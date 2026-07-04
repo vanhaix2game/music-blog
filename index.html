@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Blog nhạc - Nghe nhạc trực tuyến từ YouTube, playlist miễn phí">
+    <meta name="keywords" content="nhạc, music, playlist, YouTube, nghe nhạc trực tuyến">
+    <title>Music Blog - Nghe nhạc trực tuyến</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <i class="fas fa-music"></i>
+                <a href="#">Music Blog</a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home">Trang chủ</a></li>
+                <li><a href="#playlist">Playlist</a></li>
+                <li><a href="#blog">Blog</a></li>
+                <li><a href="#about">Giới thiệu</a></li>
+            </ul>
+            <button class="menu-toggle" id="menuToggle">☰</button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero" id="home">
+            <div class="hero-content">
+                <h1>Nghe nhạc trực tuyến miễn phí</h1>
+                <p>Khám phá và nghe nhạc yêu thích từ YouTube</p>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Tìm kiếm bài hát...">
+                    <button id="searchBtn"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Player Section -->
+        <section class="player-section">
+            <div class="container">
+                <div class="player-wrapper">
+                    <div class="video-container">
+                        <div id="youtubePlayer"></div>
+                    </div>
+                    <div class="now-playing">
+                        <h3>Đang phát:</h3>
+                        <p id="currentSongTitle">Chọn bài hát từ playlist</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Playlist Section -->
+        <section class="playlist-section" id="playlist">
+            <div class="container">
+                <h2><i class="fas fa-list"></i> Playlist</h2>
+                
+                <div class="playlist-tabs">
+                    <button class="tab-btn active" data-tab="vietnamese">Nhạc Việt</button>
+                    <button class="tab-btn" data-tab="english">Nhạc Quốc Tế</button>
+                    <button class="tab-btn" data-tab="remix">Remix</button>
+                </div>
+
+                <div class="playlist-container">
+                    <!-- Vietnamese Playlist -->
+                    <div class="playlist active" id="vietnamese">
+                        <div class="playlist-header">
+                            <span class="song-count">12 bài hát</span>
+                            <button class="play-all-btn" data-playlist="vietnamese">
+                                <i class="fas fa-play"></i> Phát tất cả
+                            </button>
+                        </div>
+                        <div class="song-list" id="vietnameseList">
+                            <!-- Songs will be loaded by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- English Playlist -->
+                    <div class="playlist" id="english">
+                        <div class="playlist-header">
+                            <span class="song-count">10 bài hát</span>
+                            <button class="play-all-btn" data-playlist="english">
+                                <i class="fas fa-play"></i> Phát tất cả
+                            </button>
+                        </div>
+                        <div class="song-list" id="englishList">
+                            <!-- Songs will be loaded by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Remix Playlist -->
+                    <div class="playlist" id="remix">
+                        <div class="playlist-header">
+                            <span class="song-count">8 bài hát</span>
+                            <button class="play-all-btn" data-playlist="remix">
+                                <i class="fas fa-play"></i> Phát tất cả
+                            </button>
+                        </div>
+                        <div class="song-list" id="remixList">
+                            <!-- Songs will be loaded by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Blog Section -->
+        <section class="blog-section" id="blog">
+            <div class="container">
+                <h2><i class="fas fa-blog"></i> Blog nhạc</h2>
+                <div class="blog-grid">
+                    <article class="blog-card">
+                        <div class="blog-image">
+                            <img src="https://picsum.photos/400/250?random=10" alt="Blog nhạc" loading="lazy">
+                        </div>
+                        <div class="blog-content">
+                            <span class="blog-category">Nhạc Việt</span>
+                            <h3><a href="#">Top 10 bài hát Việt Nam hay nhất 2026</a></h3>
+                            <p>Tổng hợp những bài hát Việt Nam đang hot nhất hiện nay...</p>
+                            <div class="blog-meta">
+                                <span><i class="fas fa-calendar"></i> 04/07/2026</span>
+                                <span><i class="fas fa-heart"></i> 128</span>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="blog-card">
+                        <div class="blog-image">
+                            <img src="https://picsum.photos/400/250?random=11" alt="Blog nhạc" loading="lazy">
+                        </div>
+                        <div class="blog-content">
+                            <span class="blog-category">Quốc Tế</span>
+                            <h3><a href="#">Những ca khúc US-UK nổi bật tháng 7</a></h3>
+                            <p>Cập nhật những bài hát quốc tế đang làm mưa làm gió...</p>
+                            <div class="blog-meta">
+                                <span><i class="fas fa-calendar"></i> 01/07/2026</span>
+                                <span><i class="fas fa-heart"></i> 96</span>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="blog-card">
+                        <div class="blog-image">
+                            <img src="https://picsum.photos/400/250?random=12" alt="Blog nhạc" loading="lazy">
+                        </div>
+                        <div class="blog-content">
+                            <span class="blog-category">Remix</span>
+                            <h3><a href="#">Playlist remix sôi động cho summer</a></h3>
+                            <p>Tuyển chọn những bản remix hot nhất cho mùa hè...</p>
+                            <div class="blog-meta">
+                                <span><i class="fas fa-calendar"></i> 28/06/2026</span>
+                                <span><i class="fas fa-heart"></i> 156</span>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Music Control Bar -->
+    <div class="music-control-bar" id="musicControlBar">
+        <div class="control-info">
+            <img src="https://picsum.photos/50/50?random=20" alt="Album art" id="albumArt">
+            <div class="song-info">
+                <p id="controlSongTitle">Chưa có bài hát</p>
+                <span id="controlArtist">-</span>
+            </div>
+        </div>
+        <div class="control-buttons">
+            <button id="prevBtn"><i class="fas fa-backward"></i></button>
+            <button id="playPauseBtn" class="play-btn"><i class="fas fa-play"></i></button>
+            <button id="nextBtn"><i class="fas fa-forward"></i></button>
+        </div>
+        <div class="control-progress">
+            <div class="progress-bar">
+                <div class="progress" id="progress"></div>
+            </div>
+            <div class="time-info">
+                <span id="currentTime">0:00</span>
+                <span id="duration">0:00</span>
+            </div>
+        </div>
+        <div class="control-volume">
+            <i class="fas fa-volume-up"></i>
+            <input type="range" id="volumeSlider" min="0" max="100" value="70">
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4><i class="fas fa-music"></i> Music Blog</h4>
+                <p>Nghe nhạc trực tuyến miễn phí từ YouTube</p>
+            </div>
+            <div class="footer-section">
+                <h4>Liên kết</h4>
+                <ul>
+                    <li><a href="#home">Trang chủ</a></li>
+                    <li><a href="#playlist">Playlist</a></li>
+                    <li><a href="#blog">Blog</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Theo dõi</h4>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                    <a href="#"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Music Blog. Tất cả quyền được bảo lưu.</p>
+        </div>
+    </footer>
+
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="script.js"></script>
+</body>
+</html>
