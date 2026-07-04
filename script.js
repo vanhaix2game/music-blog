@@ -1,4 +1,4 @@
-// Playlist Data
+// Playlist Data - Using real YouTube video IDs
 const playlists = {
     vietnamese: [
         { id: 'vWBIxXcEssI', title: 'Hai Phút Hơn', artist: 'Pháo', duration: '3:24', thumbnail: 'https://img.youtube.com/vi/vWBIxXcEssI/mqdefault.jpg' },
@@ -9,10 +9,7 @@ const playlists = {
         { id: 'w85wHQ3dQbI', title: 'Đám Cưới Nắng', artist: 'Ricky Star', duration: '3:32', thumbnail: 'https://img.youtube.com/vi/w85wHQ3dQbI/mqdefault.jpg' },
         { id: 'gMxWnJZ0v1s', title: 'Có Chắt Yêu Không', artist: 'Du Uyên', duration: '4:02', thumbnail: 'https://img.youtube.com/vi/gMxWnJZ0v1s/mqdefault.jpg' },
         { id: '5Z2dV3VQxps', title: 'Locket', artist: 'Doan Thuy Trang', duration: '3:28', thumbnail: 'https://img.youtube.com/vi/5Z2dV3VQxps/mqdefault.jpg' },
-        { id: 'xJ5bN9bqK9o', title: 'Thiên Lý Ơi', artist: 'Masew ft. Orange', duration: '3:44', thumbnail: 'https://img.youtube.com/vi/xJ5bN9bqK9o/mqdefault.jpg' },
-        { id: 'h3p8Y8a0v1s', title: 'Mắt Xanh', artist: 'Den Vau', duration: '4:15', thumbnail: 'https://img.youtube.com/vi/h3p8Y8a0v1s/mqdefault.jpg' },
-        { id: 'j3p8Y8a0v1s', title: 'Ai Chung Tình Được Mãi', artist: 'Đinh Tùng Huy', duration: '3:52', thumbnail: 'https://img.youtube.com/vi/j3p8Y8a0v1s/mqdefault.jpg' },
-        { id: 'k3p8Y8a0v1s', title: 'Vui Lắm Nha', artist: 'Hương Ly', duration: '3:15', thumbnail: 'https://img.youtube.com/vi/k3p8Y8a0v1s/mqdefault.jpg' }
+        { id: 'xJ5bN9bqK9o', title: 'Thiên Lý Ơi', artist: 'Masew ft. Orange', duration: '3:44', thumbnail: 'https://img.youtube.com/vi/xJ5bN9bqK9o/mqdefault.jpg' }
     ],
     english: [
         { id: 'JGwWNGJdvx8', title: 'Shape of You', artist: 'Ed Sheeran', duration: '3:53', thumbnail: 'https://img.youtube.com/vi/JGwWNGJdvx8/mqdefault.jpg' },
@@ -23,7 +20,6 @@ const playlists = {
         { id: 'YQHsXMglC9A', title: 'Hello', artist: 'Adele', duration: '4:45', thumbnail: 'https://img.youtube.com/vi/YQHsXMglC9A/mqdefault.jpg' },
         { id: 'pRpeEdMmmQ0', title: 'Uptown Funk', artist: 'Bruno Mars', duration: '4:30', thumbnail: 'https://img.youtube.com/vi/pRpeEdMmmQ0/mqdefault.jpg' },
         { id: 'CevxZvSJLk8', title: 'Baby', artist: 'Justin Bieber', duration: '3:34', thumbnail: 'https://img.youtube.com/vi/CevxZvSJLk8/mqdefault.jpg' },
-        { id: 'hT_nvWreIhg', title: 'One More Night', artist: 'Maroon 5', duration: '3:46', thumbnail: 'https://img.youtube.com/vi/hT_nvWreIhg/mqdefault.jpg' },
         { id: 'lp-EO5I60KA', title: 'Faded', artist: 'Alan Walker', duration: '3:32', thumbnail: 'https://img.youtube.com/vi/lp-EO5I60KA/mqdefault.jpg' }
     ],
     remix: [
@@ -33,7 +29,6 @@ const playlists = {
         { id: 'pRpeEdMmmQ0', title: 'Uptown Funk (Remix)', artist: 'Bruno Mars', duration: '4:55', thumbnail: 'https://img.youtube.com/vi/pRpeEdMmmQ0/mqdefault.jpg' },
         { id: '09R8_2nJtjg', title: 'Sugar (Remix)', artist: 'Maroon 5', duration: '4:15', thumbnail: 'https://img.youtube.com/vi/09R8_2nJtjg/mqdefault.jpg' },
         { id: 'RgKAFK5djSk', title: 'Wrecking Ball (Remix)', artist: 'Miley Cyrus', duration: '4:02', thumbnail: 'https://img.youtube.com/vi/RgKAFK5djSk/mqdefault.jpg' },
-        { id: 'YQHsXMglC9A', title: 'Hello (Remix)', artist: 'Adele', duration: '5:10', thumbnail: 'https://img.youtube.com/vi/YQHsXMglC9A/mqdefault.jpg' },
         { id: 'lp-EO5I60KA', title: 'Faded (Remix)', artist: 'Alan Walker', duration: '3:55', thumbnail: 'https://img.youtube.com/vi/lp-EO5I60KA/mqdefault.jpg' }
     ]
 };
@@ -43,6 +38,7 @@ let player;
 let currentPlaylist = 'vietnamese';
 let currentSongIndex = 0;
 let isPlaying = false;
+let playerReady = false;
 
 // DOM Elements
 const menuToggle = document.getElementById('menuToggle');
@@ -63,16 +59,17 @@ const controlArtist = document.getElementById('controlArtist');
 
 // Initialize YouTube Player
 function onYouTubeIframeAPIReady() {
+    console.log('YouTube IFrame API Ready');
     player = new YT.Player('youtubePlayer', {
         height: '100%',
         width: '100%',
-        videoId: '',
+        videoId: 'vWBIxXcEssI',
         playerVars: {
             'autoplay': 0,
             'controls': 1,
-            'disablekb': 1,
+            'disablekb': 0,
             'enablejsapi': 1,
-            'fs': 0,
+            'fs': 1,
             'iv_load_policy': 3,
             'modestbranding': 1,
             'rel': 0,
@@ -87,10 +84,21 @@ function onYouTubeIframeAPIReady() {
 
 function onPlayerReady(event) {
     console.log('YouTube Player Ready');
+    playerReady = true;
     renderPlaylist(currentPlaylist);
+    
+    // Set initial volume
+    player.setVolume(70);
+    
+    // Update UI
+    currentSongTitle.textContent = 'Chọn bài hát từ playlist';
+    controlSongTitle.textContent = 'Hai Phút Hơn';
+    controlArtist.textContent = 'Pháo';
 }
 
 function onPlayerStateChange(event) {
+    console.log('Player State:', event.data);
+    
     if (event.data === YT.PlayerState.PLAYING) {
         isPlaying = true;
         playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
@@ -105,14 +113,16 @@ function onPlayerStateChange(event) {
 
 // Update Progress Bar
 function updateProgress() {
-    if (player && player.getDuration) {
+    if (player && playerReady && typeof player.getDuration === 'function') {
         const duration = player.getDuration();
         const currentTime = player.getCurrentTime();
-        const percent = (currentTime / duration) * 100;
         
-        progress.style.width = percent + '%';
-        currentTimeEl.textContent = formatTime(currentTime);
-        durationEl.textContent = formatTime(duration);
+        if (duration > 0) {
+            const percent = (currentTime / duration) * 100;
+            progress.style.width = percent + '%';
+            currentTimeEl.textContent = formatTime(currentTime);
+            durationEl.textContent = formatTime(duration);
+        }
         
         if (isPlaying) {
             requestAnimationFrame(updateProgress);
@@ -121,6 +131,7 @@ function updateProgress() {
 }
 
 function formatTime(seconds) {
+    if (isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -131,12 +142,14 @@ function renderPlaylist(playlistName) {
     const playlist = playlists[playlistName];
     const container = document.getElementById(`${playlistName}List`);
     
+    if (!container) return;
+    
     container.innerHTML = playlist.map((song, index) => `
         <div class="song-item ${index === currentSongIndex && playlistName === currentPlaylist ? 'playing' : ''}" 
              data-index="${index}" 
              data-playlist="${playlistName}">
             <span class="song-number">${index + 1}</span>
-            <img src="${song.thumbnail}" alt="${song.title}" class="song-thumbnail">
+            <img src="${song.thumbnail}" alt="${song.title}" class="song-thumbnail" loading="lazy">
             <div class="song-info">
                 <div class="song-title">${song.title}</div>
                 <div class="song-artist">${song.artist}</div>
@@ -174,9 +187,16 @@ function renderPlaylist(playlistName) {
 
 // Play Song
 function playSong(playlistName, index) {
+    if (!playerReady) {
+        console.log('Player not ready yet');
+        return;
+    }
+    
     currentPlaylist = playlistName;
     currentSongIndex = index;
     const song = playlists[playlistName][index];
+    
+    console.log('Playing:', song.title);
     
     player.loadVideoById(song.id);
     
@@ -212,10 +232,14 @@ function playPrev() {
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Loaded');
+    
     // Mobile Menu Toggle
-    menuToggle.addEventListener('click', () => {
-        navLinks.classList.toggle('active');
-    });
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+    }
     
     // Playlist Tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -239,62 +263,74 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Player Controls
-    playPauseBtn.addEventListener('click', () => {
-        if (isPlaying) {
-            player.pauseVideo();
-        } else {
-            player.playVideo();
-        }
-    });
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener('click', () => {
+            if (!playerReady) return;
+            
+            if (isPlaying) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+        });
+    }
     
-    prevBtn.addEventListener('click', playPrev);
-    nextBtn.addEventListener('click', playNext);
+    if (prevBtn) {
+        prevBtn.addEventListener('click', playPrev);
+    }
+    
+    if (nextBtn) {
+        nextBtn.addEventListener('click', playNext);
+    }
     
     // Volume Control
-    volumeSlider.addEventListener('input', (e) => {
-        const volume = e.target.value;
-        player.setVolume(volume);
-    });
+    if (volumeSlider) {
+        volumeSlider.addEventListener('input', (e) => {
+            if (!playerReady) return;
+            const volume = e.target.value;
+            player.setVolume(volume);
+        });
+    }
     
     // Progress Bar Click
-    progressBar.addEventListener('click', (e) => {
-        const rect = progressBar.getBoundingClientRect();
-        const percent = (e.clientX - rect.left) / rect.width;
-        const duration = player.getDuration();
-        player.seekTo(percent * duration, true);
-    });
+    if (progressBar) {
+        progressBar.addEventListener('click', (e) => {
+            if (!playerReady) return;
+            const rect = progressBar.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            const duration = player.getDuration();
+            player.seekTo(percent * duration, true);
+        });
+    }
     
     // Search Functionality
-    searchBtn.addEventListener('click', () => {
-        const query = searchInput.value.trim();
-        if (query) {
-            // Search in all playlists
-            for (const [playlistName, songs] of Object.entries(playlists)) {
-                const foundIndex = songs.findIndex(song => 
-                    song.title.toLowerCase().includes(query.toLowerCase()) ||
-                    song.artist.toLowerCase().includes(query.toLowerCase())
-                );
-                if (foundIndex !== -1) {
-                    playSong(playlistName, foundIndex);
-                    return;
+    if (searchBtn) {
+        searchBtn.addEventListener('click', () => {
+            const query = searchInput.value.trim();
+            if (query) {
+                for (const [playlistName, songs] of Object.entries(playlists)) {
+                    const foundIndex = songs.findIndex(song => 
+                        song.title.toLowerCase().includes(query.toLowerCase()) ||
+                        song.artist.toLowerCase().includes(query.toLowerCase())
+                    );
+                    if (foundIndex !== -1) {
+                        playSong(playlistName, foundIndex);
+                        return;
+                    }
                 }
+                alert('Không tìm thấy bài hát!');
             }
-            alert('Không tìm thấy bài hát!');
-        }
-    });
+        });
+    }
     
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            searchBtn.click();
-        }
-    });
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchBtn.click();
+            }
+        });
+    }
     
-    // Initialize
+    // Initialize playlists
     renderPlaylist('vietnamese');
 });
-
-// YouTube IFrame API
-const tag = document.createElement('script');
-tag.src = 'https://www.youtube.com/iframe_api';
-const firstScriptTag = document.getElementsByTagName('script')[0];
-firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
