@@ -233,7 +233,6 @@ var ADMIN_SECRET = 'admin123';
 var ytPlayer = null;
 var syncInterval = null;
 
-// ====== FIREBASE ======
 var firebaseConfig = {
     apiKey: "AIzaSyBM7Oysa5yni_3uFa_fkxiDLtO-hmD10HQ",
     authDomain: "planning-with-ai-142c8.firebaseapp.com",
@@ -250,7 +249,10 @@ var presenceRef = db.ref('presence');
 var playerRef = db.ref('player');
 var queueRef = db.ref('queue');
 
-// ====== YOUTUBE IFRAME API ======
+function safeSet(ref, data) {
+    try { ref.set(data); } catch(e) { console.warn('[Firebase]', e.message); }
+}
+
 function onYouTubeIframeAPIReady(){
     ytPlayer = new YT.Player('mainPlayer', {
         height: '100%', width: '100%',
@@ -259,45 +261,18 @@ function onYouTubeIframeAPIReady(){
         events: {
             onReady: function(){ console.log('[YT] Player ready'); },
             onStateChange: function(e){
-                if(isAdmin && e.data === YT.PlayerState.ENDED){
-                    playNextSong();
-                }
+                if(isAdmin && e.data === YT.PlayerState.ENDED){ playNextSong(); }
             }
         }
     });
 }
 
-function ytPlay(videoId, startTime){
-    if(!ytPlayer || !ytPlayer.loadVideoById) return;
-    ytPlayer.loadVideoById({videoId: videoId, startSeconds: startTime || 0});
-}
+function ytPlay(vid, t){ if(ytPlayer&&ytPlayer.loadVideoById) ytPlayer.loadVideoById({videoId:vid,startSeconds:t||0}); }
+function ytSeekTo(t){ if(ytPlayer&&ytPlayer.seekTo) ytPlayer.seekTo(t,true); }
+function ytGetCurrentTime(){ return (ytPlayer&&ytPlayer.getCurrentTime)?ytPlayer.getCurrentTime():0; }
+function ytPause(){ if(ytPlayer&&ytPlayer.pauseVideo) ytPlayer.pauseVideo(); }
+function ytResume(){ if(ytPlayer&&ytPlayer.playVideo) ytPlayer.playVideo(); }
 
-function ytSeekTo(time){
-    if(!ytPlayer || !ytPlayer.seekTo) return;
-    ytPlayer.seekTo(time, true);
-}
-
-function ytGetCurrentTime(){
-    if(!ytPlayer || !ytPlayer.getCurrentTime) return 0;
-    return ytPlayer.getCurrentTime();
-}
-
-function ytGetDuration(){
-    if(!ytPlayer || !ytPlayer.getDuration) return 0;
-    return ytPlayer.getDuration();
-}
-
-function ytPause(){
-    if(!ytPlayer || !ytPlayer.pauseVideo) return;
-    ytPlayer.pauseVideo();
-}
-
-function ytResume(){
-    if(!ytPlayer || !ytPlayer.playVideo) return;
-    ytPlayer.playVideo();
-}
-
-// ====== STATE ======
 var username = localStorage.getItem('musicblog_username') || '';
 var userColor = localStorage.getItem('musicblog_color') || (function(){
     var c=['#e94560','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e74c3c'];
@@ -309,25 +284,19 @@ var userId = localStorage.getItem('musicblog_uid') || ('u_'+Math.random().toStri
 localStorage.setItem('musicblog_uid',userId);
 var isAdmin = localStorage.getItem('musicblog_admin') === 'true';
 
-// ====== FIREBASE CONNECTION ======
 db.ref('.info/connected').on('value', function(snap){
     var el = document.getElementById('connStatus');
-    if(snap.val()){
-        el.className='conn-badge conn-ok';
-        el.innerHTML='<i class="fas fa-check-circle"></i> Da ket noi';
-    } else {
-        el.className='conn-badge conn-err';
-        el.innerHTML='<i class="fas fa-times-circle"></i> Mat ket noi';
-    }
+    if(snap.val()){ el.className='conn-badge conn-ok'; el.innerHTML='<i class="fas fa-check-circle"></i> Da ket noi'; }
+    else { el.className='conn-badge conn-err'; el.innerHTML='<i class="fas fa-times-circle"></i> Mat ket noi'; }
 });
 db.ref('_healthCheck').set({ts: Date.now()}).then(function(){
     db.ref('_healthCheck').remove();
     document.getElementById('setupBanner').classList.add('hidden');
 }).catch(function(err){
     document.getElementById('setupBanner').classList.remove('hidden');
+    console.warn('[Firebase] Rules chua setup:', err.message);
 });
 
-// ====== SONGS DATA ======
 var allSongs = [
     {id:'mw7Y0jQ8_BU',title:'2 Phut Hon (KAIZ Remix)',artist:'Phao'},
     {id:'Y29OrOVJUKs',title:'Em Gai Mua',artist:'Huong Tram'},
@@ -351,23 +320,14 @@ var allSongs = [
     {id:'RgKAFK5djSk',title:'Yeu Em Hon Moi Ngay',artist:'Hoac Ton'}
 ];
 
-// ====== ADMIN UI ======
 function updateAdminUI(){
     var controls = document.querySelectorAll('.ctrl-btn');
     var badge = document.getElementById('adminBadge');
     var hint = document.getElementById('adminHint');
-    if(isAdmin){
-        controls.forEach(function(btn){btn.disabled = false;});
-        badge.style.display = 'inline-block';
-        hint.textContent = 'Ban la ADMIN - dieu khien nhac cho tat ca.';
-    } else {
-        controls.forEach(function(btn){btn.disabled = true;});
-        badge.style.display = 'none';
-        hint.textContent = 'Chi admin moi dieu khien duoc nhac. Ban co the them bai va nghe.';
-    }
+    if(isAdmin){ controls.forEach(function(b){b.disabled=false;}); badge.style.display='inline-block'; hint.textContent='Ban la ADMIN - dieu khien nhac cho tat ca.'; }
+    else { controls.forEach(function(b){b.disabled=true;}); badge.style.display='none'; hint.textContent='Chi admin moi dieu khien duoc nhac. Ban co the them bai va nghe.'; }
 }
 
-// ====== RENDER SONGS ======
 function renderSongGrid(songs, containerId){
     var container = document.getElementById(containerId);
     var html = '';
@@ -379,13 +339,10 @@ function renderSongGrid(songs, containerId){
     }
     container.innerHTML=html;
     container.querySelectorAll('.song-card').forEach(function(card){
-        card.addEventListener('click',function(){
-            addToQueue({id:card.dataset.id,title:card.dataset.title,artist:card.dataset.artist});
-        });
+        card.addEventListener('click',function(){ addToQueue({id:card.dataset.id,title:card.dataset.title,artist:card.dataset.artist}); });
     });
 }
 
-// ====== QUEUE ======
 function addToQueue(song){
     queueRef.once('value').then(function(snap){
         var q=snap.val()||{songs:[],currentIndex:0};
@@ -395,19 +352,11 @@ function addToQueue(song){
         if(!exists){
             if(q.songs.length>=MAX_QUEUE){q.songs.shift();}
             q.songs.push(song);
-            chatRef.push({username:'He thong',text:'Da them: '+song.title+' - '+song.artist,time:firebase.database.ServerValue.TIMESTAMP,system:true});
+            try{ chatRef.push({username:'He thong',text:'Da them: '+song.title+' - '+song.artist,time:Date.now(),system:true}); }catch(e){}
         }
         if(q.currentIndex<0)q.currentIndex=0;
         return queueRef.set(q);
-    }).then(function(){
-        return queueRef.once('value');
-    }).then(function(snap){
-        var q=snap.val();
-        if(q&&q.songs&&q.songs.length>0){
-            if(q.currentIndex<0||q.currentIndex>=q.songs.length)q.currentIndex=0;
-            if(isAdmin) playSongAt(q.currentIndex);
-        }
-    });
+    }).catch(function(e){ console.warn('[Firebase] addToQueue failed:', e.message); });
 }
 
 function playSongAt(index){
@@ -418,13 +367,8 @@ function playSongAt(index){
         q.currentIndex=index;
         var song=q.songs[index];
         queueRef.set(q);
-        playerRef.set({
-            videoId:song.id,title:song.title,artist:song.artist,
-            currentTime:0,
-            playing:true,
-            by:userId,ts:firebase.database.ServerValue.TIMESTAMP
-        });
-    });
+        playerRef.set({videoId:song.id,title:song.title,artist:song.artist,currentTime:0,playing:true,by:userId,ts:Date.now()});
+    }).catch(function(e){});
 }
 
 function playNextSong(){
@@ -435,12 +379,8 @@ function playNextSong(){
         q.currentIndex=(q.currentIndex+1)%q.songs.length;
         queueRef.set(q);
         var song=q.songs[q.currentIndex];
-        playerRef.set({
-            videoId:song.id,title:song.title,artist:song.artist,
-            currentTime:0,playing:true,
-            by:userId,ts:firebase.database.ServerValue.TIMESTAMP
-        });
-    });
+        playerRef.set({videoId:song.id,title:song.title,artist:song.artist,currentTime:0,playing:true,by:userId,ts:Date.now()});
+    }).catch(function(e){});
 }
 
 function playPrevSong(){
@@ -451,48 +391,32 @@ function playPrevSong(){
         q.currentIndex=(q.currentIndex-1+q.songs.length)%q.songs.length;
         queueRef.set(q);
         var song=q.songs[q.currentIndex];
-        playerRef.set({
-            videoId:song.id,title:song.title,artist:song.artist,
-            currentTime:0,playing:true,
-            by:userId,ts:firebase.database.ServerValue.TIMESTAMP
-        });
-    });
+        playerRef.set({videoId:song.id,title:song.title,artist:song.artist,currentTime:0,playing:true,by:userId,ts:Date.now()});
+    }).catch(function(e){});
 }
 
-// ====== SYNC TIME - ADMIN ======
 if(isAdmin){
     syncInterval = setInterval(function(){
         if(!ytPlayer||!ytPlayer.getCurrentTime) return;
-        var data = {
-            videoId: null,
-            currentTime: ytGetCurrentTime(),
-            playing: ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1
-        };
         playerRef.once('value').then(function(snap){
-            var d = snap.val();
-            if(d){data.videoId = d.videoId; data.title = d.title; data.artist = d.artist; data.by = d.by; data.ts = d.ts;}
-            return playerRef.set(data);
-        });
+            var d = snap.val()||{};
+            d.currentTime = ytGetCurrentTime();
+            d.playing = ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1;
+            d.ts = Date.now();
+            return playerRef.set(d);
+        }).catch(function(e){});
     }, 3000);
 }
 
-// ====== LISTEN PLAYER - ALL USERS ======
 var lastSyncedVideo = null;
 playerRef.on('value',function(snap){
     var data=snap.val();
     if(!data||!data.videoId)return;
-
     document.getElementById('nowPlayingTitle').textContent=data.title+' - '+data.artist;
-
     var newVideo = data.videoId;
-    var shouldSync = false;
-
-    if(newVideo !== lastSyncedVideo){
-        lastSyncedVideo = newVideo;
-        shouldSync = true;
-    }
-
+    var shouldSync = (newVideo !== lastSyncedVideo);
     if(shouldSync){
+        lastSyncedVideo = newVideo;
         var startTime = data.currentTime || 0;
         if(!isAdmin && data.ts){
             var elapsed = (Date.now() - data.ts) / 1000;
@@ -501,16 +425,11 @@ playerRef.on('value',function(snap){
         ytPlay(newVideo, startTime);
         console.log('[Sync] Playing:', newVideo, 'at', startTime.toFixed(1)+'s');
     } else if(!isAdmin && data.currentTime !== undefined){
-        var myTime = ytGetCurrentTime();
-        var diff = Math.abs(myTime - data.currentTime);
-        if(diff > 3){
-            console.log('[Sync] Correcting time diff:', diff.toFixed(1)+'s');
-            ytSeekTo(data.currentTime);
-        }
+        var diff = Math.abs(ytGetCurrentTime() - data.currentTime);
+        if(diff > 3){ console.log('[Sync] Correcting:', diff.toFixed(1)+'s'); ytSeekTo(data.currentTime); }
     }
 });
 
-// ====== LISTEN QUEUE ======
 queueRef.on('value',function(snap){
     var data=snap.val();
     if(!data||!data.songs)return;
@@ -519,36 +438,19 @@ queueRef.on('value',function(snap){
 
 function renderQueueUI(songs,currentIndex){
     var container=document.getElementById('queueList');
-    var countEl=document.getElementById('queueCount');
-    countEl.textContent=songs.length+'/'+MAX_QUEUE+' bai';
-    if(songs.length===0){
-        container.innerHTML='<div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chua co bai nao</div>';
-        return;
-    }
+    document.getElementById('queueCount').textContent=songs.length+'/'+MAX_QUEUE+' bai';
+    if(songs.length===0){ container.innerHTML='<div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chua co bai nao</div>'; return; }
     var html='';
     for(var i=0;i<songs.length;i++){
-        var s=songs[i];
-        var active=i===currentIndex?' active':'';
-        html+='<div class="queue-item'+active+'" data-index="'+i+'">'+
-            '<img src="https://img.youtube.com/vi/'+s.id+'/mqdefault.jpg" alt="">'+
+        var s=songs[i]; var active=i===currentIndex?' active':'';
+        html+='<div class="queue-item'+active+'" data-index="'+i+'"><img src="https://img.youtube.com/vi/'+s.id+'/mqdefault.jpg" alt="">'+
             '<div class="queue-item-info"><div class="queue-item-title">'+s.title+'</div><div class="queue-item-artist">'+s.artist+'</div></div>'+
-            (isAdmin?'<button class="queue-item-remove" data-index="'+i+'"><i class="fas fa-times"></i></button>':'')+
-            '</div>';
+            (isAdmin?'<button class="queue-item-remove" data-index="'+i+'"><i class="fas fa-times"></i></button>':'')+'</div>';
     }
     container.innerHTML=html;
     if(isAdmin){
-        container.querySelectorAll('.queue-item').forEach(function(item){
-            item.addEventListener('click',function(e){
-                if(e.target.closest('.queue-item-remove'))return;
-                playSongAt(parseInt(item.dataset.index));
-            });
-        });
-        container.querySelectorAll('.queue-item-remove').forEach(function(btn){
-            btn.addEventListener('click',function(e){
-                e.stopPropagation();
-                removeSongFromQueue(parseInt(btn.dataset.index));
-            });
-        });
+        container.querySelectorAll('.queue-item').forEach(function(item){ item.addEventListener('click',function(e){ if(!e.target.closest('.queue-item-remove')) playSongAt(parseInt(item.dataset.index)); }); });
+        container.querySelectorAll('.queue-item-remove').forEach(function(btn){ btn.addEventListener('click',function(e){ e.stopPropagation(); removeSongFromQueue(parseInt(btn.dataset.index)); }); });
     }
 }
 
@@ -561,10 +463,9 @@ function removeSongFromQueue(index){
         if(q.currentIndex>=q.songs.length)q.currentIndex=q.songs.length-1;
         if(q.currentIndex<0)q.currentIndex=0;
         queueRef.set(q);
-    });
+    }).catch(function(e){});
 }
 
-// ====== YOUTUBE LINK ======
 function extractVideoId(url){
     var match=url.match(/(?:v=|youtu\.be\/|embed\/|\/v\/|\/e\/)([a-zA-Z0-9_-]{11})/);
     return match?match[1]:null;
@@ -573,39 +474,33 @@ document.getElementById('addLinkBtn').addEventListener('click',function(){
     var url=document.getElementById('linkInput').value.trim();
     if(!url){alert('Vui long dan link YouTube!');return;}
     var videoId=extractVideoId(url);
-    if(!videoId){alert('Link khong hop le!\nDang: https://youtube.com/watch?v=xxx\nhoac: https://youtu.be/xxx');return;}
+    if(!videoId){alert('Link khong hop le!');return;}
     addToQueue({id:videoId,title:'Bai tu link',artist:'YouTube'});
     document.getElementById('linkInput').value='';
 });
 document.getElementById('linkInput').addEventListener('keypress',function(e){if(e.key==='Enter')document.getElementById('addLinkBtn').click();});
 
-// ====== PLAYER CONTROLS ======
 document.getElementById('playPauseBtn').addEventListener('click',function(){
     if(!isAdmin)return alert('Chi admin moi dieu khien duoc!');
     if(ytPlayer.getPlayerState() === 1){
         ytPause();
-        playerRef.once('value').then(function(snap){
-            var d=snap.val();if(d){d.playing=false;playerRef.set(d);}
-        });
+        playerRef.once('value').then(function(snap){ var d=snap.val();if(d){d.playing=false;playerRef.set(d);} }).catch(function(e){});
     } else {
         ytResume();
-        playerRef.once('value').then(function(snap){
-            var d=snap.val();if(d){d.playing=true;playerRef.set(d);}
-        });
+        playerRef.once('value').then(function(snap){ var d=snap.val();if(d){d.playing=true;playerRef.set(d);} }).catch(function(e){});
     }
 });
-document.getElementById('nextBtn').addEventListener('click',function(){if(!isAdmin)return;playNextSong();});
-document.getElementById('prevBtn').addEventListener('click',function(){if(!isAdmin)return;playPrevSong();});
-document.getElementById('repeatBtn').addEventListener('click',function(){if(!isAdmin)return;this.classList.toggle('active');});
-document.getElementById('shuffleBtn').addEventListener('click',function(){if(!isAdmin)return;this.classList.toggle('active');});
+document.getElementById('nextBtn').addEventListener('click',function(){if(isAdmin)playNextSong();});
+document.getElementById('prevBtn').addEventListener('click',function(){if(isAdmin)playPrevSong();});
+document.getElementById('repeatBtn').addEventListener('click',function(){if(isAdmin)this.classList.toggle('active');});
+document.getElementById('shuffleBtn').addEventListener('click',function(){if(isAdmin)this.classList.toggle('active');});
 
-// ====== CHAT & PRESENCE ======
 var chatModal=document.getElementById('usernameModal');
 var chatInput=document.getElementById('chatInput');
 var chatSendBtn=document.getElementById('chatSendBtn');
 var chatMessages=document.getElementById('chatMessages');
 
-if(username){chatModal.classList.remove('show');enableChat();document.getElementById('chatUserName').textContent=username;}
+if(username){ chatModal.classList.remove('show'); enableChat(); document.getElementById('chatUserName').textContent=username; }
 
 document.getElementById('usernameSubmit').addEventListener('click',function(){
     var name=document.getElementById('usernameInput').value.trim();
@@ -615,7 +510,7 @@ document.getElementById('usernameSubmit').addEventListener('click',function(){
     chatModal.classList.remove('show');
     document.getElementById('chatUserName').textContent=username;
     enableChat();
-    chatRef.push({username:'He thong',text:username+' da tham gia chat!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
+    try{ chatRef.push({username:'He thong',text:username+' da tham gia chat!',time:Date.now(),system:true}); }catch(e){}
 });
 document.getElementById('usernameInput').addEventListener('keypress',function(e){if(e.key==='Enter')document.getElementById('usernameSubmit').click();});
 
@@ -624,52 +519,49 @@ document.getElementById('changeNameBtn').addEventListener('click',function(){
     if(!newName)return;
     newName=newName.trim();
     if(newName.length<2){alert('Ten phai co it nhat 2 ky tu!');return;}
-    var old=username;username=newName;
+    var old=username; username=newName;
     localStorage.setItem('musicblog_username',username);
     document.getElementById('chatUserName').textContent=username;
     setupPresence();
-    chatRef.push({username:'He thong',text:old+' da doi ten thanh '+username,time:firebase.database.ServerValue.TIMESTAMP,system:true});
+    try{ chatRef.push({username:'He thong',text:old+' da doi ten thanh '+username,time:Date.now(),system:true}); }catch(e){}
 });
 
 function enableChat(){
-    chatInput.disabled=false;chatSendBtn.disabled=false;chatInput.focus();
+    chatInput.disabled=false; chatSendBtn.disabled=false; chatInput.focus();
     setupPresence();
     updateAdminUI();
 }
 
 function setupPresence(){
     var myPres=presenceRef.child(userId);
-    myPres.set({name:username,time:firebase.database.ServerValue.TIMESTAMP});
+    safeSet(myPres, {name:username, time:Date.now()});
     myPres.onDisconnect().remove();
     presenceRef.on('value',function(snap){
         var users=snap.val()||{};
         var keys=Object.keys(users);
         document.getElementById('onlineCount').textContent=keys.length;
-        var names=keys.map(function(k){return users[k].name;}).join(', ');
-        document.getElementById('onlineNames').textContent=names||'Khong ai';
+        document.getElementById('onlineNames').textContent=keys.map(function(k){return users[k].name;}).join(', ')||'Khong ai';
     });
 }
 
 function sendMessage(){
     var text=chatInput.value.trim();
     if(!text||!username)return;
-
     if(text.toLowerCase()==='admin'){
-        if(isAdmin){chatRef.push({username:'He thong',text:'Ban da la admin roi!',time:firebase.database.ServerValue.TIMESTAMP,system:true});}
+        if(isAdmin){ try{chatRef.push({username:'He thong',text:'Ban da la admin roi!',time:Date.now(),system:true});}catch(e){} }
         else{
             var pass=prompt('Nhap mat khau admin:');
             if(pass===ADMIN_SECRET){
-                isAdmin=true;localStorage.setItem('musicblog_admin','true');
-                updateAdminUI();
-                chatRef.push({username:'He thong',text:username+' da tro thanh ADMIN!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
+                isAdmin=true; localStorage.setItem('musicblog_admin','true'); updateAdminUI();
+                try{chatRef.push({username:'He thong',text:username+' da tro thanh ADMIN!',time:Date.now(),system:true});}catch(e){}
             } else if(pass!==null){
-                chatRef.push({username:'He thong',text:'Sai mat khau admin!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
+                try{chatRef.push({username:'He thong',text:'Sai mat khau admin!',time:Date.now(),system:true});}catch(e){}
             }
         }
-        chatInput.value='';return;
+        chatInput.value=''; return;
     }
-    chatRef.push({username:username,color:userColor,text:text,time:firebase.database.ServerValue.TIMESTAMP,userId:userId});
-    chatInput.value='';chatInput.focus();
+    try{ chatRef.push({username:username,color:userColor,text:text,time:Date.now(),userId:userId}); }catch(e){}
+    chatInput.value=''; chatInput.focus();
 }
 
 chatSendBtn.addEventListener('click',sendMessage);
@@ -691,66 +583,6 @@ chatRef.orderByChild('time').limitToLast(50).on('child_added',function(snap){
 
 function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
-// ====== INIT ======
-renderSongGrid(allSongs,'allSongsGrid');
-updateAdminUI();
-}
-
-function setupPresence(){
-    var myPres=presenceRef.child(userId);
-    myPres.set({name:username,time:firebase.database.ServerValue.TIMESTAMP});
-    myPres.onDisconnect().remove();
-    presenceRef.on('value',function(snap){
-        var users=snap.val()||{};
-        var keys=Object.keys(users);
-        document.getElementById('onlineCount').textContent=keys.length;
-        var names=keys.map(function(k){return users[k].name;}).join(', ');
-        document.getElementById('onlineNames').textContent=names||'Khong ai';
-    });
-}
-
-function sendMessage(){
-    var text=chatInput.value.trim();
-    if(!text||!username)return;
-
-    if(text.toLowerCase()==='admin'){
-        if(isAdmin){chatRef.push({username:'He thong',text:'Ban da la admin roi!',time:firebase.database.ServerValue.TIMESTAMP,system:true});}
-        else{
-            var pass=prompt('Nhap mat khau admin:');
-            if(pass===ADMIN_SECRET){
-                isAdmin=true;localStorage.setItem('musicblog_admin','true');
-                updateAdminUI();
-                chatRef.push({username:'He thong',text:username+' da tro thanh ADMIN!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
-            } else if(pass!==null){
-                chatRef.push({username:'He thong',text:'Sai mat khau admin!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
-            }
-        }
-        chatInput.value='';return;
-    }
-    chatRef.push({username:username,color:userColor,text:text,time:firebase.database.ServerValue.TIMESTAMP,userId:userId});
-    chatInput.value='';chatInput.focus();
-}
-
-chatSendBtn.addEventListener('click',sendMessage);
-chatInput.addEventListener('keypress',function(e){if(e.key==='Enter')sendMessage();});
-
-chatRef.orderByChild('time').limitToLast(50).on('child_added',function(snap){
-    var msg=snap.val();
-    var div=document.createElement('div');
-    var isSelf=msg.userId===userId;
-    div.className='chat-msg'+(msg.system?' system':(isSelf?' self':' other'));
-    var t=new Date(msg.time);
-    var ts=t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0');
-    div.innerHTML='<div class="chat-msg-author" style="'+(!isSelf&&!msg.system?'color:'+msg.color:'')+'">'+msg.username+'</div>'+
-        '<div class="chat-msg-bubble">'+escapeHtml(msg.text)+'</div>'+
-        '<div class="chat-msg-time">'+ts+'</div>';
-    chatMessages.appendChild(div);
-    chatMessages.scrollTop=chatMessages.scrollHeight;
-});
-
-function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-
-// ====== INIT ======
 renderSongGrid(allSongs,'allSongsGrid');
 updateAdminUI();
 </script>
