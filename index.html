@@ -3,53 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music Blog - Nghe nhac truc tuyen</title>
+    <title>Music Blog - Nghe nhạc trực tuyến</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        
-        @keyframes bgZoom{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes glow{0%,100%{box-shadow:0 0 5px rgba(233,69,96,0.3)}50%{box-shadow:0 0 20px rgba(233,69,96,0.6)}}
-        
-        body{font-family:'Inter',sans-serif;color:#333;min-height:100vh;position:relative;overflow-x:hidden}
-        
-        .bg-video{position:fixed;top:0;left:0;width:100vw;height:100vh;object-fit:cover;z-index:-2;animation:bgZoom 25s ease-in-out infinite}
-        .bg-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:-1;
-            background:linear-gradient(135deg,rgba(255,255,255,0.75),rgba(255,255,255,0.6));
-            backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+
+        @keyframes floatVideo{
+            0%{transform:translate(0px, 0px) rotate(0deg)}
+            20%{transform:translate(15px, -10px) rotate(0.5deg)}
+            40%{transform:translate(-8px, 5px) rotate(-0.3deg)}
+            60%{transform:translate(10px, -15px) rotate(0.4deg)}
+            80%{transform:translate(-5px, 8px) rotate(-0.2deg)}
+            100%{transform:translate(0px, 0px) rotate(0deg)}
         }
-        
+
+        @keyframes floatChat{
+            0%{transform:translate(0px, 0px) rotate(0deg)}
+            25%{transform:translate(-12px, -8px) rotate(-0.4deg)}
+            50%{transform:translate(8px, 12px) rotate(0.3deg)}
+            75%{transform:translate(-6px, -10px) rotate(-0.5deg)}
+            100%{transform:translate(0px, 0px) rotate(0deg)}
+        }
+
+        @keyframes softPulse{
+            0%,100%{box-shadow:0 8px 32px rgba(0,0,0,0.15)}
+            50%{box-shadow:0 12px 40px rgba(0,0,0,0.25)}
+        }
+
+        body{
+            font-family:'Inter',sans-serif;
+            color:#333;
+            min-height:100vh;
+            overflow-x:hidden;
+            background:#f0e6d3;
+        }
+        body.dark{background:#1a1a2e;color:#fff}
+
+        .bg-anime{
+            position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-2;
+            background:url('https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=1920&q=80') center/cover no-repeat;
+        }
+        body.dark .bg-anime{
+            background:url('https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=1920&q=80') center/cover no-repeat;
+        }
+        .bg-overlay{
+            position:fixed;top:0;left:0;right:0;bottom:0;z-index:-1;
+            background:linear-gradient(135deg,rgba(255,255,255,0.25),rgba(255,255,255,0.1));
+        }
+        body.dark .bg-overlay{
+            background:linear-gradient(135deg,rgba(10,8,30,0.5),rgba(20,18,50,0.4));
+        }
+
+        .theme-toggle{
+            position:fixed;right:20px;top:50%;transform:translateY(-50%);z-index:9999;
+            width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;font-size:1.4rem;
+            background:rgba(255,255,255,0.5);backdrop-filter:blur(10px);
+            box-shadow:0 4px 15px rgba(0,0,0,0.15);
+        }
+        body.dark .theme-toggle{background:rgba(255,255,255,0.15)}
+
         .glass{
-            background:rgba(255,255,255,0.55);
-            backdrop-filter:blur(16px) saturate(180%);
-            -webkit-backdrop-filter:blur(16px) saturate(180%);
-            border:1px solid rgba(255,255,255,0.6);
-            border-radius:16px;
-            box-shadow:0 8px 32px rgba(0,0,0,0.08),inset 0 1px 0 rgba(255,255,255,0.8);
-            animation:fadeIn 0.6s ease-out;
+            background:rgba(255,255,255,0.5);
+            backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+            border:1px solid rgba(255,255,255,0.5);
+            border-radius:18px;
+            box-shadow:0 8px 32px rgba(0,0,0,0.1);
         }
-        .glass:hover{
-            box-shadow:0 12px 40px rgba(0,0,0,0.12),inset 0 1px 0 rgba(255,255,255,0.9);
+        body.dark .glass{
+            background:rgba(255,255,255,0.08);
+            border-color:rgba(255,255,255,0.12);
+            box-shadow:0 8px 32px rgba(0,0,0,0.3);
         }
-        
-        header{
-            background:rgba(255,255,255,0.6);
-            backdrop-filter:blur(20px) saturate(180%);
-            -webkit-backdrop-filter:blur(20px) saturate(180%);
-            border-bottom:1px solid rgba(255,255,255,0.5);
-            position:sticky;top:0;z-index:1000;
-            box-shadow:0 2px 20px rgba(0,0,0,0.06);
-        }
+
+        header{background:rgba(255,255,255,0.5);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.4);position:sticky;top:0;z-index:1000}
+        body.dark header{background:rgba(15,12,41,0.7);border-bottom-color:rgba(255,255,255,0.1)}
         nav{max-width:1400px;margin:0 auto;padding:0.8rem 2rem;display:flex;justify-content:space-between;align-items:center}
         .logo{display:flex;align-items:center;gap:0.5rem}
-        .logo i{font-size:1.8rem;color:#e94560;animation:glow 3s infinite}
-        .logo a{font-size:1.4rem;font-weight:700;color:#e94560;text-decoration:none}
+        .logo i{font-size:1.8rem;color:#e94560}
+        .logo a{font-size:1.4rem;font-weight:700;color:#333;text-decoration:none}
+        body.dark .logo a{color:#fff}
         .nav-links{display:flex;list-style:none;gap:1rem;align-items:center}
+        .nav-links a{color:#555}
+        body.dark .nav-links a{color:rgba(255,255,255,0.7)}
         .conn-badge{font-size:0.7rem;padding:3px 10px;border-radius:12px;font-weight:600}
         .conn-ok{background:rgba(39,174,96,0.15);color:#27ae60;border:1px solid rgba(39,174,96,0.2)}
         .conn-err{background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid rgba(231,76,60,0.2)}
@@ -58,131 +96,157 @@
         .left-panel{flex:1;min-width:0;display:flex;flex-direction:column;gap:1rem}
         .right-panel{width:340px;flex-shrink:0}
 
-        .search-bar{display:flex;gap:0.5rem;margin-bottom:0}
-        .search-bar input{flex:1;padding:0.8rem 1.2rem;border:1px solid rgba(255,255,255,0.5);border-radius:12px;font-size:1rem;transition:border 0.3s;background:rgba(255,255,255,0.4);backdrop-filter:blur(10px)}
-        .search-bar input:focus{outline:none;border-color:#e94560;background:rgba(255,255,255,0.6)}
-        .search-bar button{padding:0.8rem 1.5rem;background:linear-gradient(135deg,#e94560,#d63851);border:none;border-radius:12px;color:#fff;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:0.5rem;box-shadow:0 4px 15px rgba(233,69,96,0.3);transition:all 0.3s}
-        .search-bar button:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(233,69,96,0.4)}
+        .search-bar{display:flex;gap:0.5rem}
+        .search-bar input{flex:1;padding:0.8rem 1.2rem;border:1px solid rgba(0,0,0,0.1);border-radius:12px;font-size:1rem;background:rgba(255,255,255,0.5);color:#333}
+        body.dark .search-bar input{border-color:rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#fff}
+        .search-bar input::placeholder{color:rgba(0,0,0,0.35)}
+        body.dark .search-bar input::placeholder{color:rgba(255,255,255,0.4)}
+        .search-bar input:focus{outline:none;border-color:#e94560}
+        .search-bar button{padding:0.8rem 1.5rem;background:linear-gradient(135deg,#e94560,#c23152);border:none;border-radius:12px;color:#fff;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:0.5rem}
+        .search-bar button:hover{box-shadow:0 4px 20px rgba(233,69,96,0.4)}
 
-        .player-container{padding:1.2rem;animation:slideUp 0.8s ease-out}
-        .video-wrapper{position:relative;padding-bottom:56.25%;border-radius:12px;overflow:hidden;background:#000;box-shadow:0 8px 30px rgba(0,0,0,0.15)}
+        .player-container{
+            padding:1.2rem;
+            animation:floatVideo 8s ease-in-out infinite,softPulse 8s ease-in-out infinite;
+        }
+        .video-wrapper{position:relative;padding-bottom:56.25%;border-radius:14px;overflow:hidden;background:#000;box-shadow:0 10px 40px rgba(0,0,0,0.4)}
         .video-wrapper iframe{position:absolute;top:0;left:0;width:100%;height:100%}
         .player-controls{display:flex;align-items:center;justify-content:center;gap:0.8rem;padding:1rem 0}
-        .ctrl-btn{width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.3s;font-size:1rem;background:rgba(255,255,255,0.5);color:#555;border:1px solid rgba(255,255,255,0.5)}
-        .ctrl-btn:hover{background:#e94560;color:#fff;transform:scale(1.1);box-shadow:0 4px 15px rgba(233,69,96,0.3)}
-        .ctrl-btn.play-btn{width:56px;height:56px;background:linear-gradient(135deg,#e94560,#d63851);color:#fff;font-size:1.3rem;box-shadow:0 6px 25px rgba(233,69,96,0.4)}
-        .ctrl-btn.play-btn:hover{transform:scale(1.12);box-shadow:0 8px 30px rgba(233,69,96,0.5)}
+        .ctrl-btn{width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;background:rgba(0,0,0,0.06);color:#555;border:1px solid rgba(0,0,0,0.1)}
+        body.dark .ctrl-btn{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.15)}
+        .ctrl-btn:hover{background:#e94560;color:#fff;transform:scale(1.1)}
+        .ctrl-btn.play-btn{width:56px;height:56px;background:linear-gradient(135deg,#e94560,#c23152);color:#fff;font-size:1.3rem}
+        .ctrl-btn.play-btn:hover{transform:scale(1.15)}
         .ctrl-btn.active{background:#e94560;color:#fff}
         .ctrl-btn:disabled{opacity:0.3;cursor:not-allowed}
-        .ctrl-btn:disabled:hover{background:rgba(255,255,255,0.5);color:#555;transform:none}
+        .ctrl-btn:disabled:hover{transform:none;background:rgba(0,0,0,0.06);color:#555}
         .now-playing{text-align:center;padding:0.3rem 0 0.5rem}
-        .now-playing small{color:#999}
+        .now-playing small{color:rgba(0,0,0,0.4)}
+        body.dark .now-playing small{color:rgba(255,255,255,0.5)}
         .now-playing h4{color:#333;font-size:0.95rem;margin-top:0.2rem}
+        body.dark .now-playing h4{color:#fff}
         .admin-badge{display:inline-block;background:#e94560;color:#fff;padding:1px 8px;border-radius:8px;font-size:0.65rem;margin-left:4px}
-        .admin-hint{font-size:0.7rem;color:#999;text-align:center;margin-top:0.3rem}
+        .admin-hint{font-size:0.7rem;color:rgba(0,0,0,0.35);text-align:center;margin-top:0.3rem}
+        body.dark .admin-hint{color:rgba(255,255,255,0.4)}
 
         .queue-section{padding:1rem}
         .queue-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem}
         .queue-header h3{font-size:1rem;color:#333}
+        body.dark .queue-header h3{color:#fff}
         .queue-list{max-height:250px;overflow-y:auto}
-        .queue-item{display:flex;align-items:center;gap:0.8rem;padding:0.5rem;border-radius:8px;cursor:pointer;transition:all 0.2s}
-        .queue-item:hover{background:rgba(255,255,255,0.5)}
-        .queue-item.active{background:rgba(233,69,96,0.1);border-left:3px solid #e94560}
-        .queue-item img{width:42px;height:42px;border-radius:6px;object-fit:cover}
+        .queue-item{display:flex;align-items:center;gap:0.8rem;padding:0.5rem;border-radius:10px;cursor:pointer;background:rgba(0,0,0,0.03)}
+        body.dark .queue-item{background:rgba(255,255,255,0.05)}
+        .queue-item:hover{background:rgba(0,0,0,0.07);transform:translateX(5px)}
+        body.dark .queue-item:hover{background:rgba(255,255,255,0.1)}
+        .queue-item.active{background:rgba(233,69,96,0.08);border-left:3px solid #e94560}
+        body.dark .queue-item.active{background:rgba(233,69,96,0.15)}
+        .queue-item img{width:42px;height:42px;border-radius:8px;object-fit:cover}
         .queue-item-info{flex:1;min-width:0}
         .queue-item-title{font-size:0.8rem;font-weight:500;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .queue-item-artist{font-size:0.7rem;color:#999}
-        .queue-item-by{font-size:0.6rem;color:#bbb}
-        .queue-item-remove{background:none;border:none;color:#ccc;cursor:pointer;font-size:0.85rem}
-        .queue-item-remove:hover{color:#e94560}
-        .queue-empty{text-align:center;padding:1.5rem;color:#ccc;font-size:0.85rem}
+        body.dark .queue-item-title{color:#fff}
+        .queue-item-artist{font-size:0.7rem;color:rgba(0,0,0,0.4)}
+        body.dark .queue-item-artist{color:rgba(255,255,255,0.5)}
+        .queue-item-remove{background:none;border:none;color:rgba(0,0,0,0.2);cursor:pointer;font-size:0.85rem}
+        body.dark .queue-item-remove{color:rgba(255,255,255,0.3)}
+        .queue-item-remove:hover{color:#e94560;transform:rotate(90deg)}
+        .queue-empty{text-align:center;padding:1.5rem;color:rgba(0,0,0,0.25);font-size:0.85rem}
+        body.dark .queue-empty{color:rgba(255,255,255,0.3)}
 
         .song-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:0.8rem}
-        .song-card{border-radius:10px;overflow:hidden;cursor:pointer;transition:all 0.3s;background:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.5)}
-        .song-card:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,0.1);border-color:rgba(233,69,96,0.3)}
+        .song-card{border-radius:12px;overflow:hidden;cursor:pointer;background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);transition:transform 0.3s,box-shadow 0.3s}
+        body.dark .song-card{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.1)}
+        .song-card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(0,0,0,0.15)}
+        body.dark .song-card:hover{box-shadow:0 12px 30px rgba(0,0,0,0.4)}
         .song-card img{width:100%;aspect-ratio:1;object-fit:cover}
         .song-card-info{padding:0.6rem}
         .song-card-title{font-size:0.78rem;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .song-card-artist{font-size:0.68rem;color:#999;margin-top:0.2rem}
+        body.dark .song-card-title{color:#fff}
+        .song-card-artist{font-size:0.68rem;color:rgba(0,0,0,0.4);margin-top:0.2rem}
+        body.dark .song-card-artist{color:rgba(255,255,255,0.5)}
 
-        .chat-panel{display:flex;flex-direction:column;height:calc(100vh - 100px);position:sticky;top:80px;overflow:hidden}
-        .chat-header{padding:1rem;border-bottom:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;gap:0.5rem;flex-shrink:0}
+        .chat-panel{
+            display:flex;flex-direction:column;height:calc(100vh - 100px);position:sticky;top:80px;
+            animation:floatChat 7s ease-in-out infinite;
+        }
+        .chat-header{padding:1rem;border-bottom:1px solid rgba(0,0,0,0.06);display:flex;align-items:center;gap:0.5rem;flex-shrink:0}
+        body.dark .chat-header{border-bottom-color:rgba(255,255,255,0.1)}
         .chat-header i{color:#e94560;font-size:1.1rem}
         .chat-header h3{font-size:0.9rem;color:#333;flex:1}
+        body.dark .chat-header h3{color:#fff}
         .online-count{font-size:0.7rem;color:#27ae60;display:flex;align-items:center;gap:0.3rem}
-        .online-dot{width:7px;height:7px;background:#27ae60;border-radius:50%;display:inline-block;animation:glow 2s infinite}
-        .chat-online-list{padding:0.4rem 1rem;font-size:0.7rem;color:#999;border-bottom:1px solid rgba(255,255,255,0.3);min-height:1.5rem;flex-shrink:0}
+        .online-dot{width:7px;height:7px;background:#27ae60;border-radius:50%;display:inline-block}
+        .chat-online-list{padding:0.4rem 1rem;font-size:0.7rem;color:rgba(0,0,0,0.4);border-bottom:1px solid rgba(0,0,0,0.05);min-height:1.5rem;flex-shrink:0}
+        body.dark .chat-online-list{color:rgba(255,255,255,0.5);border-bottom-color:rgba(255,255,255,0.08)}
         .chat-messages{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:0.6rem}
-        .chat-msg{max-width:85%;animation:slideUp 0.3s ease-out}
+        .chat-msg{max-width:85%}
         .chat-msg.self{align-self:flex-end}
         .chat-msg.other{align-self:flex-start}
         .chat-msg.system{align-self:center}
         .chat-msg-author{font-size:0.65rem;font-weight:600;margin-bottom:0.15rem}
         .chat-msg.self .chat-msg-author{color:#e94560;text-align:right}
         .chat-msg.other .chat-msg-author{color:#3498db}
-        .chat-msg.system .chat-msg-author{color:#999;font-style:italic;font-weight:400}
-        .chat-msg-bubble{padding:0.45rem 0.75rem;border-radius:12px;font-size:0.82rem;line-height:1.4;word-wrap:break-word}
-        .chat-msg.self .chat-msg-bubble{background:linear-gradient(135deg,#e94560,#d63851);color:#fff;border-bottom-right-radius:4px}
-        .chat-msg.other .chat-msg-bubble{background:rgba(255,255,255,0.6);color:#333;border-bottom-left-radius:4px;border:1px solid rgba(255,255,255,0.5)}
-        .chat-msg.system .chat-msg-bubble{background:none;color:#bbb;font-size:0.72rem;padding:0.2rem}
-        .chat-msg-time{font-size:0.55rem;color:#bbb;margin-top:0.15rem}
+        body.dark .chat-msg.other .chat-msg-author{color:#5dade2}
+        .chat-msg.system .chat-msg-author{color:rgba(0,0,0,0.3);font-style:italic;font-weight:400}
+        body.dark .chat-msg.system .chat-msg-author{color:rgba(255,255,255,0.4)}
+        .chat-msg-bubble{padding:0.5rem 0.85rem;border-radius:14px;font-size:0.82rem;line-height:1.4;word-wrap:break-word}
+        .chat-msg.self .chat-msg-bubble{background:linear-gradient(135deg,#e94560,#c23152);color:#fff;border-bottom-right-radius:4px}
+        .chat-msg.other .chat-msg-bubble{background:rgba(0,0,0,0.06);color:#333;border-bottom-left-radius:4px;border:1px solid rgba(0,0,0,0.08)}
+        body.dark .chat-msg.other .chat-msg-bubble{background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.1)}
+        .chat-msg.system .chat-msg-bubble{background:none;color:rgba(0,0,0,0.3);font-size:0.72rem;padding:0.2rem}
+        body.dark .chat-msg.system .chat-msg-bubble{color:rgba(255,255,255,0.3)}
+        .chat-msg-time{font-size:0.55rem;color:rgba(0,0,0,0.2);margin-top:0.15rem}
+        body.dark .chat-msg-time{color:rgba(255,255,255,0.25)}
         .chat-msg.self .chat-msg-time{text-align:right}
-        .chat-input-area{padding:0.8rem;border-top:1px solid rgba(255,255,255,0.3);display:flex;gap:0.5rem;flex-shrink:0}
-        .chat-input-area input{flex:1;padding:0.6rem 1rem;border:1px solid rgba(255,255,255,0.4);border-radius:20px;font-size:0.85rem;background:rgba(255,255,255,0.4)}
+        .chat-input-area{padding:0.8rem;border-top:1px solid rgba(0,0,0,0.05);display:flex;gap:0.5rem;flex-shrink:0}
+        body.dark .chat-input-area{border-top-color:rgba(255,255,255,0.08)}
+        .chat-input-area input{flex:1;padding:0.6rem 1rem;border:1px solid rgba(0,0,0,0.1);border-radius:20px;font-size:0.85rem;background:rgba(0,0,0,0.03);color:#333}
+        body.dark .chat-input-area input{border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.08);color:#fff}
+        .chat-input-area input::placeholder{color:rgba(0,0,0,0.3)}
+        body.dark .chat-input-area input::placeholder{color:rgba(255,255,255,0.3)}
         .chat-input-area input:focus{outline:none;border-color:#e94560}
-        .chat-send-btn{width:38px;height:38px;border-radius:50%;border:none;background:linear-gradient(135deg,#e94560,#d63851);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 15px rgba(233,69,96,0.3)}
-        .chat-user-bar{padding:0.5rem 1rem;border-top:1px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.3);border-radius:0 0 16px 16px;flex-shrink:0}
+        .chat-send-btn{width:38px;height:38px;border-radius:50%;border:none;background:linear-gradient(135deg,#e94560,#c23152);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .chat-send-btn:hover{transform:scale(1.1)}
+        .chat-user-bar{padding:0.5rem 1rem;border-top:1px solid rgba(0,0,0,0.05);display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.02);border-radius:0 0 18px 18px;flex-shrink:0}
+        body.dark .chat-user-bar{border-top-color:rgba(255,255,255,0.08);background:rgba(0,0,0,0.15)}
         .chat-user-name{font-size:0.8rem;font-weight:600;color:#e94560;display:flex;align-items:center;gap:0.4rem}
-        .chat-user-name::before{content:'';width:8px;height:8px;background:#27ae60;border-radius:50%;display:inline-block;animation:glow 2s infinite}
-        .chat-change-name-btn{background:none;border:1px solid rgba(255,255,255,0.4);padding:0.3rem 0.7rem;border-radius:8px;font-size:0.7rem;color:#888;cursor:pointer;transition:all 0.2s}
+        .chat-user-name::before{content:'';width:8px;height:8px;background:#27ae60;border-radius:50%;display:inline-block}
+        .chat-change-name-btn{background:none;border:1px solid rgba(0,0,0,0.1);padding:0.3rem 0.7rem;border-radius:8px;font-size:0.7rem;color:rgba(0,0,0,0.4);cursor:pointer}
+        body.dark .chat-change-name-btn{border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.5)}
         .chat-change-name-btn:hover{border-color:#e94560;color:#e94560}
 
-        .username-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+        .username-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(10px)}
         .username-modal.show{display:flex}
-        .username-box{
-            background:rgba(255,255,255,0.7);backdrop-filter:blur(20px) saturate(180%);
-            -webkit-backdrop-filter:blur(20px) saturate(180%);
-            border:1px solid rgba(255,255,255,0.6);
-            padding:2.5rem;border-radius:20px;text-align:center;width:380px;
-            box-shadow:0 20px 60px rgba(0,0,0,0.15),inset 0 1px 0 rgba(255,255,255,0.8);
-            animation:slideUp 0.5s ease-out;
-        }
+        .username-box{background:rgba(255,255,255,0.85);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.6);padding:2.5rem;border-radius:24px;text-align:center;width:380px;box-shadow:0 25px 60px rgba(0,0,0,0.15)}
+        body.dark .username-box{background:rgba(15,12,41,0.85);border-color:rgba(255,255,255,0.12);box-shadow:0 25px 60px rgba(0,0,0,0.5)}
         .username-box h2{color:#e94560;margin-bottom:0.5rem}
-        .username-box p{color:#999;margin-bottom:1rem;font-size:0.85rem}
-        .username-box input{width:100%;padding:0.8rem;border:1px solid rgba(255,255,255,0.5);border-radius:10px;font-size:1rem;margin-bottom:1rem;text-align:center;background:rgba(255,255,255,0.5)}
+        .username-box p{color:rgba(0,0,0,0.4);margin-bottom:1rem;font-size:0.85rem}
+        body.dark .username-box p{color:rgba(255,255,255,0.5)}
+        .username-box input{width:100%;padding:0.8rem;border:1px solid rgba(0,0,0,0.1);border-radius:12px;font-size:1rem;margin-bottom:1rem;text-align:center;background:rgba(0,0,0,0.03);color:#333}
+        body.dark .username-box input{border-color:rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#fff}
+        .username-box input::placeholder{color:rgba(0,0,0,0.3)}
+        body.dark .username-box input::placeholder{color:rgba(255,255,255,0.3)}
         .username-box input:focus{outline:none;border-color:#e94560}
-        .username-box button{width:100%;padding:0.8rem;background:linear-gradient(135deg,#e94560,#d63851);border:none;border-radius:10px;color:#fff;font-size:1rem;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(233,69,96,0.3);transition:all 0.3s}
-        .username-box button:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(233,69,96,0.4)}
+        .username-box button{width:100%;padding:0.8rem;background:linear-gradient(135deg,#e94560,#c23152);border:none;border-radius:12px;color:#fff;font-size:1rem;font-weight:600;cursor:pointer}
+        .username-box button:hover{box-shadow:0 4px 20px rgba(233,69,96,0.4)}
 
-        footer{background:rgba(255,255,255,0.5);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,0.4);padding:2rem;text-align:center;color:#999;font-size:0.8rem;margin-top:2rem}
-        
-        @media(max-width:900px){
-            .main-layout{flex-direction:column;padding:1rem}
-            .right-panel{width:100%}
-            .chat-panel{height:400px;position:static}
-            .bg-video{animation:none}
-        }
+        footer{background:rgba(0,0,0,0.03);border-top:1px solid rgba(0,0,0,0.05);padding:2rem;text-align:center;color:rgba(0,0,0,0.35);font-size:0.8rem;margin-top:2rem}
+        body.dark footer{background:rgba(0,0,0,0.2);border-top-color:rgba(255,255,255,0.06);color:rgba(255,255,255,0.35)}
+        @media(max-width:900px){.main-layout{flex-direction:column;padding:1rem}.right-panel{width:100%}.chat-panel{height:400px;position:static}.theme-toggle{top:auto;bottom:20px;right:20px}}
     </style>
 </head>
 <body>
 
-<video class="bg-video" autoplay muted loop playsinline>
-    <source src="https://cdn.pixabay.com/video/2024/03/11/203754-921797593_large.mp4" type="video/mp4">
-</video>
+<div class="bg-anime"></div>
 <div class="bg-overlay"></div>
-
-<video class="bg-video" autoplay muted loop playsinline>
-    <source src="https://cdn.pixabay.com/video/2024/03/11/203754-921797593_large.mp4" type="video/mp4">
-</video>
-<div class="bg-overlay"></div>
+<button class="theme-toggle" id="themeToggle" title="Chế độ sáng/tối">☀️</button>
 
 <div class="username-modal show" id="usernameModal">
     <div class="username-box">
         <i class="fas fa-user-circle" style="font-size:3rem;color:#e94560;margin-bottom:0.5rem"></i>
-        <h2>Chao mung ban!</h2>
-        <p>Nhap ten de bat dau chat va nghe nhac</p>
-        <input type="text" id="usernameInput" placeholder="Nhap ten cua ban..." maxlength="20" autocomplete="off">
-        <button id="usernameSubmit">Bat dau</button>
+        <h2>Chào mừng bạn!</h2>
+        <p>Nhập tên để bắt đầu chat và nghe nhạc</p>
+        <input type="text" id="usernameInput" placeholder="Nhập tên của bạn..." maxlength="20" autocomplete="off">
+        <button id="usernameSubmit">Bắt đầu</button>
     </div>
 </div>
 
@@ -190,19 +254,17 @@
     <nav>
         <div class="logo"><i class="fas fa-music"></i><a href="#">Music Blog</a></div>
         <ul class="nav-links">
-            <li><a href="#" class="active"><i class="fas fa-home"></i> Trang chu</a></li>
-            <li><span class="conn-badge conn-err" id="connStatus"><i class="fas fa-circle"></i> Dang ket noi...</span></li>
+            <li><a href="#" class="active"><i class="fas fa-home"></i> Trang chủ</a></li>
+            <li><span class="conn-badge conn-err" id="connStatus"><i class="fas fa-circle"></i> Đang kết nối...</span></li>
         </ul>
     </nav>
 </header>
 
-<!-- Banner removed - Firebase Rules already configured -->
-
 <div class="main-layout">
     <div class="left-panel">
         <div class="search-bar">
-            <input type="text" id="linkInput" placeholder="Dan link YouTube vao day (vd: https://youtube.com/watch?v=xxx)..." autocomplete="off">
-            <button id="addLinkBtn"><i class="fas fa-plus"></i> Them bai</button>
+            <input type="text" id="linkInput" placeholder="Dán link YouTube vào đây (vd: https://youtube.com/watch?v=xxx)..." autocomplete="off">
+            <button id="addLinkBtn"><i class="fas fa-plus"></i> Thêm bài</button>
         </div>
 
         <div class="player-container glass">
@@ -210,31 +272,31 @@
                 <div id="mainPlayer"></div>
             </div>
             <div class="player-controls">
-                <button class="ctrl-btn" id="shuffleBtn" title="Tron bai" disabled><i class="fas fa-random"></i></button>
-                <button class="ctrl-btn" id="prevBtn" title="Bai truoc" disabled><i class="fas fa-backward"></i></button>
-                <button class="ctrl-btn play-btn" id="playPauseBtn" title="Phat/Tam dung" disabled><i class="fas fa-play"></i></button>
-                <button class="ctrl-btn" id="nextBtn" title="Bai tiep" disabled><i class="fas fa-forward"></i></button>
-                <button class="ctrl-btn" id="repeatBtn" title="Lap lai" disabled><i class="fas fa-redo"></i></button>
+                <button class="ctrl-btn" id="shuffleBtn" title="Trộn bài" disabled><i class="fas fa-random"></i></button>
+                <button class="ctrl-btn" id="prevBtn" title="Bài trước" disabled><i class="fas fa-backward"></i></button>
+                <button class="ctrl-btn play-btn" id="playPauseBtn" title="Phát/Tạm dừng" disabled><i class="fas fa-play"></i></button>
+                <button class="ctrl-btn" id="nextBtn" title="Bài tiếp" disabled><i class="fas fa-forward"></i></button>
+                <button class="ctrl-btn" id="repeatBtn" title="Lặp lại" disabled><i class="fas fa-redo"></i></button>
             </div>
             <div class="now-playing">
-                <small>Dang phat:<span id="adminBadge" class="admin-badge" style="display:none">ADMIN</span></small>
-                <h4 id="nowPlayingTitle">Dang cho admin phat nhac...</h4>
+                <small>Đang phát:<span id="adminBadge" class="admin-badge" style="display:none">ADMIN</span></small>
+                <h4 id="nowPlayingTitle">Đang chờ admin phát nhạc...</h4>
             </div>
-            <div class="admin-hint" id="adminHint">Chi admin moi dieu khien duoc nhac. Ban co the them bai va nghe.</div>
+            <div class="admin-hint" id="adminHint">Chỉ admin mới điều khiển được nhạc. Bạn có thể thêm bài và nghe.</div>
         </div>
 
         <div class="queue-section glass">
             <div class="queue-header">
-                <h3><i class="fas fa-list-ol" style="color:#e94560"></i> Hang cho <span style="font-size:0.75rem;color:#999;font-weight:400">(toi da 30 bai)</span></h3>
-                <span style="font-size:0.75rem;color:#999" id="queueCount">0 bai</span>
+                <h3><i class="fas fa-list-ol" style="color:#e94560"></i> Hàng chờ <span style="font-size:0.75rem;color:rgba(0,0,0,0.3);font-weight:400">(tối đa 30 bài)</span></h3>
+                <span style="font-size:0.75rem;color:rgba(0,0,0,0.3)" id="queueCount">0 bài</span>
             </div>
             <div class="queue-list" id="queueList">
-                <div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chua co bai nao</div>
+                <div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chưa có bài nào</div>
             </div>
         </div>
 
         <div class="playlist-section glass" style="border-radius:12px;padding:1rem">
-            <h3 style="margin-bottom:0.8rem;font-size:0.95rem"><i class="fas fa-fire" style="color:#e94560"></i> Danh sach bai hat</h3>
+            <h3 style="margin-bottom:0.8rem;font-size:0.95rem"><i class="fas fa-fire" style="color:#e94560"></i> Danh sách bài hát</h3>
             <div class="song-grid" id="allSongsGrid"></div>
         </div>
     </div>
@@ -243,33 +305,44 @@
         <div class="chat-panel glass">
             <div class="chat-header">
                 <i class="fas fa-comments"></i>
-                <h3>Chat truc tuyen</h3>
-                <span class="online-count"><span class="online-dot"></span> <span id="onlineCount">0</span> online</span>
+                <h3>Chat trực tuyến</h3>
+                <span class="online-count"><span class="online-dot"></span> <span id="onlineCount">0</span> đang online</span>
             </div>
-            <div class="chat-online-list" id="onlineNames">Dang tai...</div>
+            <div class="chat-online-list" id="onlineNames">Đang tải...</div>
             <div class="chat-messages" id="chatMessages">
                 <div class="chat-msg system">
-                    <div class="chat-msg-author">He thong</div>
-                    <div class="chat-msg-bubble">Chao mung den Music Blog! Nhap ten de bat dau chat.</div>
+                    <div class="chat-msg-author">Hệ thống</div>
+                    <div class="chat-msg-bubble">Chào mừng đến Music Blog! Nhập tên để bắt đầu chat.</div>
                 </div>
             </div>
             <div class="chat-input-area">
-                <input type="text" id="chatInput" placeholder="Nhap tin nhan..." maxlength="500" disabled>
+                <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." maxlength="500" disabled>
                 <button class="chat-send-btn" id="chatSendBtn" disabled><i class="fas fa-paper-plane"></i></button>
             </div>
             <div class="chat-user-bar">
-                <span class="chat-user-name" id="chatUserName">Khach</span>
-                <button class="chat-change-name-btn" id="changeNameBtn"><i class="fas fa-pen"></i> Doi ten</button>
+                <span class="chat-user-name" id="chatUserName">Khách</span>
+                <button class="chat-change-name-btn" id="changeNameBtn"><i class="fas fa-pen"></i> Đổi tên</button>
             </div>
         </div>
     </div>
 </div>
 
-<footer><p>&copy; 2026 Music Blog. Tat ca quyen duoc bao luu.</p></footer>
+<footer><p>&copy; 2026 Music Blog. Tất cả quyền được bảo lưu.</p></footer>
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 var MAX_QUEUE = 30;
+var isDark = localStorage.getItem('musicblog_theme') === 'dark';
+if(isDark) document.body.classList.add('dark');
+var themeBtn = document.getElementById('themeToggle');
+themeBtn.textContent = isDark ? '🌙' : '☀️';
+themeBtn.onclick = function(){
+    isDark = !isDark;
+    document.body.classList.toggle('dark', isDark);
+    localStorage.setItem('musicblog_theme', isDark ? 'dark' : 'light');
+    themeBtn.textContent = isDark ? '🌙' : '☀️';
+};
+
 var ADMIN_SECRET = 'haitm8592';
 var ytPlayer = null;
 var syncInterval = null;
@@ -344,34 +417,34 @@ db.ref('.info/connected').on('value', function(snap){
     var el = document.getElementById('connStatus');
     if(snap.val()){
         el.className='conn-badge conn-ok';
-        el.innerHTML='<i class="fas fa-check-circle"></i> Da ket noi';
+        el.innerHTML='<i class="fas fa-check-circle"></i> Đã kết nối';
     } else {
         el.className='conn-badge conn-err';
-        el.innerHTML='<i class="fas fa-times-circle"></i> Mat ket noi';
+        el.innerHTML='<i class="fas fa-times-circle"></i> Mất kết nối';
     }
 });
 
 var allSongs = [
-    {id:'mw7Y0jQ8_BU',title:'2 Phut Hon (KAIZ Remix)',artist:'Phao'},
-    {id:'Y29OrOVJUKs',title:'Em Gai Mua',artist:'Huong Tram'},
-    {id:'CtW5JvL2hbE',title:'Song Gio',artist:'Jack'},
-    {id:'qoSJYmhqdfI',title:'Nhat Nghe Tinh',artist:'Luffy'},
-    {id:'F16h2-jCkvs',title:'Cat Doi Noi Sau',artist:'Tang Duy Tan'},
-    {id:'w85wHQ3dQbI',title:'Dam Cuoi Nang',artist:'Ricky Star'},
-    {id:'gMxWnJZ0v1s',title:'Co chac yeu khong',artist:'Du Uyen'},
-    {id:'5Z2dV3VQxps',title:'Locket',artist:'Doan Thuy Trang'},
-    {id:'xJ5bN9bqK9o',title:'Thien Ly Oi',artist:'Masew ft. Orange'},
-    {id:'pRpeEdMmmQ0',title:'Noi Nay Co Anh',artist:'Son Tung M-TP'},
-    {id:'09R8_2nJtjg',title:'Phia Sau Mot Co Gai',artist:'Soobin Hoang Son'},
-    {id:'CevxZvSJLk8',title:'Buong',artist:'Truong Quynh Anh'},
-    {id:'F2fCkZu3FYo',title:'Luu Chuy (Mua Sao Bang)',artist:'F4'},
-    {id:'KQ7b0V1VjYg',title:'Tinh Phai Duy Nhat',artist:'Harlem Yu'},
-    {id:'x5H3rDw5sVQ',title:'Thu Nhat Thoi Gian',artist:'F4'},
-    {id:'y8JXoQ3wG9M',title:'Nghi Dung Ai',artist:'Penny Tai'},
-    {id:'hT_nvWreIhg',title:'Trong Lai My Cuoi Thoi Quang',artist:'F4'},
-    {id:'lp-EO5I60KA',title:'Tu Than Ky OST',artist:'Various'},
-    {id:'YQHsXMglC9A',title:'Phong Lac',artist:'Luu Vu Ninh'},
-    {id:'RgKAFK5djSk',title:'Yeu Em Hon Moi Ngay',artist:'Hoac Ton'}
+    {id:'mw7Y0jQ8_BU',title:'2 Phút Hơn (KAIZ Remix)',artist:'Phao'},
+    {id:'Y29OrOVJUKs',title:'Em Gái Mùa',artist:'Hương Tràm'},
+    {id:'CtW5JvL2hbE',title:'Sóng Gió',artist:'Jack'},
+    {id:'qoSJYmhqdfI',title:'Nhất Nghệ Tinh',artist:'Luffy'},
+    {id:'F16h2-jCkvs',title:'Cắt Đôi Nỗi Sầu',artist:'Tăng Duy Tân'},
+    {id:'w85wHQ3dQbI',title:'Đám Cưới Nắng',artist:'Ricky Star'},
+    {id:'gMxWnJZ0v1s',title:'Có Chắc Yêu Không',artist:'Du Uyên'},
+    {id:'5Z2dV3VQxps',title:'Locket',artist:'Đoàn Thúy Trang'},
+    {id:'xJ5bN9bqK9o',title:'Thiên Lý Ơi',artist:'Masew ft. Orange'},
+    {id:'pRpeEdMmmQ0',title:'Nơi Này Có Anh',artist:'Sơn Tùng M-TP'},
+    {id:'09R8_2nJtjg',title:'Phía Sau Một Cô Gái',artist:'Soobin Hoàng Sơn'},
+    {id:'CevxZvSJLk8',title:'Buông',artist:'Trương Quỳnh Anh'},
+    {id:'F2fCkZu3FYo',title:'Lưu Luyến (Mùa Sao Băng)',artist:'F4'},
+    {id:'KQ7b0V1VjYg',title:'Tình Phải Duy Nhất',artist:'Harlem Yu'},
+    {id:'x5H3rDw5sVQ',title:'Thứ Nhất Thời Gian',artist:'F4'},
+    {id:'y8JXoQ3wG9M',title:'Nỗi Đau Ủ Dành',artist:'Penny Tai'},
+    {id:'hT_nvWreIhg',title:'Trông Lại My Cuối Thời Quang',artist:'F4'},
+    {id:'lp-EO5I60KA',title:'Tứ Thần Ký OST',artist:'Various'},
+    {id:'YQHsXMglC9A',title:'Phong Lạc',artist:'Lưu Vũ Ninh'},
+    {id:'RgKAFK5djSk',title:'Yêu Em Hơn Mỗi Ngày',artist:'Hòa Tấu'}
 ];
 
 function updateAdminUI(){
@@ -380,7 +453,7 @@ function updateAdminUI(){
     var hint = document.getElementById('adminHint');
     controls.forEach(function(btn){btn.disabled = false;});
     badge.style.display = 'none';
-    hint.textContent = 'Bat ky ai deu co the dieu khien nhac. Them bai va xem cung nhau!';
+    hint.textContent = 'Bất kỳ ai đều có thể điều khiển nhạc. Thêm bài và xem cùng nhau!';
 }
 
 function renderSongGrid(songs, containerId){
@@ -409,7 +482,7 @@ function addToQueue(song){
         if(!exists){
             if(q.songs.length>=MAX_QUEUE){q.songs.shift();}
             q.songs.push(song);
-            chatRef.push({username:'He thong',text:'Da them: '+song.title+' - '+song.artist,time:firebase.database.ServerValue.TIMESTAMP,system:true});
+            chatRef.push({username:'Hệ thống',text:'Đã thêm: '+song.title+' - '+song.artist,time:firebase.database.ServerValue.TIMESTAMP,system:true});
         }
         if(q.currentIndex<0)q.currentIndex=0;
         return queueRef.set(q);
@@ -521,9 +594,9 @@ queueRef.on('value',function(snap){
 function renderQueueUI(songs,currentIndex){
     var container=document.getElementById('queueList');
     var countEl=document.getElementById('queueCount');
-    countEl.textContent=songs.length+'/'+MAX_QUEUE+' bai';
+    countEl.textContent=songs.length+'/'+MAX_QUEUE+' bài';
     if(songs.length===0){
-        container.innerHTML='<div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chua co bai nao</div>';
+        container.innerHTML='<div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chưa có bài nào</div>';
         return;
     }
     var html='';
@@ -571,10 +644,10 @@ function extractVideoId(url){
 }
 document.getElementById('addLinkBtn').addEventListener('click',function(){
     var url=document.getElementById('linkInput').value.trim();
-    if(!url){alert('Vui long dan link YouTube!');return;}
+    if(!url){alert('Vui lòng dán link YouTube!');return;}
     var videoId=extractVideoId(url);
-    if(!videoId){alert('Link khong hop le!');return;}
-    addToQueue({id:videoId,title:'Bai tu link',artist:'YouTube'});
+    if(!videoId){alert('Link không hợp lệ!');return;}
+    addToQueue({id:videoId,title:'Bài từ link',artist:'YouTube'});
     document.getElementById('linkInput').value='';
 });
 document.getElementById('linkInput').addEventListener('keypress',function(e){if(e.key==='Enter')document.getElementById('addLinkBtn').click();});
@@ -606,26 +679,26 @@ if(username){chatModal.classList.remove('show');enableChat();document.getElement
 
 document.getElementById('usernameSubmit').addEventListener('click',function(){
     var name=document.getElementById('usernameInput').value.trim();
-    if(name.length<2){alert('Ten phai co it nhat 2 ky tu!');return;}
+    if(name.length<2){alert('Tên phải có ít nhất 2 ký tự!');return;}
     username=name;
     localStorage.setItem('musicblog_username',username);
     chatModal.classList.remove('show');
     document.getElementById('chatUserName').textContent=username;
     enableChat();
-    chatRef.push({username:'He thong',text:username+' da tham gia chat!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
+    chatRef.push({username:'Hệ thống',text:username+' đã tham gia chat!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
 });
 document.getElementById('usernameInput').addEventListener('keypress',function(e){if(e.key==='Enter')document.getElementById('usernameSubmit').click();});
 
 document.getElementById('changeNameBtn').addEventListener('click',function(){
-    var newName=prompt('Nhap ten moi:',username);
+    var newName=prompt('Nhập tên mới:',username);
     if(!newName)return;
     newName=newName.trim();
-    if(newName.length<2){alert('Ten phai co it nhat 2 ky tu!');return;}
+    if(newName.length<2){alert('Tên phải có ít nhất 2 ký tự!');return;}
     var old=username;username=newName;
     localStorage.setItem('musicblog_username',username);
     document.getElementById('chatUserName').textContent=username;
     setupPresence();
-    chatRef.push({username:'He thong',text:old+' da doi ten thanh '+username,time:firebase.database.ServerValue.TIMESTAMP,system:true});
+    chatRef.push({username:'Hệ thống',text:old+' đã đổi tên thành '+username,time:firebase.database.ServerValue.TIMESTAMP,system:true});
 });
 
 function enableChat(){
@@ -646,7 +719,7 @@ function setupPresence(){
             var u=users[k];
             return u.name+(u.admin?' (Admin)':'');
         }).join(', ');
-        document.getElementById('onlineNames').textContent=names||'Khong ai';
+        document.getElementById('onlineNames').textContent=names||'Không ai';
     });
 }
 
@@ -655,15 +728,15 @@ function sendMessage(){
     if(!text||!username)return;
 
     if(text.toLowerCase()==='admin'){
-        if(isAdmin){chatRef.push({username:'He thong',text:'Ban da la admin roi!',time:firebase.database.ServerValue.TIMESTAMP,system:true});}
+        if(isAdmin){chatRef.push({username:'Hệ thống',text:'Bạn đã là admin rồi!',time:firebase.database.ServerValue.TIMESTAMP,system:true});}
         else{
-            var pass=prompt('Nhap mat khau admin:');
+            var pass=prompt('Nhập mật khẩu admin:');
             if(pass===ADMIN_SECRET){
                 isAdmin=true;localStorage.setItem('musicblog_admin','true');
                 updateAdminUI();
-                chatRef.push({username:'He thong',text:username+' da tro thanh ADMIN!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
+                chatRef.push({username:'Hệ thống',text:username+' đã trở thành ADMIN!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
             } else if(pass!==null){
-                chatRef.push({username:'He thong',text:'Sai mat khau admin!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
+                chatRef.push({username:'Hệ thống',text:'Sai mật khẩu admin!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
             }
         }
         chatInput.value='';return;
@@ -693,7 +766,6 @@ function escapeHtml(s){var d=document.createElement('div');d.textContent=s;retur
 
 renderSongGrid(allSongs,'allSongsGrid');
 updateAdminUI();
-document.getElementById('setupBanner').classList.add('hidden');
 </script>
 </body>
 </html>
