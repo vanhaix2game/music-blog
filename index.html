@@ -329,15 +329,9 @@ function updateAdminUI(){
     var controls = document.querySelectorAll('.ctrl-btn');
     var badge = document.getElementById('adminBadge');
     var hint = document.getElementById('adminHint');
-    if(isAdmin){
-        controls.forEach(function(btn){btn.disabled = false;});
-        badge.style.display = 'inline-block';
-        hint.textContent = 'Ban la ADMIN - dieu khien nhac cho tat ca.';
-    } else {
-        controls.forEach(function(btn){btn.disabled = true;});
-        badge.style.display = 'none';
-        hint.textContent = 'Chi admin moi dieu khien duoc nhac. Ban co the them bai va nghe.';
-    }
+    controls.forEach(function(btn){btn.disabled = false;});
+    badge.style.display = 'none';
+    hint.textContent = 'Bat ky ai deu co the dieu khien nhac. Them bai va xem cung nhau!';
 }
 
 function renderSongGrid(songs, containerId){
@@ -382,7 +376,6 @@ function addToQueue(song){
 }
 
 function playSongAt(index){
-    if(!isAdmin)return;
     queueRef.once('value').then(function(snap){
         var q=snap.val();
         if(!q||!q.songs||index<0||index>=q.songs.length)return;
@@ -399,7 +392,6 @@ function playSongAt(index){
 }
 
 function playNextSong(){
-    if(!isAdmin)return;
     queueRef.once('value').then(function(snap){
         var q=snap.val();
         if(!q||!q.songs||q.songs.length===0)return;
@@ -415,7 +407,6 @@ function playNextSong(){
 }
 
 function playPrevSong(){
-    if(!isAdmin)return;
     queueRef.once('value').then(function(snap){
         var q=snap.val();
         if(!q||!q.songs||q.songs.length===0)return;
@@ -430,19 +421,17 @@ function playPrevSong(){
     });
 }
 
-if(isAdmin){
-    syncInterval = setInterval(function(){
-        if(!ytPlayer||!ytPlayer.getCurrentTime) return;
-        playerRef.once('value').then(function(snap){
-            var d = snap.val();
-            if(!d||!d.videoId) return;
-            d.currentTime = ytGetCurrentTime();
-            d.playing = ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1;
-            d.ts = Date.now();
-            playerRef.set(d);
-        });
-    }, 1000);
-}
+syncInterval = setInterval(function(){
+    if(!ytPlayer||!ytPlayer.getCurrentTime) return;
+    playerRef.once('value').then(function(snap){
+        var d = snap.val();
+        if(!d||!d.videoId) return;
+        d.currentTime = ytGetCurrentTime();
+        d.playing = ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1;
+        d.ts = Date.now();
+        playerRef.set(d);
+    });
+}, 1000);
 
 var lastSyncedVideo = null;
 playerRef.on('value',function(snap){
@@ -500,13 +489,13 @@ function renderQueueUI(songs,currentIndex){
             '</div>';
     }
     container.innerHTML=html;
-    if(isAdmin){
-        container.querySelectorAll('.queue-item').forEach(function(item){
-            item.addEventListener('click',function(e){
-                if(e.target.closest('.queue-item-remove'))return;
-                playSongAt(parseInt(item.dataset.index));
-            });
+    container.querySelectorAll('.queue-item').forEach(function(item){
+        item.addEventListener('click',function(e){
+            if(e.target.closest('.queue-item-remove'))return;
+            playSongAt(parseInt(item.dataset.index));
         });
+    });
+    if(isAdmin){
         container.querySelectorAll('.queue-item-remove').forEach(function(btn){
             btn.addEventListener('click',function(e){
                 e.stopPropagation();
@@ -543,23 +532,22 @@ document.getElementById('addLinkBtn').addEventListener('click',function(){
 document.getElementById('linkInput').addEventListener('keypress',function(e){if(e.key==='Enter')document.getElementById('addLinkBtn').click();});
 
 document.getElementById('playPauseBtn').addEventListener('click',function(){
-    if(!isAdmin)return alert('Chi admin moi dieu khien duoc!');
     if(ytPlayer.getPlayerState() === 1){
         ytPause();
         playerRef.once('value').then(function(snap){
-            var d=snap.val();if(d){d.playing=false;playerRef.set(d);}
+            var d=snap.val();if(d){d.playing=false;d.ts=Date.now();playerRef.set(d);}
         });
     } else {
         ytResume();
         playerRef.once('value').then(function(snap){
-            var d=snap.val();if(d){d.playing=true;playerRef.set(d);}
+            var d=snap.val();if(d){d.playing=true;d.ts=Date.now();playerRef.set(d);}
         });
     }
 });
-document.getElementById('nextBtn').addEventListener('click',function(){if(!isAdmin)return;playNextSong();});
-document.getElementById('prevBtn').addEventListener('click',function(){if(!isAdmin)return;playPrevSong();});
-document.getElementById('repeatBtn').addEventListener('click',function(){if(!isAdmin)return;this.classList.toggle('active');});
-document.getElementById('shuffleBtn').addEventListener('click',function(){if(!isAdmin)return;this.classList.toggle('active');});
+document.getElementById('nextBtn').addEventListener('click',function(){playNextSong();});
+document.getElementById('prevBtn').addEventListener('click',function(){playPrevSong();});
+document.getElementById('repeatBtn').addEventListener('click',function(){this.classList.toggle('active');});
+document.getElementById('shuffleBtn').addEventListener('click',function(){this.classList.toggle('active');});
 
 var chatModal=document.getElementById('usernameModal');
 var chatInput=document.getElementById('chatInput');
