@@ -30,6 +30,21 @@
             100%{transform:translate(0px, 0px) rotate(0deg)}
         }
 
+        @keyframes floatQueue{
+            0%{transform:translate(0px, 0px) rotate(0deg)}
+            33%{transform:translate(8px, -6px) rotate(0.3deg)}
+            66%{transform:translate(-6px, 4px) rotate(-0.2deg)}
+            100%{transform:translate(0px, 0px) rotate(0deg)}
+        }
+
+        @keyframes floatPlaylist{
+            0%{transform:translate(0px, 0px) rotate(0deg)}
+            25%{transform:translate(-10px, 5px) rotate(-0.3deg)}
+            50%{transform:translate(6px, -8px) rotate(0.4deg)}
+            75%{transform:translate(-4px, 7px) rotate(-0.2deg)}
+            100%{transform:translate(0px, 0px) rotate(0deg)}
+        }
+
         @keyframes softPulse{
             0%,100%{box-shadow:0 8px 32px rgba(0,0,0,0.15)}
             50%{box-shadow:0 12px 40px rgba(0,0,0,0.25)}
@@ -131,7 +146,7 @@
         .admin-hint{font-size:0.7rem;color:rgba(0,0,0,0.35);text-align:center;margin-top:0.3rem}
         body.dark .admin-hint{color:rgba(255,255,255,0.4)}
 
-        .queue-section{padding:1rem}
+        .queue-section{padding:1rem;animation:floatQueue 9s ease-in-out infinite}
         .queue-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem}
         .queue-header h3{font-size:1rem;color:#333}
         body.dark .queue-header h3{color:#fff}
@@ -165,6 +180,8 @@
         body.dark .song-card-title{color:#fff}
         .song-card-artist{font-size:0.68rem;color:rgba(0,0,0,0.4);margin-top:0.2rem}
         body.dark .song-card-artist{color:rgba(255,255,255,0.5)}
+
+        .playlist-section{border-radius:12px;padding:1rem;animation:floatPlaylist 10s ease-in-out infinite}
 
         .chat-panel{
             display:flex;flex-direction:column;height:calc(100vh - 100px);position:sticky;top:80px;
@@ -297,7 +314,7 @@
             </div>
         </div>
 
-        <div class="playlist-section glass" style="border-radius:12px;padding:1rem">
+        <div class="playlist-section glass">
             <h3 style="margin-bottom:0.8rem;font-size:0.95rem"><i class="fas fa-fire" style="color:#e94560"></i> Danh sách bài hát</h3>
             <div class="song-grid" id="allSongsGrid"></div>
         </div>
