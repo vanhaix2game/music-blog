@@ -165,8 +165,8 @@
         </div>
 
         <div class="player-container">
-            <div class="video-wrapper">
-                <iframe id="mainPlayer" src="https://www.youtube.com/embed/mw7Y0jQ8_BU?enablejsapi=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            <div class="video-wrapper" id="playerContainer">
+                <div id="mainPlayer"></div>
             </div>
             <div class="player-controls">
                 <button class="ctrl-btn" id="shuffleBtn" title="Tron bai" disabled><i class="fas fa-random"></i></button>
@@ -226,9 +226,12 @@
 
 <footer><p>&copy; 2026 Music Blog. Tat ca quyen duoc bao luu.</p></footer>
 
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
 var MAX_QUEUE = 30;
 var ADMIN_SECRET = 'admin123';
+var ytPlayer = null;
+var syncInterval = null;
 
 // ====== FIREBASE ======
 var firebaseConfig = {
@@ -246,6 +249,53 @@ var chatRef = db.ref('chat');
 var presenceRef = db.ref('presence');
 var playerRef = db.ref('player');
 var queueRef = db.ref('queue');
+
+// ====== YOUTUBE IFRAME API ======
+function onYouTubeIframeAPIReady(){
+    ytPlayer = new YT.Player('mainPlayer', {
+        height: '100%', width: '100%',
+        videoId: 'mw7Y0jQ8_BU',
+        playerVars: { autoplay: 0, controls: 0, rel: 0 },
+        events: {
+            onReady: function(){ console.log('[YT] Player ready'); },
+            onStateChange: function(e){
+                if(isAdmin && e.data === YT.PlayerState.ENDED){
+                    playNextSong();
+                }
+            }
+        }
+    });
+}
+
+function ytPlay(videoId, startTime){
+    if(!ytPlayer || !ytPlayer.loadVideoById) return;
+    ytPlayer.loadVideoById({videoId: videoId, startSeconds: startTime || 0});
+}
+
+function ytSeekTo(time){
+    if(!ytPlayer || !ytPlayer.seekTo) return;
+    ytPlayer.seekTo(time, true);
+}
+
+function ytGetCurrentTime(){
+    if(!ytPlayer || !ytPlayer.getCurrentTime) return 0;
+    return ytPlayer.getCurrentTime();
+}
+
+function ytGetDuration(){
+    if(!ytPlayer || !ytPlayer.getDuration) return 0;
+    return ytPlayer.getDuration();
+}
+
+function ytPause(){
+    if(!ytPlayer || !ytPlayer.pauseVideo) return;
+    ytPlayer.pauseVideo();
+}
+
+function ytResume(){
+    if(!ytPlayer || !ytPlayer.playVideo) return;
+    ytPlayer.playVideo();
+}
 
 // ====== STATE ======
 var username = localStorage.getItem('musicblog_username') || '';
@@ -275,7 +325,6 @@ db.ref('_healthCheck').set({ts: Date.now()}).then(function(){
     document.getElementById('setupBanner').classList.add('hidden');
 }).catch(function(err){
     document.getElementById('setupBanner').classList.remove('hidden');
-    document.getElementById('setupBanner').querySelector('h3').innerHTML = '<i class="fas fa-exclamation-triangle"></i> LOI: '+err.message;
 });
 
 // ====== SONGS DATA ======
@@ -346,7 +395,7 @@ function addToQueue(song){
         if(!exists){
             if(q.songs.length>=MAX_QUEUE){q.songs.shift();}
             q.songs.push(song);
-            chatRef.push({username:'He thong',text:'Da them: '+song.title+' - '+song.artist+(q.songs.length>=MAX_QUEUE?' (danh sach day, bai cu bi day di)':''),time:firebase.database.ServerValue.TIMESTAMP,system:true});
+            chatRef.push({username:'He thong',text:'Da them: '+song.title+' - '+song.artist,time:firebase.database.ServerValue.TIMESTAMP,system:true});
         }
         if(q.currentIndex<0)q.currentIndex=0;
         return queueRef.set(q);
@@ -356,7 +405,7 @@ function addToQueue(song){
         var q=snap.val();
         if(q&&q.songs&&q.songs.length>0){
             if(q.currentIndex<0||q.currentIndex>=q.songs.length)q.currentIndex=0;
-            playSongAt(q.currentIndex);
+            if(isAdmin) playSongAt(q.currentIndex);
         }
     });
 }
@@ -371,6 +420,8 @@ function playSongAt(index){
         queueRef.set(q);
         playerRef.set({
             videoId:song.id,title:song.title,artist:song.artist,
+            currentTime:0,
+            playing:true,
             by:userId,ts:firebase.database.ServerValue.TIMESTAMP
         });
     });
@@ -386,6 +437,7 @@ function playNextSong(){
         var song=q.songs[q.currentIndex];
         playerRef.set({
             videoId:song.id,title:song.title,artist:song.artist,
+            currentTime:0,playing:true,
             by:userId,ts:firebase.database.ServerValue.TIMESTAMP
         });
     });
@@ -401,24 +453,64 @@ function playPrevSong(){
         var song=q.songs[q.currentIndex];
         playerRef.set({
             videoId:song.id,title:song.title,artist:song.artist,
+            currentTime:0,playing:true,
             by:userId,ts:firebase.database.ServerValue.TIMESTAMP
         });
     });
 }
 
-// ====== LISTEN PLAYER SYNC ======
+// ====== SYNC TIME - ADMIN ======
+if(isAdmin){
+    syncInterval = setInterval(function(){
+        if(!ytPlayer||!ytPlayer.getCurrentTime) return;
+        var data = {
+            videoId: null,
+            currentTime: ytGetCurrentTime(),
+            playing: ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1
+        };
+        playerRef.once('value').then(function(snap){
+            var d = snap.val();
+            if(d){data.videoId = d.videoId; data.title = d.title; data.artist = d.artist; data.by = d.by; data.ts = d.ts;}
+            return playerRef.set(data);
+        });
+    }, 3000);
+}
+
+// ====== LISTEN PLAYER - ALL USERS ======
+var lastSyncedVideo = null;
 playerRef.on('value',function(snap){
     var data=snap.val();
     if(!data||!data.videoId)return;
-    var player=document.getElementById('mainPlayer');
-    var newSrc='https://www.youtube.com/embed/'+data.videoId+'?autoplay=1&enablejsapi=1';
-    if(player.src.indexOf(data.videoId)===-1){
-        player.src=newSrc;
-    }
+
     document.getElementById('nowPlayingTitle').textContent=data.title+' - '+data.artist;
+
+    var newVideo = data.videoId;
+    var shouldSync = false;
+
+    if(newVideo !== lastSyncedVideo){
+        lastSyncedVideo = newVideo;
+        shouldSync = true;
+    }
+
+    if(shouldSync){
+        var startTime = data.currentTime || 0;
+        if(!isAdmin && data.ts){
+            var elapsed = (Date.now() - data.ts) / 1000;
+            startTime = Math.max(0, (data.currentTime || 0) + elapsed);
+        }
+        ytPlay(newVideo, startTime);
+        console.log('[Sync] Playing:', newVideo, 'at', startTime.toFixed(1)+'s');
+    } else if(!isAdmin && data.currentTime !== undefined){
+        var myTime = ytGetCurrentTime();
+        var diff = Math.abs(myTime - data.currentTime);
+        if(diff > 3){
+            console.log('[Sync] Correcting time diff:', diff.toFixed(1)+'s');
+            ytSeekTo(data.currentTime);
+        }
+    }
 });
 
-// ====== LISTEN QUEUE SYNC ======
+// ====== LISTEN QUEUE ======
 queueRef.on('value',function(snap){
     var data=snap.val();
     if(!data||!data.songs)return;
@@ -487,18 +579,25 @@ document.getElementById('addLinkBtn').addEventListener('click',function(){
 });
 document.getElementById('linkInput').addEventListener('keypress',function(e){if(e.key==='Enter')document.getElementById('addLinkBtn').click();});
 
-// ====== PLAYER CONTROLS (admin only) ======
+// ====== PLAYER CONTROLS ======
 document.getElementById('playPauseBtn').addEventListener('click',function(){
     if(!isAdmin)return alert('Chi admin moi dieu khien duoc!');
-    var iframe=document.getElementById('mainPlayer');
-    var src=iframe.src;
-    if(src.indexOf('autoplay=1')>-1){iframe.src=src.replace('autoplay=1','autoplay=0');this.innerHTML='<i class="fas fa-play"></i>';}
-    else{iframe.src=src.replace('autoplay=0','autoplay=1');this.innerHTML='<i class="fas fa-pause"></i>';}
+    if(ytPlayer.getPlayerState() === 1){
+        ytPause();
+        playerRef.once('value').then(function(snap){
+            var d=snap.val();if(d){d.playing=false;playerRef.set(d);}
+        });
+    } else {
+        ytResume();
+        playerRef.once('value').then(function(snap){
+            var d=snap.val();if(d){d.playing=true;playerRef.set(d);}
+        });
+    }
 });
-document.getElementById('nextBtn').addEventListener('click',function(){if(!isAdmin)return alert('Chi admin moi dieu khien duoc!');playNextSong();});
-document.getElementById('prevBtn').addEventListener('click',function(){if(!isAdmin)return alert('Chi admin moi dieu khien duoc!');playPrevSong();});
-document.getElementById('repeatBtn').addEventListener('click',function(){if(!isAdmin)return alert('Chi admin moi dieu khien duoc!');this.classList.toggle('active');});
-document.getElementById('shuffleBtn').addEventListener('click',function(){if(!isAdmin)return alert('Chi admin moi dieu khien duoc!');this.classList.toggle('active');});
+document.getElementById('nextBtn').addEventListener('click',function(){if(!isAdmin)return;playNextSong();});
+document.getElementById('prevBtn').addEventListener('click',function(){if(!isAdmin)return;playPrevSong();});
+document.getElementById('repeatBtn').addEventListener('click',function(){if(!isAdmin)return;this.classList.toggle('active');});
+document.getElementById('shuffleBtn').addEventListener('click',function(){if(!isAdmin)return;this.classList.toggle('active');});
 
 // ====== CHAT & PRESENCE ======
 var chatModal=document.getElementById('usernameModal');
@@ -536,6 +635,65 @@ function enableChat(){
     chatInput.disabled=false;chatSendBtn.disabled=false;chatInput.focus();
     setupPresence();
     updateAdminUI();
+}
+
+function setupPresence(){
+    var myPres=presenceRef.child(userId);
+    myPres.set({name:username,time:firebase.database.ServerValue.TIMESTAMP});
+    myPres.onDisconnect().remove();
+    presenceRef.on('value',function(snap){
+        var users=snap.val()||{};
+        var keys=Object.keys(users);
+        document.getElementById('onlineCount').textContent=keys.length;
+        var names=keys.map(function(k){return users[k].name;}).join(', ');
+        document.getElementById('onlineNames').textContent=names||'Khong ai';
+    });
+}
+
+function sendMessage(){
+    var text=chatInput.value.trim();
+    if(!text||!username)return;
+
+    if(text.toLowerCase()==='admin'){
+        if(isAdmin){chatRef.push({username:'He thong',text:'Ban da la admin roi!',time:firebase.database.ServerValue.TIMESTAMP,system:true});}
+        else{
+            var pass=prompt('Nhap mat khau admin:');
+            if(pass===ADMIN_SECRET){
+                isAdmin=true;localStorage.setItem('musicblog_admin','true');
+                updateAdminUI();
+                chatRef.push({username:'He thong',text:username+' da tro thanh ADMIN!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
+            } else if(pass!==null){
+                chatRef.push({username:'He thong',text:'Sai mat khau admin!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
+            }
+        }
+        chatInput.value='';return;
+    }
+    chatRef.push({username:username,color:userColor,text:text,time:firebase.database.ServerValue.TIMESTAMP,userId:userId});
+    chatInput.value='';chatInput.focus();
+}
+
+chatSendBtn.addEventListener('click',sendMessage);
+chatInput.addEventListener('keypress',function(e){if(e.key==='Enter')sendMessage();});
+
+chatRef.orderByChild('time').limitToLast(50).on('child_added',function(snap){
+    var msg=snap.val();
+    var div=document.createElement('div');
+    var isSelf=msg.userId===userId;
+    div.className='chat-msg'+(msg.system?' system':(isSelf?' self':' other'));
+    var t=new Date(msg.time);
+    var ts=t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0');
+    div.innerHTML='<div class="chat-msg-author" style="'+(!isSelf&&!msg.system?'color:'+msg.color:'')+'">'+msg.username+'</div>'+
+        '<div class="chat-msg-bubble">'+escapeHtml(msg.text)+'</div>'+
+        '<div class="chat-msg-time">'+ts+'</div>';
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop=chatMessages.scrollHeight;
+});
+
+function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+// ====== INIT ======
+renderSongGrid(allSongs,'allSongsGrid');
+updateAdminUI();
 }
 
 function setupPresence(){
