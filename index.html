@@ -3,12 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Blog nhạc - Nghe nhạc trực tuyến từ YouTube, playlist miễn phí">
-    <meta name="keywords" content="nhạc, music, playlist, YouTube, nghe nhạc trực tuyến">
     <title>Music Blog - Nghe nhạc trực tuyến</title>
-    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: #fff; min-height: 100vh; }
+        
+        /* Header */
+        header { background: rgba(0,0,0,0.3); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 1000; }
+        nav { max-width: 1200px; margin: 0 auto; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .logo { display: flex; align-items: center; gap: 0.5rem; }
+        .logo i { font-size: 1.5rem; color: #e94560; }
+        .logo a { font-size: 1.5rem; font-weight: 700; color: #fff; text-decoration: none; }
+        .nav-links { display: flex; list-style: none; gap: 2rem; }
+        .nav-links a { color: #fff; text-decoration: none; font-weight: 500; transition: color 0.3s; }
+        .nav-links a:hover { color: #e94560; }
+        
+        /* Hero */
+        .hero { padding: 4rem 2rem; text-align: center; }
+        .hero h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .hero p { opacity: 0.8; margin-bottom: 1.5rem; }
+        .search-box { display: flex; max-width: 400px; margin: 0 auto; background: rgba(255,255,255,0.1); border-radius: 50px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); }
+        .search-box input { flex: 1; padding: 0.75rem 1.25rem; border: none; background: transparent; color: #fff; font-size: 1rem; }
+        .search-box input::placeholder { color: rgba(255,255,255,0.6); }
+        .search-box button { padding: 0.75rem 1.25rem; background: #e94560; border: none; color: #fff; cursor: pointer; }
+        
+        /* Container */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        
+        /* Player Section */
+        .player-section { padding: 2rem 0; }
+        .player-wrapper { background: rgba(255,255,255,0.05); border-radius: 20px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.1); }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; border-radius: 15px; overflow: hidden; background: #000; margin-bottom: 1rem; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .now-playing { padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 10px; }
+        .now-playing h3 { color: #e94560; font-size: 0.85rem; margin-bottom: 0.25rem; }
+        #currentSongTitle { font-size: 1rem; font-weight: 600; }
+        
+        /* Playlist Section */
+        .playlist-section { padding: 3rem 0; }
+        .playlist-section h2 { font-size: 1.8rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .playlist-section h2 i { color: #e94560; }
+        
+        .playlist-tabs { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .tab-btn { padding: 0.6rem 1.25rem; background: rgba(255,255,255,0.1); border: none; border-radius: 25px; color: #fff; cursor: pointer; transition: all 0.3s; font-weight: 500; }
+        .tab-btn.active { background: #e94560; }
+        .tab-btn:hover { background: rgba(233,69,96,0.8); }
+        
+        .playlist { display: none; }
+        .playlist.active { display: block; }
+        
+        .playlist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .play-all-btn { padding: 0.6rem 1.25rem; background: #e94560; border: none; border-radius: 25px; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; }
+        .play-all-btn:hover { background: #ff6b6b; }
+        
+        /* Song List */
+        .song-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .song-item { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: rgba(255,255,255,0.05); border-radius: 10px; cursor: pointer; transition: all 0.3s; }
+        .song-item:hover { background: rgba(233,69,96,0.2); transform: translateX(5px); }
+        .song-item.playing { background: rgba(233,69,96,0.3); border-left: 4px solid #e94560; }
+        .song-number { width: 25px; text-align: center; opacity: 0.6; font-size: 0.9rem; }
+        .song-item.playing .song-number { color: #e94560; }
+        .song-thumbnail { width: 45px; height: 45px; border-radius: 6px; object-fit: cover; }
+        .song-info { flex: 1; }
+        .song-title { font-weight: 600; font-size: 0.95rem; }
+        .song-artist { font-size: 0.8rem; opacity: 0.7; }
+        .song-duration { opacity: 0.6; font-size: 0.85rem; }
+        
+        /* Blog Section */
+        .blog-section { padding: 3rem 0; }
+        .blog-section h2 { font-size: 1.8rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .blog-section h2 i { color: #e94560; }
+        .blog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .blog-card { background: rgba(255,255,255,0.05); border-radius: 15px; overflow: hidden; transition: transform 0.3s; border: 1px solid rgba(255,255,255,0.1); }
+        .blog-card:hover { transform: translateY(-5px); }
+        .blog-image img { width: 100%; height: 180px; object-fit: cover; }
+        .blog-content { padding: 1.25rem; }
+        .blog-category { display: inline-block; background: #e94560; padding: 0.2rem 0.6rem; border-radius: 15px; font-size: 0.75rem; margin-bottom: 0.5rem; }
+        .blog-content h3 { margin-bottom: 0.5rem; font-size: 1.1rem; }
+        .blog-content h3 a { color: #fff; text-decoration: none; }
+        .blog-content h3 a:hover { color: #e94560; }
+        .blog-content p { opacity: 0.7; font-size: 0.9rem; margin-bottom: 0.75rem; }
+        .blog-meta { display: flex; gap: 1rem; font-size: 0.8rem; opacity: 0.5; }
+        
+        /* Footer */
+        footer { background: rgba(0,0,0,0.3); padding: 3rem 2rem 1.5rem; margin-top: 3rem; }
+        .footer-content { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; }
+        .footer-section h4 { margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+        .footer-section h4 i { color: #e94560; }
+        .footer-section ul { list-style: none; }
+        .footer-section ul li { margin-bottom: 0.4rem; }
+        .footer-section ul a { color: #fff; text-decoration: none; opacity: 0.7; }
+        .footer-section ul a:hover { opacity: 1; color: #e94560; }
+        .social-links { display: flex; gap: 0.75rem; }
+        .social-links a { width: 35px; height: 35px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; text-decoration: none; }
+        .social-links a:hover { background: #e94560; }
+        .footer-bottom { text-align: center; padding-top: 1.5rem; margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); opacity: 0.5; font-size: 0.85rem; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero h1 { font-size: 1.8rem; }
+            .blog-grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -21,41 +120,34 @@
                 <li><a href="#home">Trang chủ</a></li>
                 <li><a href="#playlist">Playlist</a></li>
                 <li><a href="#blog">Blog</a></li>
-                <li><a href="#about">Giới thiệu</a></li>
             </ul>
-            <button class="menu-toggle" id="menuToggle">☰</button>
         </nav>
     </header>
 
     <main>
-        <!-- Hero Section -->
         <section class="hero" id="home">
-            <div class="hero-content">
-                <h1>Nghe nhạc trực tuyến miễn phí</h1>
-                <p>Khám phá và nghe nhạc yêu thích từ YouTube</p>
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Tìm kiếm bài hát...">
-                    <button id="searchBtn"><i class="fas fa-search"></i></button>
-                </div>
+            <h1>Nghe nhạc trực tuyến miễn phí</h1>
+            <p>Khám phá và nghe nhạc yêu thích từ YouTube</p>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Tìm kiếm bài hát...">
+                <button id="searchBtn"><i class="fas fa-search"></i></button>
             </div>
         </section>
 
-        <!-- Player Section -->
         <section class="player-section">
             <div class="container">
                 <div class="player-wrapper">
                     <div class="video-container">
-                        <div id="youtubePlayer"></div>
+                        <iframe id="youtubePlayer" src="https://www.youtube.com/embed/vWBIxXcEssI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                     </div>
                     <div class="now-playing">
                         <h3>Đang phát:</h3>
-                        <p id="currentSongTitle">Chọn bài hát từ playlist</p>
+                        <p id="currentSongTitle">Hai Phút Hơn - Pháo</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Playlist Section -->
         <section class="playlist-section" id="playlist">
             <div class="container">
                 <h2><i class="fas fa-list"></i> Playlist</h2>
@@ -66,50 +158,35 @@
                     <button class="tab-btn" data-tab="remix">Remix</button>
                 </div>
 
-                <div class="playlist-container">
-                    <!-- Vietnamese Playlist -->
-                    <div class="playlist active" id="vietnamese">
-                        <div class="playlist-header">
-                            <span class="song-count">12 bài hát</span>
-                            <button class="play-all-btn" data-playlist="vietnamese">
-                                <i class="fas fa-play"></i> Phát tất cả
-                            </button>
-                        </div>
-                        <div class="song-list" id="vietnameseList">
-                            <!-- Songs will be loaded by JavaScript -->
-                        </div>
+                <div class="playlist active" id="vietnamese">
+                    <div class="playlist-header">
+                        <button class="play-all-btn" data-playlist="vietnamese">
+                            <i class="fas fa-play"></i> Phát tất cả
+                        </button>
                     </div>
+                    <div class="song-list" id="vietnameseList"></div>
+                </div>
 
-                    <!-- English Playlist -->
-                    <div class="playlist" id="english">
-                        <div class="playlist-header">
-                            <span class="song-count">10 bài hát</span>
-                            <button class="play-all-btn" data-playlist="english">
-                                <i class="fas fa-play"></i> Phát tất cả
-                            </button>
-                        </div>
-                        <div class="song-list" id="englishList">
-                            <!-- Songs will be loaded by JavaScript -->
-                        </div>
+                <div class="playlist" id="english">
+                    <div class="playlist-header">
+                        <button class="play-all-btn" data-playlist="english">
+                            <i class="fas fa-play"></i> Phát tất cả
+                        </button>
                     </div>
+                    <div class="song-list" id="englishList"></div>
+                </div>
 
-                    <!-- Remix Playlist -->
-                    <div class="playlist" id="remix">
-                        <div class="playlist-header">
-                            <span class="song-count">8 bài hát</span>
-                            <button class="play-all-btn" data-playlist="remix">
-                                <i class="fas fa-play"></i> Phát tất cả
-                            </button>
-                        </div>
-                        <div class="song-list" id="remixList">
-                            <!-- Songs will be loaded by JavaScript -->
-                        </div>
+                <div class="playlist" id="remix">
+                    <div class="playlist-header">
+                        <button class="play-all-btn" data-playlist="remix">
+                            <i class="fas fa-play"></i> Phát tất cả
+                        </button>
                     </div>
+                    <div class="song-list" id="remixList"></div>
                 </div>
             </div>
         </section>
 
-        <!-- Blog Section -->
         <section class="blog-section" id="blog">
             <div class="container">
                 <h2><i class="fas fa-blog"></i> Blog nhạc</h2>
@@ -128,7 +205,6 @@
                             </div>
                         </div>
                     </article>
-
                     <article class="blog-card">
                         <div class="blog-image">
                             <img src="https://picsum.photos/400/250?random=11" alt="Blog nhạc" loading="lazy">
@@ -143,7 +219,6 @@
                             </div>
                         </div>
                     </article>
-
                     <article class="blog-card">
                         <div class="blog-image">
                             <img src="https://picsum.photos/400/250?random=12" alt="Blog nhạc" loading="lazy">
@@ -162,35 +237,6 @@
             </div>
         </section>
     </main>
-
-    <!-- Music Control Bar -->
-    <div class="music-control-bar" id="musicControlBar">
-        <div class="control-info">
-            <img src="https://picsum.photos/50/50?random=20" alt="Album art" id="albumArt">
-            <div class="song-info">
-                <p id="controlSongTitle">Chưa có bài hát</p>
-                <span id="controlArtist">-</span>
-            </div>
-        </div>
-        <div class="control-buttons">
-            <button id="prevBtn"><i class="fas fa-backward"></i></button>
-            <button id="playPauseBtn" class="play-btn"><i class="fas fa-play"></i></button>
-            <button id="nextBtn"><i class="fas fa-forward"></i></button>
-        </div>
-        <div class="control-progress">
-            <div class="progress-bar">
-                <div class="progress" id="progress"></div>
-            </div>
-            <div class="time-info">
-                <span id="currentTime">0:00</span>
-                <span id="duration">0:00</span>
-            </div>
-        </div>
-        <div class="control-volume">
-            <i class="fas fa-volume-up"></i>
-            <input type="range" id="volumeSlider" min="0" max="100" value="70">
-        </div>
-    </div>
 
     <footer>
         <div class="footer-content">
@@ -220,183 +266,41 @@
         </div>
     </footer>
 
-    <!-- Playlist Data - Embedded directly -->
     <script>
-    // Playlist Data - Using real YouTube video IDs
-    const playlists = {
+    var playlists = {
         vietnamese: [
-            { id: 'vWBIxXcEssI', title: 'Hai Phút Hơn', artist: 'Pháo', duration: '3:24', thumbnail: 'https://img.youtube.com/vi/vWBIxXcEssI/mqdefault.jpg' },
-            { id: 'kTJczYoc5Oo', title: 'Em Gái Mưa', artist: 'Hương Tràm', duration: '4:12', thumbnail: 'https://img.youtube.com/vi/kTJczYoc5Oo/mqdefault.jpg' },
-            { id: 'CtW5JvL2hbE', title: 'Sóng Gió', artist: 'Jack', duration: '3:45', thumbnail: 'https://img.youtube.com/vi/CtW5JvL2hbE/mqdefault.jpg' },
-            { id: 'qoSJYmhqdfI', title: 'Nhất Nghệ Tinh', artist: 'Luffy', duration: '3:18', thumbnail: 'https://img.youtube.com/vi/qoSJYmhqdfI/mqdefault.jpg' },
-            { id: 'F16h2-jCkvs', title: 'Cắt Đôi Nỗi Sầu', artist: 'Tăng Duy Tân', duration: '3:56', thumbnail: 'https://img.youtube.com/vi/F16h2-jCkvs/mqdefault.jpg' }
+            { id: 'vWBIxXcEssI', title: 'Hai Phút Hơn', artist: 'Pháo' },
+            { id: 'kTJczYoc5Oo', title: 'Em Gái Mưa', artist: 'Hương Tràm' },
+            { id: 'CtW5JvL2hbE', title: 'Sóng Gió', artist: 'Jack' },
+            { id: 'F16h2-jCkvs', title: 'Cắt Đôi Nỗi Sầu', artist: 'Tăng Duy Tân' },
+            { id: 'w85wHQ3dQbI', title: 'Đám Cưới Nắng', artist: 'Ricky Star' }
         ],
         english: [
-            { id: 'JGwWNGJdvx8', title: 'Shape of You', artist: 'Ed Sheeran', duration: '3:53', thumbnail: 'https://img.youtube.com/vi/JGwWNGJdvx8/mqdefault.jpg' },
-            { id: 'kJQP7kiw5Fk', title: 'Despacito', artist: 'Luis Fonsi', duration: '4:22', thumbnail: 'https://img.youtube.com/vi/kJQP7kiw5Fk/mqdefault.jpg' },
-            { id: '09R8_2nJtjg', title: 'Sugar', artist: 'Maroon 5', duration: '3:55', thumbnail: 'https://img.youtube.com/vi/09R8_2nJtjg/mqdefault.jpg' },
-            { id: 'fJ9rUzIMcZQ', title: 'Bohemian Rhapsody', artist: 'Queen', duration: '5:55', thumbnail: 'https://img.youtube.com/vi/fJ9rUzIMcZQ/mqdefault.jpg' },
-            { id: 'lp-EO5I60KA', title: 'Faded', artist: 'Alan Walker', duration: '3:32', thumbnail: 'https://img.youtube.com/vi/lp-EO5I60KA/mqdefault.jpg' }
+            { id: 'JGwWNGJdvx8', title: 'Shape of You', artist: 'Ed Sheeran' },
+            { id: 'kJQP7kiw5Fk', title: 'Despacito', artist: 'Luis Fonsi' },
+            { id: '09R8_2nJtjg', title: 'Sugar', artist: 'Maroon 5' },
+            { id: 'fJ9rUzIMcZQ', title: 'Bohemian Rhapsody', artist: 'Queen' },
+            { id: 'lp-EO5I60KA', title: 'Faded', artist: 'Alan Walker' }
         ],
         remix: [
-            { id: 'vWBIxXcEssI', title: 'Hai Phút Hơn (Remix)', artist: 'Pháo', duration: '3:45', thumbnail: 'https://img.youtube.com/vi/vWBIxXcEssI/mqdefault.jpg' },
-            { id: 'kJQP7kiw5Fk', title: 'Despacito (Remix)', artist: 'Luis Fonsi', duration: '4:45', thumbnail: 'https://img.youtube.com/vi/kJQP7kiw5Fk/mqdefault.jpg' },
-            { id: 'lp-EO5I60KA', title: 'Faded (Remix)', artist: 'Alan Walker', duration: '3:55', thumbnail: 'https://img.youtube.com/vi/lp-EO5I60KA/mqdefault.jpg' }
+            { id: 'vWBIxXcEssI', title: 'Hai Phút Hơn (Remix)', artist: 'Pháo' },
+            { id: 'kJQP7kiw5Fk', title: 'Despacito (Remix)', artist: 'Luis Fonsi' },
+            { id: 'lp-EO5I60KA', title: 'Faded (Remix)', artist: 'Alan Walker' }
         ]
     };
-    </script>
 
-    <!-- Player Script -->
-    <script>
-    // Global State
-    let player;
-    let currentPlaylist = 'vietnamese';
-    let currentSongIndex = 0;
-    let isPlaying = false;
-    let playerReady = false;
-
-    // This function is called by YouTube IFrame API
-    function onYouTubeIframeAPIReady() {
-        console.log('YouTube IFrame API Ready');
-        player = new YT.Player('youtubePlayer', {
-            height: '100%',
-            width: '100%',
-            videoId: 'vWBIxXcEssI',
-            playerVars: {
-                'autoplay': 0,
-                'controls': 1,
-                'disablekb': 0,
-                'enablejsapi': 1,
-                'fs': 1,
-                'iv_load_policy': 3,
-                'modestbranding': 1,
-                'rel': 0,
-                'showinfo': 0
-            },
-            events: {
-                'onReady': onPlayerReady,
-                'onStateChange': onPlayerStateChange
-            }
-        });
-    }
-
-    function onPlayerReady(event) {
-        console.log('YouTube Player Ready');
-        playerReady = true;
-        renderPlaylist(currentPlaylist);
-        player.setVolume(70);
-    }
-
-    function onPlayerStateChange(event) {
-        console.log('Player State:', event.data);
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        
-        if (event.data === YT.PlayerState.PLAYING) {
-            isPlaying = true;
-            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            updateProgress();
-        } else if (event.data === YT.PlayerState.PAUSED) {
-            isPlaying = false;
-            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-        } else if (event.data === YT.PlayerState.ENDED) {
-            playNext();
-        }
-    }
-
-    function updateProgress() {
-        if (player && playerReady && typeof player.getDuration === 'function') {
-            const duration = player.getDuration();
-            const currentTime = player.getCurrentTime();
-            const progress = document.getElementById('progress');
-            const currentTimeEl = document.getElementById('currentTime');
-            const durationEl = document.getElementById('duration');
-            
-            if (duration > 0) {
-                const percent = (currentTime / duration) * 100;
-                progress.style.width = percent + '%';
-                currentTimeEl.textContent = formatTime(currentTime);
-                durationEl.textContent = formatTime(duration);
-            }
-            
-            if (isPlaying) {
-                requestAnimationFrame(updateProgress);
-            }
-        }
-    }
-
-    function formatTime(seconds) {
-        if (isNaN(seconds)) return '0:00';
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return mins + ':' + secs.toString().padStart(2, '0');
-    }
-
-    function renderPlaylist(playlistName) {
-        const playlist = playlists[playlistName];
-        const container = document.getElementById(playlistName + 'List');
-        
-        if (!container || !playlist) return;
-        
-        container.innerHTML = playlist.map(function(song, index) {
-            var playingClass = (index === currentSongIndex && playlistName === currentPlaylist) ? ' playing' : '';
-            return '<div class="song-item' + playingClass + '" data-index="' + index + '" data-playlist="' + playlistName + '">' +
-                '<span class="song-number">' + (index + 1) + '</span>' +
-                '<img src="' + song.thumbnail + '" alt="' + song.title + '" class="song-thumbnail" loading="lazy">' +
-                '<div class="song-info">' +
-                    '<div class="song-title">' + song.title + '</div>' +
-                    '<div class="song-artist">' + song.artist + '</div>' +
-                '</div>' +
-                '<span class="song-duration">' + song.duration + '</span>' +
-                '<div class="song-actions">' +
-                    '<button class="play-btn-small" data-index="' + index + '" data-playlist="' + playlistName + '">' +
-                        '<i class="fas fa-play"></i>' +
-                    '</button>' +
-                '</div>' +
-            '</div>';
-        }).join('');
-        
-        // Add click events
-        container.querySelectorAll('.song-item').forEach(function(item) {
-            item.addEventListener('click', function(e) {
-                if (!e.target.closest('.song-actions')) {
-                    var index = parseInt(item.dataset.index);
-                    var playlist = item.dataset.playlist;
-                    playSong(playlist, index);
-                }
-            });
-        });
-        
-        container.querySelectorAll('.play-btn-small').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                var index = parseInt(btn.dataset.index);
-                var playlist = btn.dataset.playlist;
-                playSong(playlist, index);
-            });
-        });
-    }
+    var currentPlaylist = 'vietnamese';
+    var currentSongIndex = 0;
+    var player = document.getElementById('youtubePlayer');
 
     function playSong(playlistName, index) {
-        if (!playerReady) {
-            console.log('Player not ready yet');
-            alert('Player đang tải, vui lòng thử lại sau!');
-            return;
-        }
-        
         currentPlaylist = playlistName;
         currentSongIndex = index;
         var song = playlists[playlistName][index];
         
-        console.log('Playing:', song.title);
-        
-        player.loadVideoById(song.id);
-        
-        // Update UI
+        player.src = 'https://www.youtube.com/embed/' + song.id + '?autoplay=1';
         document.getElementById('currentSongTitle').textContent = song.title + ' - ' + song.artist;
-        document.getElementById('controlSongTitle').textContent = song.title;
-        document.getElementById('controlArtist').textContent = song.artist;
         
-        // Update playing state
         document.querySelectorAll('.song-item').forEach(function(item) {
             item.classList.remove('playing');
         });
@@ -407,132 +311,78 @@
         }
     }
 
-    function playNext() {
-        var playlist = playlists[currentPlaylist];
-        currentSongIndex = (currentSongIndex + 1) % playlist.length;
-        playSong(currentPlaylist, currentSongIndex);
-    }
-
-    function playPrev() {
-        var playlist = playlists[currentPlaylist];
-        currentSongIndex = (currentSongIndex - 1 + playlist.length) % playlist.length;
-        playSong(currentPlaylist, currentSongIndex);
-    }
-
-    // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM Loaded');
+    function renderPlaylist(playlistName) {
+        var playlist = playlists[playlistName];
+        var container = document.getElementById(playlistName + 'List');
         
-        // Mobile Menu Toggle
-        var menuToggle = document.getElementById('menuToggle');
-        var navLinks = document.querySelector('.nav-links');
-        if (menuToggle) {
-            menuToggle.addEventListener('click', function() {
-                navLinks.classList.toggle('active');
-            });
+        if (!container || !playlist) return;
+        
+        var html = '';
+        for (var i = 0; i < playlist.length; i++) {
+            var song = playlist[i];
+            var playingClass = (i === currentSongIndex && playlistName === currentPlaylist) ? ' playing' : '';
+            html += '<div class="song-item' + playingClass + '" data-index="' + i + '" data-playlist="' + playlistName + '">' +
+                '<span class="song-number">' + (i + 1) + '</span>' +
+                '<img src="https://img.youtube.com/vi/' + song.id + '/mqdefault.jpg" alt="' + song.title + '" class="song-thumbnail">' +
+                '<div class="song-info">' +
+                    '<div class="song-title">' + song.title + '</div>' +
+                    '<div class="song-artist">' + song.artist + '</div>' +
+                '</div>' +
+            '</div>';
         }
+        container.innerHTML = html;
         
-        // Playlist Tabs
-        document.querySelectorAll('.tab-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-                document.querySelectorAll('.playlist').forEach(function(p) { p.classList.remove('active'); });
-                
-                btn.classList.add('active');
-                var tab = btn.dataset.tab;
-                document.getElementById(tab).classList.add('active');
-                renderPlaylist(tab);
+        container.querySelectorAll('.song-item').forEach(function(item) {
+            item.addEventListener('click', function() {
+                var index = parseInt(item.dataset.index);
+                var playlist = item.dataset.playlist;
+                playSong(playlist, index);
             });
         });
-        
-        // Play All Button
-        document.querySelectorAll('.play-all-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var playlist = btn.dataset.playlist;
-                playSong(playlist, 0);
-            });
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+            document.querySelectorAll('.playlist').forEach(function(p) { p.classList.remove('active'); });
+            
+            btn.classList.add('active');
+            var tab = btn.dataset.tab;
+            document.getElementById(tab).classList.add('active');
+            renderPlaylist(tab);
         });
-        
-        // Player Controls
-        var playPauseBtn = document.getElementById('playPauseBtn');
-        var prevBtn = document.getElementById('prevBtn');
-        var nextBtn = document.getElementById('nextBtn');
-        var volumeSlider = document.getElementById('volumeSlider');
-        var progressBar = document.querySelector('.progress-bar');
-        
-        if (playPauseBtn) {
-            playPauseBtn.addEventListener('click', function() {
-                if (!playerReady) return;
-                if (isPlaying) {
-                    player.pauseVideo();
-                } else {
-                    player.playVideo();
-                }
-            });
-        }
-        
-        if (prevBtn) {
-            prevBtn.addEventListener('click', playPrev);
-        }
-        
-        if (nextBtn) {
-            nextBtn.addEventListener('click', playNext);
-        }
-        
-        if (volumeSlider) {
-            volumeSlider.addEventListener('input', function(e) {
-                if (!playerReady) return;
-                player.setVolume(e.target.value);
-            });
-        }
-        
-        if (progressBar) {
-            progressBar.addEventListener('click', function(e) {
-                if (!playerReady) return;
-                var rect = progressBar.getBoundingClientRect();
-                var percent = (e.clientX - rect.left) / rect.width;
-                var duration = player.getDuration();
-                player.seekTo(percent * duration, true);
-            });
-        }
-        
-        // Search
-        var searchBtn = document.getElementById('searchBtn');
-        var searchInput = document.getElementById('searchInput');
-        
-        if (searchBtn) {
-            searchBtn.addEventListener('click', function() {
-                var query = searchInput.value.trim();
-                if (query) {
-                    for (var playlistName in playlists) {
-                        var songs = playlists[playlistName];
-                        for (var i = 0; i < songs.length; i++) {
-                            if (songs[i].title.toLowerCase().includes(query.toLowerCase()) || 
-                                songs[i].artist.toLowerCase().includes(query.toLowerCase())) {
-                                playSong(playlistName, i);
-                                return;
-                            }
-                        }
-                    }
-                    alert('Không tìm thấy bài hát!');
-                }
-            });
-        }
-        
-        if (searchInput) {
-            searchInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    searchBtn.click();
-                }
-            });
-        }
-        
-        // Initialize first playlist
-        renderPlaylist('vietnamese');
     });
-    </script>
 
-    <!-- YouTube IFrame API - Load LAST -->
-    <script src="https://www.youtube.com/iframe_api"></script>
+    document.querySelectorAll('.play-all-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var playlist = btn.dataset.playlist;
+            playSong(playlist, 0);
+        });
+    });
+
+    document.getElementById('searchBtn').addEventListener('click', function() {
+        var query = document.getElementById('searchInput').value.trim().toLowerCase();
+        if (query) {
+            for (var playlistName in playlists) {
+                var songs = playlists[playlistName];
+                for (var i = 0; i < songs.length; i++) {
+                    if (songs[i].title.toLowerCase().includes(query) || songs[i].artist.toLowerCase().includes(query)) {
+                        playSong(playlistName, i);
+                        return;
+                    }
+                }
+            }
+            alert('Không tìm thấy bài hát!');
+        }
+    });
+
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('searchBtn').click();
+        }
+    });
+
+    renderPlaylist('vietnamese');
+    </script>
 </body>
 </html>
