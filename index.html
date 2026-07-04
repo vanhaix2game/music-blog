@@ -247,9 +247,7 @@ function onYouTubeIframeAPIReady(){
         events: {
             onReady: function(){ console.log('[YT] Player ready'); },
             onStateChange: function(e){
-                if(isAdmin && e.data === YT.PlayerState.ENDED){
-                    playNextSong();
-                }
+                if(e.data === YT.PlayerState.ENDED){ playNextSong(); }
             }
         }
     });
