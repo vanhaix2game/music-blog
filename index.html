@@ -348,7 +348,13 @@
         </div>
 
         <div class="playlist-section glass">
-            <h3 style="margin-bottom:0.8rem;font-size:0.95rem"><i class="fas fa-fire" style="color:#e94560"></i> Danh sách bài hát</h3>
+            <div class="queue-header">
+                <h3><i class="fas fa-fire" style="color:#e94560"></i> Danh sách bài hát</h3>
+                <div style="display:flex;gap:0.4rem">
+                    <button class="ctrl-btn" id="shuffleGridBtn" title="Xáo trộn danh sách" style="width:32px;height:32px;font-size:0.8rem"><i class="fas fa-random"></i></button>
+                    <button class="ctrl-btn" id="resetGridBtn" title="Đặt lại thứ tự" style="width:32px;height:32px;font-size:0.8rem"><i class="fas fa-undo"></i></button>
+                </div>
+            </div>
             <div class="song-grid" id="allSongsGrid"></div>
         </div>
     </div>
@@ -816,7 +822,31 @@ chatRef.orderByChild('time').limitToLast(50).on('child_added',function(snap){
 
 function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
-renderSongGrid(allSongs,'allSongsGrid');
+function shuffleArray(arr){
+    var a=arr.slice();
+    for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}
+    return a;
+}
+
+var currentSongOrder=allSongs.slice();
+renderSongGrid(currentSongOrder,'allSongsGrid');
+
+document.getElementById('shuffleGridBtn').addEventListener('click',function(){
+    currentSongOrder=shuffleArray(allSongs);
+    renderSongGrid(currentSongOrder,'allSongsGrid');
+    this.classList.add('active');
+    var btn=this;
+    setTimeout(function(){btn.classList.remove('active');},300);
+});
+
+document.getElementById('resetGridBtn').addEventListener('click',function(){
+    currentSongOrder=allSongs.slice();
+    renderSongGrid(currentSongOrder,'allSongsGrid');
+    this.classList.add('active');
+    var btn=this;
+    setTimeout(function(){btn.classList.remove('active');},300);
+});
+
 updateAdminUI();
 </script>
 </body>
