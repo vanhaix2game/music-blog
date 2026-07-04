@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music Blog - Nghe nhạc trực tuyến</title>
+    <title>Music Blog - Nghe nhac truc tuyen</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -18,8 +18,6 @@
         .logo i{font-size:1.8rem;color:#e94560}
         .logo a{font-size:1.4rem;font-weight:700;color:#e94560;text-decoration:none}
         .nav-links{display:flex;list-style:none;gap:1rem;align-items:center}
-        .nav-links a{color:#666;text-decoration:none;font-weight:500;padding:0.5rem 1rem;border-radius:20px;transition:all 0.3s;font-size:0.9rem}
-        .nav-links a:hover,.nav-links a.active{color:#e94560;background:rgba(233,69,96,0.08)}
         .conn-badge{font-size:0.7rem;padding:3px 10px;border-radius:12px;font-weight:600}
         .conn-ok{background:#d4edda;color:#155724}
         .conn-err{background:#f8d7da;color:#721c24}
@@ -48,9 +46,13 @@
         .ctrl-btn:hover{background:#e94560;color:#fff;transform:scale(1.08)}
         .ctrl-btn.play-btn{width:52px;height:52px;background:linear-gradient(135deg,#e94560,#d63851);color:#fff;font-size:1.2rem}
         .ctrl-btn.active{background:#e94560;color:#fff}
+        .ctrl-btn:disabled{opacity:0.3;cursor:not-allowed}
+        .ctrl-btn:disabled:hover{background:#f5f5f5;color:#555;transform:none}
         .now-playing{text-align:center;padding:0.3rem 0 0.5rem}
         .now-playing small{color:#999}
         .now-playing h4{color:#333;font-size:0.95rem;margin-top:0.2rem}
+        .admin-badge{display:inline-block;background:#e94560;color:#fff;padding:1px 8px;border-radius:8px;font-size:0.65rem;margin-left:4px}
+        .admin-hint{font-size:0.7rem;color:#999;text-align:center;margin-top:0.3rem}
 
         .queue-section{background:#fff;border-radius:12px;padding:1rem;box-shadow:0 2px 12px rgba(0,0,0,0.04);margin-bottom:1rem}
         .queue-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem}
@@ -63,11 +65,11 @@
         .queue-item-info{flex:1;min-width:0}
         .queue-item-title{font-size:0.8rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .queue-item-artist{font-size:0.7rem;color:#999}
+        .queue-item-by{font-size:0.6rem;color:#bbb}
         .queue-item-remove{background:none;border:none;color:#ccc;cursor:pointer;font-size:0.85rem}
         .queue-item-remove:hover{color:#e94560}
         .queue-empty{text-align:center;padding:1.5rem;color:#ccc;font-size:0.85rem}
 
-        .playlist-section{background:#fff;border-radius:12px;padding:1rem;box-shadow:0 2px 12px rgba(0,0,0,0.04);margin-top:0.5rem}
         .song-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.8rem}
         .song-card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;transition:all 0.3s;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
         .song-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,0.1)}
@@ -149,7 +151,7 @@
         <strong>Chat va dong bo nhac se KHONG hoat dong</strong> neu ban khong lam buoc nay:<br><br>
         <strong>Buoc 1:</strong> Vao <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a> > Chon du an <code>planning-with-ai-142c8</code><br>
         <strong>Buoc 2:</strong> Menu trai > <code>Realtime Database</code> > Nhan <code>Create Database</code> > Chon <code>Start in test mode</code> > <code>Enable</code><br>
-        <strong>Buoc 3:</strong> Nhan tab <code>Rules</code> (goc tren cung) > Xoa het, paste vao:<br>
+        <strong>Buoc 3:</strong> Nhan tab <code>Rules</code> > Xoa het, paste:<br>
         <code>{ "rules": { ".read": true, ".write": true } }</code><br>
         <strong>Buoc 4:</strong> Nhan <code>Publish</code> > Refresh lai trang nay
     </p>
@@ -159,7 +161,7 @@
     <div class="left-panel">
         <div class="search-bar">
             <input type="text" id="linkInput" placeholder="Dan link YouTube vao day (vd: https://youtube.com/watch?v=xxx)..." autocomplete="off">
-            <button id="addLinkBtn"><i class="fas fa-plus"></i> Them</button>
+            <button id="addLinkBtn"><i class="fas fa-plus"></i> Them bai</button>
         </div>
 
         <div class="player-container">
@@ -167,29 +169,30 @@
                 <iframe id="mainPlayer" src="https://www.youtube.com/embed/mw7Y0jQ8_BU?enablejsapi=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
             <div class="player-controls">
-                <button class="ctrl-btn" id="shuffleBtn" title="Tron bai"><i class="fas fa-random"></i></button>
-                <button class="ctrl-btn" id="prevBtn" title="Bai truoc"><i class="fas fa-backward"></i></button>
-                <button class="ctrl-btn play-btn" id="playPauseBtn" title="Phat/Tam dung"><i class="fas fa-play"></i></button>
-                <button class="ctrl-btn" id="nextBtn" title="Bai tiep"><i class="fas fa-forward"></i></button>
-                <button class="ctrl-btn" id="repeatBtn" title="Lap lai"><i class="fas fa-redo"></i></button>
+                <button class="ctrl-btn" id="shuffleBtn" title="Tron bai" disabled><i class="fas fa-random"></i></button>
+                <button class="ctrl-btn" id="prevBtn" title="Bai truoc" disabled><i class="fas fa-backward"></i></button>
+                <button class="ctrl-btn play-btn" id="playPauseBtn" title="Phat/Tam dung" disabled><i class="fas fa-play"></i></button>
+                <button class="ctrl-btn" id="nextBtn" title="Bai tiep" disabled><i class="fas fa-forward"></i></button>
+                <button class="ctrl-btn" id="repeatBtn" title="Lap lai" disabled><i class="fas fa-redo"></i></button>
             </div>
             <div class="now-playing">
-                <small>Dang phat:</small>
-                <h4 id="nowPlayingTitle">Chon bai de phat</h4>
+                <small>Dang phat:<span id="adminBadge" class="admin-badge" style="display:none">ADMIN</span></small>
+                <h4 id="nowPlayingTitle">Dang cho admin phat nhac...</h4>
             </div>
+            <div class="admin-hint" id="adminHint">Chi admin moi dieu khien duoc nhac. Ban co the them bai va nghe.</div>
         </div>
 
         <div class="queue-section">
             <div class="queue-header">
-                <h3><i class="fas fa-list-ol" style="color:#e94560"></i> Hang cho phat nhac</h3>
+                <h3><i class="fas fa-list-ol" style="color:#e94560"></i> Hang cho <span style="font-size:0.75rem;color:#999;font-weight:400">(toi da 30 bai)</span></h3>
                 <span style="font-size:0.75rem;color:#999" id="queueCount">0 bai</span>
             </div>
             <div class="queue-list" id="queueList">
-                <div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chua co bai nao<br>Nhan vao bai hat de them vao hang cho</div>
+                <div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chua co bai nao</div>
             </div>
         </div>
 
-        <div class="playlist-section">
+        <div class="playlist-section" style="background:#fff;border-radius:12px;padding:1rem;box-shadow:0 2px 12px rgba(0,0,0,0.04)">
             <h3 style="margin-bottom:0.8rem;font-size:0.95rem"><i class="fas fa-fire" style="color:#e94560"></i> Danh sach bai hat</h3>
             <div class="song-grid" id="allSongsGrid"></div>
         </div>
@@ -224,6 +227,9 @@
 <footer><p>&copy; 2026 Music Blog. Tat ca quyen duoc bao luu.</p></footer>
 
 <script>
+var MAX_QUEUE = 30;
+var ADMIN_SECRET = 'admin123';
+
 // ====== FIREBASE ======
 var firebaseConfig = {
     apiKey: "AIzaSyBM7Oysa5yni_3uFa_fkxiDLtO-hmD10HQ",
@@ -236,13 +242,10 @@ var firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 var db = firebase.database();
-console.log('[Firebase] Config loaded. Database URL:', db.ref().toString());
-
-// References
 var chatRef = db.ref('chat');
 var presenceRef = db.ref('presence');
-var sharedPlayerRef = db.ref('sharedPlayer');
-var sharedQueueRef = db.ref('sharedQueue');
+var playerRef = db.ref('player');
+var queueRef = db.ref('queue');
 
 // ====== STATE ======
 var username = localStorage.getItem('musicblog_username') || '';
@@ -254,14 +257,12 @@ var userColor = localStorage.getItem('musicblog_color') || (function(){
 })();
 var userId = localStorage.getItem('musicblog_uid') || ('u_'+Math.random().toString(36).substr(2,9));
 localStorage.setItem('musicblog_uid',userId);
+var isAdmin = localStorage.getItem('musicblog_admin') === 'true';
 
-// ====== FIREBASE CONNECTION CHECK ======
+// ====== FIREBASE CONNECTION ======
 db.ref('.info/connected').on('value', function(snap){
     var el = document.getElementById('connStatus');
-    var banner = document.getElementById('setupBanner');
-    var connected = snap.val();
-    console.log('[Firebase] Connected:', connected);
-    if(connected){
+    if(snap.val()){
         el.className='conn-badge conn-ok';
         el.innerHTML='<i class="fas fa-check-circle"></i> Da ket noi';
     } else {
@@ -269,319 +270,331 @@ db.ref('.info/connected').on('value', function(snap){
         el.innerHTML='<i class="fas fa-times-circle"></i> Mat ket noi';
     }
 });
-
-// Check if Firebase Rules are working - try to write a test
 db.ref('_healthCheck').set({ts: Date.now()}).then(function(){
-    console.log('[Firebase] Rules OK - write test passed');
     db.ref('_healthCheck').remove();
     document.getElementById('setupBanner').classList.add('hidden');
 }).catch(function(err){
-    console.error('[Firebase] Rules BLOCKED:', err.message);
     document.getElementById('setupBanner').classList.remove('hidden');
-    document.getElementById('setupBanner').querySelector('h3').innerHTML = '<i class="fas fa-exclamation-triangle"></i> LOI: Firebase Rules chan write! Error: ' + err.message;
-});
-
-// Check if Firebase Rules are working - try to write a test
-sharedPlayerRef.child('_test').set(true).then(function(){
-    sharedPlayerRef.child('_test').remove();
-    document.getElementById('setupBanner').classList.add('hidden');
-}).catch(function(err){
-    console.error('Firebase Rules error:', err);
-    document.getElementById('setupBanner').classList.remove('hidden');
+    document.getElementById('setupBanner').querySelector('h3').innerHTML = '<i class="fas fa-exclamation-triangle"></i> LOI: '+err.message;
 });
 
 // ====== SONGS DATA ======
 var allSongs = [
-    {id:'mw7Y0jQ8_BU',title:'2 Phut Hon (KAIZ Remix)',artist:'Phao',cat:'Viet'},
-    {id:'Y29OrOVJUKs',title:'Em Gai Mua',artist:'Huong Tram',cat:'Viet'},
-    {id:'CtW5JvL2hbE',title:'Song Gio',artist:'Jack',cat:'Viet'},
-    {id:'qoSJYmhqdfI',title:'Nhat Nghe Tinh',artist:'Luffy',cat:'Viet'},
-    {id:'F16h2-jCkvs',title:'Cat Doi Noi Sau',artist:'Tang Duy Tan',cat:'Viet'},
-    {id:'w85wHQ3dQbI',title:'Dam Cuoi Nang',artist:'Ricky Star',cat:'Viet'},
-    {id:'gMxWnJZ0v1s',title:'Co chac yeu khong',artist:'Du Uyen',cat:'Viet'},
-    {id:'5Z2dV3VQxps',title:'Locket',artist:'Doan Thuy Trang',cat:'Viet'},
-    {id:'xJ5bN9bqK9o',title:'Thien Ly Oi',artist:'Masew ft. Orange',cat:'Viet'},
-    {id:'pRpeEdMmmQ0',title:'Noi Nay Co Anh',artist:'Son Tung M-TP',cat:'Viet'},
-    {id:'09R8_2nJtjg',title:'Phia Sau Mot Co Gai',artist:'Soobin Hoang Son',cat:'Viet'},
-    {id:'CevxZvSJLk8',title:'Buong',artist:'Truong Quynh Anh',cat:'Viet'},
-    {id:'F2fCkZu3FYo',title:'Luu Chuy (Mua Sao Bang)',artist:'F4',cat:'Phim'},
-    {id:'KQ7b0V1VjYg',title:'Tinh Phai Duy Nhat',artist:'Harlem Yu',cat:'Phim'},
-    {id:'x5H3rDw5sVQ',title:'Thu Nhat Thoi Gian',artist:'F4',cat:'Phim'},
-    {id:'y8JXoQ3wG9M',title:'Nghi Dung Ai',artist:'Penny Tai',cat:'Phim'},
-    {id:'hT_nvWreIhg',title:'Trong Lai My Cuoi Thoi Quang',artist:'F4',cat:'Phim'},
-    {id:'lp-EO5I60KA',title:'Tu Than Ky OST',artist:'Various',cat:'Phim'},
-    {id:'YQHsXMglC9A',title:'Phong Lac',artist:'Luu Vu Ninh',cat:'Phim'},
-    {id:'RgKAFK5djSk',title:'Yeu Em Hon Moi Ngay',artist:'Hoac Ton',cat:'Phim'},
-    {id:'fJ9rUzIMcZQ',title:'Vo Cuong',artist:'Hua Hac Than',cat:'Phim'}
+    {id:'mw7Y0jQ8_BU',title:'2 Phut Hon (KAIZ Remix)',artist:'Phao'},
+    {id:'Y29OrOVJUKs',title:'Em Gai Mua',artist:'Huong Tram'},
+    {id:'CtW5JvL2hbE',title:'Song Gio',artist:'Jack'},
+    {id:'qoSJYmhqdfI',title:'Nhat Nghe Tinh',artist:'Luffy'},
+    {id:'F16h2-jCkvs',title:'Cat Doi Noi Sau',artist:'Tang Duy Tan'},
+    {id:'w85wHQ3dQbI',title:'Dam Cuoi Nang',artist:'Ricky Star'},
+    {id:'gMxWnJZ0v1s',title:'Co chac yeu khong',artist:'Du Uyen'},
+    {id:'5Z2dV3VQxps',title:'Locket',artist:'Doan Thuy Trang'},
+    {id:'xJ5bN9bqK9o',title:'Thien Ly Oi',artist:'Masew ft. Orange'},
+    {id:'pRpeEdMmmQ0',title:'Noi Nay Co Anh',artist:'Son Tung M-TP'},
+    {id:'09R8_2nJtjg',title:'Phia Sau Mot Co Gai',artist:'Soobin Hoang Son'},
+    {id:'CevxZvSJLk8',title:'Buong',artist:'Truong Quynh Anh'},
+    {id:'F2fCkZu3FYo',title:'Luu Chuy (Mua Sao Bang)',artist:'F4'},
+    {id:'KQ7b0V1VjYg',title:'Tinh Phai Duy Nhat',artist:'Harlem Yu'},
+    {id:'x5H3rDw5sVQ',title:'Thu Nhat Thoi Gian',artist:'F4'},
+    {id:'y8JXoQ3wG9M',title:'Nghi Dung Ai',artist:'Penny Tai'},
+    {id:'hT_nvWreIhg',title:'Trong Lai My Cuoi Thoi Quang',artist:'F4'},
+    {id:'lp-EO5I60KA',title:'Tu Than Ky OST',artist:'Various'},
+    {id:'YQHsXMglC9A',title:'Phong Lac',artist:'Luu Vu Ninh'},
+    {id:'RgKAFK5djSk',title:'Yeu Em Hon Moi Ngay',artist:'Hoac Ton'}
 ];
 
-// ====== RENDER SONGS GRID ======
-function renderSongGrid(songs, containerId) {
+// ====== ADMIN UI ======
+function updateAdminUI(){
+    var controls = document.querySelectorAll('.ctrl-btn');
+    var badge = document.getElementById('adminBadge');
+    var hint = document.getElementById('adminHint');
+    if(isAdmin){
+        controls.forEach(function(btn){btn.disabled = false;});
+        badge.style.display = 'inline-block';
+        hint.textContent = 'Ban la ADMIN - dieu khien nhac cho tat ca.';
+    } else {
+        controls.forEach(function(btn){btn.disabled = true;});
+        badge.style.display = 'none';
+        hint.textContent = 'Chi admin moi dieu khien duoc nhac. Ban co the them bai va nghe.';
+    }
+}
+
+// ====== RENDER SONGS ======
+function renderSongGrid(songs, containerId){
     var container = document.getElementById(containerId);
     var html = '';
-    for (var i = 0; i < songs.length; i++) {
-        var s = songs[i];
-        html += '<div class="song-card" data-id="'+s.id+'" data-title="'+s.title+'" data-artist="'+s.artist+'">' +
-            '<img src="https://img.youtube.com/vi/'+s.id+'/mqdefault.jpg" alt="'+s.title+'">' +
+    for(var i=0;i<songs.length;i++){
+        var s=songs[i];
+        html+='<div class="song-card" data-id="'+s.id+'" data-title="'+s.title+'" data-artist="'+s.artist+'">'+
+            '<img src="https://img.youtube.com/vi/'+s.id+'/mqdefault.jpg" alt="'+s.title+'">'+
             '<div class="song-card-info"><div class="song-card-title">'+s.title+'</div><div class="song-card-artist">'+s.artist+'</div></div></div>';
     }
-    container.innerHTML = html;
+    container.innerHTML=html;
     container.querySelectorAll('.song-card').forEach(function(card){
-        card.addEventListener('click', function(){
-            addSongToSharedQueue({id:card.dataset.id, title:card.dataset.title, artist:card.dataset.artist});
+        card.addEventListener('click',function(){
+            addToQueue({id:card.dataset.id,title:card.dataset.title,artist:card.dataset.artist});
         });
     });
 }
 
-// ====== SHARED QUEUE (via Firebase) ======
-function addSongToSharedQueue(song) {
-    sharedQueueRef.once('value').then(function(snap){
-        var q = snap.val() || {songs:[], currentIndex:0};
-        if(!q.songs) q.songs = [];
-        var exists = false;
-        for(var i=0;i<q.songs.length;i++){
-            if(q.songs[i].id === song.id){exists=true;break;}
-        }
+// ====== QUEUE ======
+function addToQueue(song){
+    queueRef.once('value').then(function(snap){
+        var q=snap.val()||{songs:[],currentIndex:0};
+        if(!q.songs)q.songs=[];
+        var exists=false;
+        for(var i=0;i<q.songs.length;i++){if(q.songs[i].id===song.id){exists=true;break;}}
         if(!exists){
+            if(q.songs.length>=MAX_QUEUE){q.songs.shift();}
             q.songs.push(song);
+            chatRef.push({username:'He thong',text:'Da them: '+song.title+' - '+song.artist+(q.songs.length>=MAX_QUEUE?' (danh sach day, bai cu bi day di)':''),time:firebase.database.ServerValue.TIMESTAMP,system:true});
         }
-        if(q.currentIndex < 0) q.currentIndex = 0;
-        return sharedQueueRef.set(q);
+        if(q.currentIndex<0)q.currentIndex=0;
+        return queueRef.set(q);
     }).then(function(){
-        return sharedQueueRef.once('value');
+        return queueRef.once('value');
     }).then(function(snap){
-        var q = snap.val();
-        if(q && q.songs && q.currentIndex >= 0){
+        var q=snap.val();
+        if(q&&q.songs&&q.songs.length>0){
+            if(q.currentIndex<0||q.currentIndex>=q.songs.length)q.currentIndex=0;
             playSongAt(q.currentIndex);
         }
-    }).catch(function(err){
-        console.error('[Queue] Error:', err);
     });
 }
 
-function playSongAt(index) {
-    sharedQueueRef.once('value').then(function(snap){
-        var q = snap.val();
-        if(!q || !q.songs || index < 0 || index >= q.songs.length) return;
-        q.currentIndex = index;
-        var song = q.songs[index];
-        sharedQueueRef.set(q);
-        sharedPlayerRef.set({
-            videoId: song.id,
-            title: song.title,
-            artist: song.artist,
-            by: userId,
-            ts: firebase.database.ServerValue.TIMESTAMP
+function playSongAt(index){
+    if(!isAdmin)return;
+    queueRef.once('value').then(function(snap){
+        var q=snap.val();
+        if(!q||!q.songs||index<0||index>=q.songs.length)return;
+        q.currentIndex=index;
+        var song=q.songs[index];
+        queueRef.set(q);
+        playerRef.set({
+            videoId:song.id,title:song.title,artist:song.artist,
+            by:userId,ts:firebase.database.ServerValue.TIMESTAMP
         });
     });
 }
 
-function playNextSong() {
-    sharedQueueRef.once('value').then(function(snap){
-        var q = snap.val();
-        if(!q || !q.songs || q.songs.length === 0) return;
-        q.currentIndex = (q.currentIndex + 1) % q.songs.length;
-        sharedQueueRef.set(q);
-        playSongAt(q.currentIndex);
+function playNextSong(){
+    if(!isAdmin)return;
+    queueRef.once('value').then(function(snap){
+        var q=snap.val();
+        if(!q||!q.songs||q.songs.length===0)return;
+        q.currentIndex=(q.currentIndex+1)%q.songs.length;
+        queueRef.set(q);
+        var song=q.songs[q.currentIndex];
+        playerRef.set({
+            videoId:song.id,title:song.title,artist:song.artist,
+            by:userId,ts:firebase.database.ServerValue.TIMESTAMP
+        });
     });
 }
 
-function playPrevSong() {
-    sharedQueueRef.once('value').then(function(snap){
-        var q = snap.val();
-        if(!q || !q.songs || q.songs.length === 0) return;
-        q.currentIndex = (q.currentIndex - 1 + q.songs.length) % q.songs.length;
-        sharedQueueRef.set(q);
-        playSongAt(q.currentIndex);
+function playPrevSong(){
+    if(!isAdmin)return;
+    queueRef.once('value').then(function(snap){
+        var q=snap.val();
+        if(!q||!q.songs||q.songs.length===0)return;
+        q.currentIndex=(q.currentIndex-1+q.songs.length)%q.songs.length;
+        queueRef.set(q);
+        var song=q.songs[q.currentIndex];
+        playerRef.set({
+            videoId:song.id,title:song.title,artist:song.artist,
+            by:userId,ts:firebase.database.ServerValue.TIMESTAMP
+        });
     });
 }
 
-function removeSongFromQueue(index) {
-    sharedQueueRef.once('value').then(function(snap){
-        var q = snap.val();
-        if(!q || !q.songs) return;
-        q.songs.splice(index, 1);
-        if(q.currentIndex >= q.songs.length) q.currentIndex = q.songs.length - 1;
-        if(q.currentIndex < 0) q.currentIndex = 0;
-        sharedQueueRef.set(q);
-    });
-}
-
-// ====== LISTEN FOR SHARED PLAYER CHANGES ======
-sharedPlayerRef.on('value', function(snap){
-    var data = snap.val();
-    if(!data || !data.videoId) return;
-    var player = document.getElementById('mainPlayer');
-    var newSrc = 'https://www.youtube.com/embed/'+data.videoId+'?autoplay=1&enablejsapi=1';
-    if(player.src !== newSrc){
-        player.src = newSrc;
-        isSyncing = true;
-        setTimeout(function(){ isSyncing = false; }, 2000);
+// ====== LISTEN PLAYER SYNC ======
+playerRef.on('value',function(snap){
+    var data=snap.val();
+    if(!data||!data.videoId)return;
+    var player=document.getElementById('mainPlayer');
+    var newSrc='https://www.youtube.com/embed/'+data.videoId+'?autoplay=1&enablejsapi=1';
+    if(player.src.indexOf(data.videoId)===-1){
+        player.src=newSrc;
     }
-    document.getElementById('nowPlayingTitle').textContent = data.title + ' - ' + data.artist;
-    document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause"></i>';
+    document.getElementById('nowPlayingTitle').textContent=data.title+' - '+data.artist;
 });
 
-// ====== LISTEN FOR SHARED QUEUE CHANGES ======
-sharedQueueRef.on('value', function(snap){
-    var data = snap.val();
-    if(!data || !data.songs) return;
-    renderQueueUI(data.songs, data.currentIndex);
+// ====== LISTEN QUEUE SYNC ======
+queueRef.on('value',function(snap){
+    var data=snap.val();
+    if(!data||!data.songs)return;
+    renderQueueUI(data.songs,data.currentIndex);
 });
 
-function renderQueueUI(songs, currentIndex) {
-    var container = document.getElementById('queueList');
-    var countEl = document.getElementById('queueCount');
-    countEl.textContent = songs.length + ' bai';
-    if(songs.length === 0){
-        container.innerHTML = '<div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chua co bai nao<br>Nhan vao bai hat de them</div>';
+function renderQueueUI(songs,currentIndex){
+    var container=document.getElementById('queueList');
+    var countEl=document.getElementById('queueCount');
+    countEl.textContent=songs.length+'/'+MAX_QUEUE+' bai';
+    if(songs.length===0){
+        container.innerHTML='<div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chua co bai nao</div>';
         return;
     }
-    var html = '';
-    for(var i=0; i<songs.length; i++){
-        var s = songs[i];
-        var active = i === currentIndex ? ' active' : '';
-        html += '<div class="queue-item'+active+'" data-index="'+i+'">' +
-            '<img src="https://img.youtube.com/vi/'+s.id+'/mqdefault.jpg" alt="">' +
-            '<div class="queue-item-info"><div class="queue-item-title">'+s.title+'</div><div class="queue-item-artist">'+s.artist+'</div></div>' +
-            '<button class="queue-item-remove" data-index="'+i+'"><i class="fas fa-times"></i></button></div>';
+    var html='';
+    for(var i=0;i<songs.length;i++){
+        var s=songs[i];
+        var active=i===currentIndex?' active':'';
+        html+='<div class="queue-item'+active+'" data-index="'+i+'">'+
+            '<img src="https://img.youtube.com/vi/'+s.id+'/mqdefault.jpg" alt="">'+
+            '<div class="queue-item-info"><div class="queue-item-title">'+s.title+'</div><div class="queue-item-artist">'+s.artist+'</div></div>'+
+            (isAdmin?'<button class="queue-item-remove" data-index="'+i+'"><i class="fas fa-times"></i></button>':'')+
+            '</div>';
     }
-    container.innerHTML = html;
-    container.querySelectorAll('.queue-item').forEach(function(item){
-        item.addEventListener('click', function(e){
-            if(e.target.closest('.queue-item-remove')) return;
-            playSongAt(parseInt(item.dataset.index));
+    container.innerHTML=html;
+    if(isAdmin){
+        container.querySelectorAll('.queue-item').forEach(function(item){
+            item.addEventListener('click',function(e){
+                if(e.target.closest('.queue-item-remove'))return;
+                playSongAt(parseInt(item.dataset.index));
+            });
         });
-    });
-    container.querySelectorAll('.queue-item-remove').forEach(function(btn){
-        btn.addEventListener('click', function(e){
-            e.stopPropagation();
-            removeSongFromQueue(parseInt(btn.dataset.index));
+        container.querySelectorAll('.queue-item-remove').forEach(function(btn){
+            btn.addEventListener('click',function(e){
+                e.stopPropagation();
+                removeSongFromQueue(parseInt(btn.dataset.index));
+            });
         });
+    }
+}
+
+function removeSongFromQueue(index){
+    if(!isAdmin)return;
+    queueRef.once('value').then(function(snap){
+        var q=snap.val();
+        if(!q||!q.songs)return;
+        q.songs.splice(index,1);
+        if(q.currentIndex>=q.songs.length)q.currentIndex=q.songs.length-1;
+        if(q.currentIndex<0)q.currentIndex=0;
+        queueRef.set(q);
     });
 }
 
 // ====== YOUTUBE LINK ======
-function extractVideoId(url) {
-    var match = url.match(/(?:v=|youtu\.be\/|embed\/|\/v\/|\/e\/)([a-zA-Z0-9_-]{11})/);
-    return match ? match[1] : null;
+function extractVideoId(url){
+    var match=url.match(/(?:v=|youtu\.be\/|embed\/|\/v\/|\/e\/)([a-zA-Z0-9_-]{11})/);
+    return match?match[1]:null;
 }
-
-document.getElementById('addLinkBtn').addEventListener('click', function(){
-    var url = document.getElementById('linkInput').value.trim();
+document.getElementById('addLinkBtn').addEventListener('click',function(){
+    var url=document.getElementById('linkInput').value.trim();
     if(!url){alert('Vui long dan link YouTube!');return;}
-    var videoId = extractVideoId(url);
+    var videoId=extractVideoId(url);
     if(!videoId){alert('Link khong hop le!\nDang: https://youtube.com/watch?v=xxx\nhoac: https://youtu.be/xxx');return;}
-    addSongToSharedQueue({id:videoId, title:'Bai tu link YouTube', artist:'YouTube'});
-    document.getElementById('linkInput').value = '';
+    addToQueue({id:videoId,title:'Bai tu link',artist:'YouTube'});
+    document.getElementById('linkInput').value='';
 });
-document.getElementById('linkInput').addEventListener('keypress', function(e){
-    if(e.key==='Enter') document.getElementById('addLinkBtn').click();
-});
+document.getElementById('linkInput').addEventListener('keypress',function(e){if(e.key==='Enter')document.getElementById('addLinkBtn').click();});
 
-// ====== PLAYER CONTROLS ======
-document.getElementById('playPauseBtn').addEventListener('click', function(){
-    var iframe = document.getElementById('mainPlayer');
-    var src = iframe.src;
-    if(src.includes('autoplay=1')){
-        iframe.src = src.replace('autoplay=1','autoplay=0');
-        this.innerHTML = '<i class="fas fa-play"></i>';
-    } else {
-        iframe.src = src.replace('autoplay=0','autoplay=1');
-        this.innerHTML = '<i class="fas fa-pause"></i>';
-    }
+// ====== PLAYER CONTROLS (admin only) ======
+document.getElementById('playPauseBtn').addEventListener('click',function(){
+    if(!isAdmin)return alert('Chi admin moi dieu khien duoc!');
+    var iframe=document.getElementById('mainPlayer');
+    var src=iframe.src;
+    if(src.indexOf('autoplay=1')>-1){iframe.src=src.replace('autoplay=1','autoplay=0');this.innerHTML='<i class="fas fa-play"></i>';}
+    else{iframe.src=src.replace('autoplay=0','autoplay=1');this.innerHTML='<i class="fas fa-pause"></i>';}
 });
-document.getElementById('nextBtn').addEventListener('click', playNextSong);
-document.getElementById('prevBtn').addEventListener('click', playPrevSong);
-document.getElementById('repeatBtn').addEventListener('click', function(){this.classList.toggle('active')});
-document.getElementById('shuffleBtn').addEventListener('click', function(){this.classList.toggle('active')});
+document.getElementById('nextBtn').addEventListener('click',function(){if(!isAdmin)return alert('Chi admin moi dieu khien duoc!');playNextSong();});
+document.getElementById('prevBtn').addEventListener('click',function(){if(!isAdmin)return alert('Chi admin moi dieu khien duoc!');playPrevSong();});
+document.getElementById('repeatBtn').addEventListener('click',function(){if(!isAdmin)return alert('Chi admin moi dieu khien duoc!');this.classList.toggle('active');});
+document.getElementById('shuffleBtn').addEventListener('click',function(){if(!isAdmin)return alert('Chi admin moi dieu khien duoc!');this.classList.toggle('active');});
 
 // ====== CHAT & PRESENCE ======
-var chatModal = document.getElementById('usernameModal');
-var chatInput = document.getElementById('chatInput');
-var chatSendBtn = document.getElementById('chatSendBtn');
-var chatMessages = document.getElementById('chatMessages');
+var chatModal=document.getElementById('usernameModal');
+var chatInput=document.getElementById('chatInput');
+var chatSendBtn=document.getElementById('chatSendBtn');
+var chatMessages=document.getElementById('chatMessages');
 
-if(username){ chatModal.classList.remove('show'); enableChat(); document.getElementById('chatUserName').textContent = username; }
+if(username){chatModal.classList.remove('show');enableChat();document.getElementById('chatUserName').textContent=username;}
 
-document.getElementById('usernameSubmit').addEventListener('click', function(){
-    var name = document.getElementById('usernameInput').value.trim();
+document.getElementById('usernameSubmit').addEventListener('click',function(){
+    var name=document.getElementById('usernameInput').value.trim();
     if(name.length<2){alert('Ten phai co it nhat 2 ky tu!');return;}
-    username = name;
-    localStorage.setItem('musicblog_username', username);
+    username=name;
+    localStorage.setItem('musicblog_username',username);
     chatModal.classList.remove('show');
-    document.getElementById('chatUserName').textContent = username;
+    document.getElementById('chatUserName').textContent=username;
     enableChat();
-    chatRef.push({username:'He thong', text:username+' da tham gia chat!', time:firebase.database.ServerValue.TIMESTAMP, system:true});
+    chatRef.push({username:'He thong',text:username+' da tham gia chat!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
 });
-document.getElementById('usernameInput').addEventListener('keypress', function(e){
-    if(e.key==='Enter') document.getElementById('usernameSubmit').click();
-});
+document.getElementById('usernameInput').addEventListener('keypress',function(e){if(e.key==='Enter')document.getElementById('usernameSubmit').click();});
 
-// Change name button
-document.getElementById('changeNameBtn').addEventListener('click', function(){
-    var newName = prompt('Nhap ten moi:', username);
-    if(!newName) return;
-    newName = newName.trim();
-    if(newName.length < 2){ alert('Ten phai co it nhat 2 ky tu!'); return; }
-    var oldName = username;
-    username = newName;
-    localStorage.setItem('musicblog_username', username);
-    document.getElementById('chatUserName').textContent = username;
+document.getElementById('changeNameBtn').addEventListener('click',function(){
+    var newName=prompt('Nhap ten moi:',username);
+    if(!newName)return;
+    newName=newName.trim();
+    if(newName.length<2){alert('Ten phai co it nhat 2 ky tu!');return;}
+    var old=username;username=newName;
+    localStorage.setItem('musicblog_username',username);
+    document.getElementById('chatUserName').textContent=username;
     setupPresence();
-    chatRef.push({username:'He thong', text:oldName+' da doi ten thanh '+username, time:firebase.database.ServerValue.TIMESTAMP, system:true});
+    chatRef.push({username:'He thong',text:old+' da doi ten thanh '+username,time:firebase.database.ServerValue.TIMESTAMP,system:true});
 });
 
 function enableChat(){
-    chatInput.disabled = false;
-    chatSendBtn.disabled = false;
-    chatInput.focus();
+    chatInput.disabled=false;chatSendBtn.disabled=false;chatInput.focus();
     setupPresence();
+    updateAdminUI();
 }
 
 function setupPresence(){
-    var myPres = presenceRef.child(userId);
-    myPres.set({name: username, time: firebase.database.ServerValue.TIMESTAMP});
+    var myPres=presenceRef.child(userId);
+    myPres.set({name:username,time:firebase.database.ServerValue.TIMESTAMP});
     myPres.onDisconnect().remove();
-
-    presenceRef.on('value', function(snap){
-        var users = snap.val() || {};
-        var keys = Object.keys(users);
-        document.getElementById('onlineCount').textContent = keys.length;
-        var names = keys.map(function(k){return users[k].name;}).join(', ');
-        document.getElementById('onlineNames').textContent = names || 'Khong ai';
+    presenceRef.on('value',function(snap){
+        var users=snap.val()||{};
+        var keys=Object.keys(users);
+        document.getElementById('onlineCount').textContent=keys.length;
+        var names=keys.map(function(k){return users[k].name;}).join(', ');
+        document.getElementById('onlineNames').textContent=names||'Khong ai';
     });
 }
 
 function sendMessage(){
-    var text = chatInput.value.trim();
-    if(!text || !username) return;
-    chatRef.push({username:username, color:userColor, text:text, time:firebase.database.ServerValue.TIMESTAMP, userId:userId});
-    chatInput.value = '';
-    chatInput.focus();
+    var text=chatInput.value.trim();
+    if(!text||!username)return;
+
+    if(text.toLowerCase()==='admin'){
+        if(isAdmin){chatRef.push({username:'He thong',text:'Ban da la admin roi!',time:firebase.database.ServerValue.TIMESTAMP,system:true});}
+        else{
+            var pass=prompt('Nhap mat khau admin:');
+            if(pass===ADMIN_SECRET){
+                isAdmin=true;localStorage.setItem('musicblog_admin','true');
+                updateAdminUI();
+                chatRef.push({username:'He thong',text:username+' da tro thanh ADMIN!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
+            } else if(pass!==null){
+                chatRef.push({username:'He thong',text:'Sai mat khau admin!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
+            }
+        }
+        chatInput.value='';return;
+    }
+    chatRef.push({username:username,color:userColor,text:text,time:firebase.database.ServerValue.TIMESTAMP,userId:userId});
+    chatInput.value='';chatInput.focus();
 }
 
-chatSendBtn.addEventListener('click', sendMessage);
-chatInput.addEventListener('keypress', function(e){ if(e.key==='Enter') sendMessage(); });
+chatSendBtn.addEventListener('click',sendMessage);
+chatInput.addEventListener('keypress',function(e){if(e.key==='Enter')sendMessage();});
 
-chatRef.orderByChild('time').limitToLast(50).on('child_added', function(snap){
-    var msg = snap.val();
-    var div = document.createElement('div');
-    var isSelf = msg.userId === userId;
-    div.className = 'chat-msg' + (msg.system ? ' system' : (isSelf ? ' self' : ' other'));
-    var t = new Date(msg.time);
-    var ts = t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0');
-    div.innerHTML = '<div class="chat-msg-author" style="'+(!isSelf && !msg.system ? 'color:'+msg.color : '')+'">'+msg.username+'</div>'+
+chatRef.orderByChild('time').limitToLast(50).on('child_added',function(snap){
+    var msg=snap.val();
+    var div=document.createElement('div');
+    var isSelf=msg.userId===userId;
+    div.className='chat-msg'+(msg.system?' system':(isSelf?' self':' other'));
+    var t=new Date(msg.time);
+    var ts=t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0');
+    div.innerHTML='<div class="chat-msg-author" style="'+(!isSelf&&!msg.system?'color:'+msg.color:'')+'">'+msg.username+'</div>'+
         '<div class="chat-msg-bubble">'+escapeHtml(msg.text)+'</div>'+
         '<div class="chat-msg-time">'+ts+'</div>';
     chatMessages.appendChild(div);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    chatMessages.scrollTop=chatMessages.scrollHeight;
 });
 
 function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
 // ====== INIT ======
-renderSongGrid(allSongs, 'allSongsGrid');
+renderSongGrid(allSongs,'allSongsGrid');
+updateAdminUI();
 </script>
 </body>
 </html>
