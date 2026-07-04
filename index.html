@@ -145,18 +145,7 @@
     </nav>
 </header>
 
-<div class="setup-banner" id="setupBanner">
-    <h3><i class="fas fa-exclamation-triangle"></i> CANH BAO: Firebase Rules chua duoc setup!</h3>
-    <p>
-        <strong>Chat va dong bo nhac se KHONG hoat dong</strong> neu ban khong lam buoc nay:<br><br>
-        <strong>Buoc 1:</strong> Vao <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a> > Chon du an <code>planning-with-ai-142c8</code><br>
-        <strong>Buoc 2:</strong> Menu trai > <code>Realtime Database</code> > Nhan <code>Create Database</code> > Chon <code>Start in test mode</code> > <code>Enable</code><br>
-        <strong>Buoc 3:</strong> Nhan tab <code>Rules</code> > Xoa het, paste:<br>
-        <code>{ "rules": { ".read": true, ".write": true } }</code><br>
-        <strong>Buoc 4:</strong> Nhan <code>Publish</code> > Refresh lai trang nay
-    </p>
-    <button onclick="document.getElementById('setupBanner').classList.add('hidden')" style="position:absolute;top:8px;right:12px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#856404">&times;</button>
-</div>
+<!-- Banner removed - Firebase Rules already configured -->
 
 <div class="main-layout">
     <div class="left-panel">
@@ -250,10 +239,6 @@ var presenceRef = db.ref('presence');
 var playerRef = db.ref('player');
 var queueRef = db.ref('queue');
 
-function safeSet(ref, data) {
-    try { ref.set(data); } catch(e) { console.warn('[Firebase]', e.message); }
-}
-
 function onYouTubeIframeAPIReady(){
     ytPlayer = new YT.Player('mainPlayer', {
         height: '100%', width: '100%',
@@ -262,17 +247,38 @@ function onYouTubeIframeAPIReady(){
         events: {
             onReady: function(){ console.log('[YT] Player ready'); },
             onStateChange: function(e){
-                if(isAdmin && e.data === YT.PlayerState.ENDED){ playNextSong(); }
+                if(isAdmin && e.data === YT.PlayerState.ENDED){
+                    playNextSong();
+                }
             }
         }
     });
 }
 
-function ytPlay(vid, t){ if(ytPlayer&&ytPlayer.loadVideoById) ytPlayer.loadVideoById({videoId:vid,startSeconds:t||0}); }
-function ytSeekTo(t){ if(ytPlayer&&ytPlayer.seekTo) ytPlayer.seekTo(t,true); }
-function ytGetCurrentTime(){ return (ytPlayer&&ytPlayer.getCurrentTime)?ytPlayer.getCurrentTime():0; }
-function ytPause(){ if(ytPlayer&&ytPlayer.pauseVideo) ytPlayer.pauseVideo(); }
-function ytResume(){ if(ytPlayer&&ytPlayer.playVideo) ytPlayer.playVideo(); }
+function ytPlay(videoId, startTime){
+    if(!ytPlayer || !ytPlayer.loadVideoById) return;
+    ytPlayer.loadVideoById({videoId: videoId, startSeconds: startTime || 0});
+}
+
+function ytSeekTo(time){
+    if(!ytPlayer || !ytPlayer.seekTo) return;
+    ytPlayer.seekTo(time, true);
+}
+
+function ytGetCurrentTime(){
+    if(!ytPlayer || !ytPlayer.getCurrentTime) return 0;
+    return ytPlayer.getCurrentTime();
+}
+
+function ytPause(){
+    if(!ytPlayer || !ytPlayer.pauseVideo) return;
+    ytPlayer.pauseVideo();
+}
+
+function ytResume(){
+    if(!ytPlayer || !ytPlayer.playVideo) return;
+    ytPlayer.playVideo();
+}
 
 var username = localStorage.getItem('musicblog_username') || '';
 var userColor = localStorage.getItem('musicblog_color') || (function(){
@@ -287,15 +293,13 @@ var isAdmin = localStorage.getItem('musicblog_admin') === 'true';
 
 db.ref('.info/connected').on('value', function(snap){
     var el = document.getElementById('connStatus');
-    if(snap.val()){ el.className='conn-badge conn-ok'; el.innerHTML='<i class="fas fa-check-circle"></i> Da ket noi'; }
-    else { el.className='conn-badge conn-err'; el.innerHTML='<i class="fas fa-times-circle"></i> Mat ket noi'; }
-});
-db.ref('queue/_check').set({ts: Date.now()}).then(function(){
-    db.ref('queue/_check').remove();
-    document.getElementById('setupBanner').classList.add('hidden');
-}).catch(function(err){
-    document.getElementById('setupBanner').classList.remove('hidden');
-    console.warn('[Firebase] Rules chua setup:', err.message);
+    if(snap.val()){
+        el.className='conn-badge conn-ok';
+        el.innerHTML='<i class="fas fa-check-circle"></i> Da ket noi';
+    } else {
+        el.className='conn-badge conn-err';
+        el.innerHTML='<i class="fas fa-times-circle"></i> Mat ket noi';
+    }
 });
 
 var allSongs = [
@@ -325,8 +329,15 @@ function updateAdminUI(){
     var controls = document.querySelectorAll('.ctrl-btn');
     var badge = document.getElementById('adminBadge');
     var hint = document.getElementById('adminHint');
-    if(isAdmin){ controls.forEach(function(b){b.disabled=false;}); badge.style.display='inline-block'; hint.textContent='Ban la ADMIN - dieu khien nhac cho tat ca.'; }
-    else { controls.forEach(function(b){b.disabled=true;}); badge.style.display='none'; hint.textContent='Chi admin moi dieu khien duoc nhac. Ban co the them bai va nghe.'; }
+    if(isAdmin){
+        controls.forEach(function(btn){btn.disabled = false;});
+        badge.style.display = 'inline-block';
+        hint.textContent = 'Ban la ADMIN - dieu khien nhac cho tat ca.';
+    } else {
+        controls.forEach(function(btn){btn.disabled = true;});
+        badge.style.display = 'none';
+        hint.textContent = 'Chi admin moi dieu khien duoc nhac. Ban co the them bai va nghe.';
+    }
 }
 
 function renderSongGrid(songs, containerId){
@@ -340,7 +351,9 @@ function renderSongGrid(songs, containerId){
     }
     container.innerHTML=html;
     container.querySelectorAll('.song-card').forEach(function(card){
-        card.addEventListener('click',function(){ addToQueue({id:card.dataset.id,title:card.dataset.title,artist:card.dataset.artist}); });
+        card.addEventListener('click',function(){
+            addToQueue({id:card.dataset.id,title:card.dataset.title,artist:card.dataset.artist});
+        });
     });
 }
 
@@ -353,11 +366,19 @@ function addToQueue(song){
         if(!exists){
             if(q.songs.length>=MAX_QUEUE){q.songs.shift();}
             q.songs.push(song);
-            try{ chatRef.push({username:'He thong',text:'Da them: '+song.title+' - '+song.artist,time:Date.now(),system:true}); }catch(e){}
+            chatRef.push({username:'He thong',text:'Da them: '+song.title+' - '+song.artist,time:firebase.database.ServerValue.TIMESTAMP,system:true});
         }
         if(q.currentIndex<0)q.currentIndex=0;
         return queueRef.set(q);
-    }).catch(function(e){ console.warn('[Firebase] addToQueue failed:', e.message); });
+    }).then(function(){
+        return queueRef.once('value');
+    }).then(function(snap){
+        var q=snap.val();
+        if(q&&q.songs&&q.songs.length>0){
+            if(q.currentIndex<0||q.currentIndex>=q.songs.length)q.currentIndex=0;
+            if(isAdmin) playSongAt(q.currentIndex);
+        }
+    });
 }
 
 function playSongAt(index){
@@ -368,8 +389,13 @@ function playSongAt(index){
         q.currentIndex=index;
         var song=q.songs[index];
         queueRef.set(q);
-        playerRef.set({videoId:song.id,title:song.title,artist:song.artist,currentTime:0,playing:true,by:userId,ts:Date.now()});
-    }).catch(function(e){});
+        playerRef.set({
+            videoId:song.id,title:song.title,artist:song.artist,
+            currentTime:0,
+            playing:true,
+            by:userId,ts:firebase.database.ServerValue.TIMESTAMP
+        });
+    });
 }
 
 function playNextSong(){
@@ -380,8 +406,12 @@ function playNextSong(){
         q.currentIndex=(q.currentIndex+1)%q.songs.length;
         queueRef.set(q);
         var song=q.songs[q.currentIndex];
-        playerRef.set({videoId:song.id,title:song.title,artist:song.artist,currentTime:0,playing:true,by:userId,ts:Date.now()});
-    }).catch(function(e){});
+        playerRef.set({
+            videoId:song.id,title:song.title,artist:song.artist,
+            currentTime:0,playing:true,
+            by:userId,ts:firebase.database.ServerValue.TIMESTAMP
+        });
+    });
 }
 
 function playPrevSong(){
@@ -392,20 +422,27 @@ function playPrevSong(){
         q.currentIndex=(q.currentIndex-1+q.songs.length)%q.songs.length;
         queueRef.set(q);
         var song=q.songs[q.currentIndex];
-        playerRef.set({videoId:song.id,title:song.title,artist:song.artist,currentTime:0,playing:true,by:userId,ts:Date.now()});
-    }).catch(function(e){});
+        playerRef.set({
+            videoId:song.id,title:song.title,artist:song.artist,
+            currentTime:0,playing:true,
+            by:userId,ts:firebase.database.ServerValue.TIMESTAMP
+        });
+    });
 }
 
 if(isAdmin){
     syncInterval = setInterval(function(){
         if(!ytPlayer||!ytPlayer.getCurrentTime) return;
+        var data = {
+            videoId: null,
+            currentTime: ytGetCurrentTime(),
+            playing: ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1
+        };
         playerRef.once('value').then(function(snap){
-            var d = snap.val()||{};
-            d.currentTime = ytGetCurrentTime();
-            d.playing = ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1;
-            d.ts = Date.now();
-            return playerRef.set(d);
-        }).catch(function(e){});
+            var d = snap.val();
+            if(d){data.videoId = d.videoId; data.title = d.title; data.artist = d.artist; data.by = d.by; data.ts = d.ts;}
+            return playerRef.set(data);
+        });
     }, 3000);
 }
 
@@ -413,11 +450,18 @@ var lastSyncedVideo = null;
 playerRef.on('value',function(snap){
     var data=snap.val();
     if(!data||!data.videoId)return;
+
     document.getElementById('nowPlayingTitle').textContent=data.title+' - '+data.artist;
+
     var newVideo = data.videoId;
-    var shouldSync = (newVideo !== lastSyncedVideo);
-    if(shouldSync){
+    var shouldSync = false;
+
+    if(newVideo !== lastSyncedVideo){
         lastSyncedVideo = newVideo;
+        shouldSync = true;
+    }
+
+    if(shouldSync){
         var startTime = data.currentTime || 0;
         if(!isAdmin && data.ts){
             var elapsed = (Date.now() - data.ts) / 1000;
@@ -426,8 +470,12 @@ playerRef.on('value',function(snap){
         ytPlay(newVideo, startTime);
         console.log('[Sync] Playing:', newVideo, 'at', startTime.toFixed(1)+'s');
     } else if(!isAdmin && data.currentTime !== undefined){
-        var diff = Math.abs(ytGetCurrentTime() - data.currentTime);
-        if(diff > 3){ console.log('[Sync] Correcting:', diff.toFixed(1)+'s'); ytSeekTo(data.currentTime); }
+        var myTime = ytGetCurrentTime();
+        var diff = Math.abs(myTime - data.currentTime);
+        if(diff > 3){
+            console.log('[Sync] Correcting time diff:', diff.toFixed(1)+'s');
+            ytSeekTo(data.currentTime);
+        }
     }
 });
 
@@ -439,19 +487,36 @@ queueRef.on('value',function(snap){
 
 function renderQueueUI(songs,currentIndex){
     var container=document.getElementById('queueList');
-    document.getElementById('queueCount').textContent=songs.length+'/'+MAX_QUEUE+' bai';
-    if(songs.length===0){ container.innerHTML='<div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chua co bai nao</div>'; return; }
+    var countEl=document.getElementById('queueCount');
+    countEl.textContent=songs.length+'/'+MAX_QUEUE+' bai';
+    if(songs.length===0){
+        container.innerHTML='<div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chua co bai nao</div>';
+        return;
+    }
     var html='';
     for(var i=0;i<songs.length;i++){
-        var s=songs[i]; var active=i===currentIndex?' active':'';
-        html+='<div class="queue-item'+active+'" data-index="'+i+'"><img src="https://img.youtube.com/vi/'+s.id+'/mqdefault.jpg" alt="">'+
+        var s=songs[i];
+        var active=i===currentIndex?' active':'';
+        html+='<div class="queue-item'+active+'" data-index="'+i+'">'+
+            '<img src="https://img.youtube.com/vi/'+s.id+'/mqdefault.jpg" alt="">'+
             '<div class="queue-item-info"><div class="queue-item-title">'+s.title+'</div><div class="queue-item-artist">'+s.artist+'</div></div>'+
-            (isAdmin?'<button class="queue-item-remove" data-index="'+i+'"><i class="fas fa-times"></i></button>':'')+'</div>';
+            (isAdmin?'<button class="queue-item-remove" data-index="'+i+'"><i class="fas fa-times"></i></button>':'')+
+            '</div>';
     }
     container.innerHTML=html;
     if(isAdmin){
-        container.querySelectorAll('.queue-item').forEach(function(item){ item.addEventListener('click',function(e){ if(!e.target.closest('.queue-item-remove')) playSongAt(parseInt(item.dataset.index)); }); });
-        container.querySelectorAll('.queue-item-remove').forEach(function(btn){ btn.addEventListener('click',function(e){ e.stopPropagation(); removeSongFromQueue(parseInt(btn.dataset.index)); }); });
+        container.querySelectorAll('.queue-item').forEach(function(item){
+            item.addEventListener('click',function(e){
+                if(e.target.closest('.queue-item-remove'))return;
+                playSongAt(parseInt(item.dataset.index));
+            });
+        });
+        container.querySelectorAll('.queue-item-remove').forEach(function(btn){
+            btn.addEventListener('click',function(e){
+                e.stopPropagation();
+                removeSongFromQueue(parseInt(btn.dataset.index));
+            });
+        });
     }
 }
 
@@ -464,7 +529,7 @@ function removeSongFromQueue(index){
         if(q.currentIndex>=q.songs.length)q.currentIndex=q.songs.length-1;
         if(q.currentIndex<0)q.currentIndex=0;
         queueRef.set(q);
-    }).catch(function(e){});
+    });
 }
 
 function extractVideoId(url){
@@ -485,23 +550,27 @@ document.getElementById('playPauseBtn').addEventListener('click',function(){
     if(!isAdmin)return alert('Chi admin moi dieu khien duoc!');
     if(ytPlayer.getPlayerState() === 1){
         ytPause();
-        playerRef.once('value').then(function(snap){ var d=snap.val();if(d){d.playing=false;playerRef.set(d);} }).catch(function(e){});
+        playerRef.once('value').then(function(snap){
+            var d=snap.val();if(d){d.playing=false;playerRef.set(d);}
+        });
     } else {
         ytResume();
-        playerRef.once('value').then(function(snap){ var d=snap.val();if(d){d.playing=true;playerRef.set(d);} }).catch(function(e){});
+        playerRef.once('value').then(function(snap){
+            var d=snap.val();if(d){d.playing=true;playerRef.set(d);}
+        });
     }
 });
-document.getElementById('nextBtn').addEventListener('click',function(){if(isAdmin)playNextSong();});
-document.getElementById('prevBtn').addEventListener('click',function(){if(isAdmin)playPrevSong();});
-document.getElementById('repeatBtn').addEventListener('click',function(){if(isAdmin)this.classList.toggle('active');});
-document.getElementById('shuffleBtn').addEventListener('click',function(){if(isAdmin)this.classList.toggle('active');});
+document.getElementById('nextBtn').addEventListener('click',function(){if(!isAdmin)return;playNextSong();});
+document.getElementById('prevBtn').addEventListener('click',function(){if(!isAdmin)return;playPrevSong();});
+document.getElementById('repeatBtn').addEventListener('click',function(){if(!isAdmin)return;this.classList.toggle('active');});
+document.getElementById('shuffleBtn').addEventListener('click',function(){if(!isAdmin)return;this.classList.toggle('active');});
 
 var chatModal=document.getElementById('usernameModal');
 var chatInput=document.getElementById('chatInput');
 var chatSendBtn=document.getElementById('chatSendBtn');
 var chatMessages=document.getElementById('chatMessages');
 
-if(username){ chatModal.classList.remove('show'); enableChat(); document.getElementById('chatUserName').textContent=username; }
+if(username){chatModal.classList.remove('show');enableChat();document.getElementById('chatUserName').textContent=username;}
 
 document.getElementById('usernameSubmit').addEventListener('click',function(){
     var name=document.getElementById('usernameInput').value.trim();
@@ -511,7 +580,7 @@ document.getElementById('usernameSubmit').addEventListener('click',function(){
     chatModal.classList.remove('show');
     document.getElementById('chatUserName').textContent=username;
     enableChat();
-    try{ chatRef.push({username:'He thong',text:username+' da tham gia chat!',time:Date.now(),system:true}); }catch(e){}
+    chatRef.push({username:'He thong',text:username+' da tham gia chat!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
 });
 document.getElementById('usernameInput').addEventListener('keypress',function(e){if(e.key==='Enter')document.getElementById('usernameSubmit').click();});
 
@@ -520,49 +589,52 @@ document.getElementById('changeNameBtn').addEventListener('click',function(){
     if(!newName)return;
     newName=newName.trim();
     if(newName.length<2){alert('Ten phai co it nhat 2 ky tu!');return;}
-    var old=username; username=newName;
+    var old=username;username=newName;
     localStorage.setItem('musicblog_username',username);
     document.getElementById('chatUserName').textContent=username;
     setupPresence();
-    try{ chatRef.push({username:'He thong',text:old+' da doi ten thanh '+username,time:Date.now(),system:true}); }catch(e){}
+    chatRef.push({username:'He thong',text:old+' da doi ten thanh '+username,time:firebase.database.ServerValue.TIMESTAMP,system:true});
 });
 
 function enableChat(){
-    chatInput.disabled=false; chatSendBtn.disabled=false; chatInput.focus();
+    chatInput.disabled=false;chatSendBtn.disabled=false;chatInput.focus();
     setupPresence();
     updateAdminUI();
 }
 
 function setupPresence(){
     var myPres=presenceRef.child(userId);
-    myPres.set({name:username, time:Date.now()}).catch(function(e){console.warn('[Firebase] presence:',e.message);});
+    myPres.set({name:username,time:firebase.database.ServerValue.TIMESTAMP});
     myPres.onDisconnect().remove();
     presenceRef.on('value',function(snap){
         var users=snap.val()||{};
         var keys=Object.keys(users);
         document.getElementById('onlineCount').textContent=keys.length;
-        document.getElementById('onlineNames').textContent=keys.map(function(k){return users[k].name;}).join(', ')||'Khong ai';
+        var names=keys.map(function(k){return users[k].name;}).join(', ');
+        document.getElementById('onlineNames').textContent=names||'Khong ai';
     });
 }
 
 function sendMessage(){
     var text=chatInput.value.trim();
     if(!text||!username)return;
+
     if(text.toLowerCase()==='admin'){
-        if(isAdmin){ try{chatRef.push({username:'He thong',text:'Ban da la admin roi!',time:Date.now(),system:true});}catch(e){} }
+        if(isAdmin){chatRef.push({username:'He thong',text:'Ban da la admin roi!',time:firebase.database.ServerValue.TIMESTAMP,system:true});}
         else{
             var pass=prompt('Nhap mat khau admin:');
             if(pass===ADMIN_SECRET){
-                isAdmin=true; localStorage.setItem('musicblog_admin','true'); updateAdminUI();
-                try{chatRef.push({username:'He thong',text:username+' da tro thanh ADMIN!',time:Date.now(),system:true});}catch(e){}
+                isAdmin=true;localStorage.setItem('musicblog_admin','true');
+                updateAdminUI();
+                chatRef.push({username:'He thong',text:username+' da tro thanh ADMIN!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
             } else if(pass!==null){
-                try{chatRef.push({username:'He thong',text:'Sai mat khau admin!',time:Date.now(),system:true});}catch(e){}
+                chatRef.push({username:'He thong',text:'Sai mat khau admin!',time:firebase.database.ServerValue.TIMESTAMP,system:true});
             }
         }
-        chatInput.value=''; return;
+        chatInput.value='';return;
     }
-    try{ chatRef.push({username:username,color:userColor,text:text,time:Date.now(),userId:userId}); }catch(e){}
-    chatInput.value=''; chatInput.focus();
+    chatRef.push({username:username,color:userColor,text:text,time:firebase.database.ServerValue.TIMESTAMP,userId:userId});
+    chatInput.value='';chatInput.focus();
 }
 
 chatSendBtn.addEventListener('click',sendMessage);
@@ -586,7 +658,7 @@ function escapeHtml(s){var d=document.createElement('div');d.textContent=s;retur
 
 renderSongGrid(allSongs,'allSongsGrid');
 updateAdminUI();
-setTimeout(function(){ document.getElementById('setupBanner').classList.add('hidden'); }, 10000);
+document.getElementById('setupBanner').classList.add('hidden');
 </script>
 </body>
 </html>
