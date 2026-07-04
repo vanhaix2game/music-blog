@@ -9,116 +9,115 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; color: #333; min-height: 100vh; background: url('https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1920&q=80') no-repeat center center fixed; background-size: cover; position: relative; }
-        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.92); z-index: -1; }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;color:#333;min-height:100vh;background:url('https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1920&q=80') no-repeat center center fixed;background-size:cover;position:relative}
+        body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.92);z-index:-1}
+        header{background:rgba(255,255,255,0.98);backdrop-filter:blur(15px);position:sticky;top:0;z-index:1000;box-shadow:0 2px 20px rgba(0,0,0,0.08)}
+        nav{max-width:1400px;margin:0 auto;padding:0.8rem 2rem;display:flex;justify-content:space-between;align-items:center}
+        .logo{display:flex;align-items:center;gap:0.5rem}
+        .logo i{font-size:1.8rem;color:#e94560}
+        .logo a{font-size:1.4rem;font-weight:700;color:#e94560;text-decoration:none}
+        .nav-links{display:flex;list-style:none;gap:1rem;align-items:center}
+        .nav-links a{color:#666;text-decoration:none;font-weight:500;padding:0.5rem 1rem;border-radius:20px;transition:all 0.3s;font-size:0.9rem}
+        .nav-links a:hover,.nav-links a.active{color:#e94560;background:rgba(233,69,96,0.08)}
+        .conn-badge{font-size:0.7rem;padding:3px 10px;border-radius:12px;font-weight:600}
+        .conn-ok{background:#d4edda;color:#155724}
+        .conn-err{background:#f8d7da;color:#721c24}
 
-        header { background: rgba(255,255,255,0.98); backdrop-filter: blur(15px); position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 20px rgba(0,0,0,0.08); }
-        nav { max-width: 1400px; margin: 0 auto; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-        .logo { display: flex; align-items: center; gap: 0.5rem; }
-        .logo i { font-size: 1.8rem; color: #e94560; }
-        .logo a { font-size: 1.4rem; font-weight: 700; color: #e94560; text-decoration: none; }
-        .nav-links { display: flex; list-style: none; gap: 1.5rem; }
-        .nav-links a { color: #666; text-decoration: none; font-weight: 500; padding: 0.5rem 1rem; border-radius: 20px; transition: all 0.3s; }
-        .nav-links a:hover, .nav-links a.active { color: #e94560; background: rgba(233,69,96,0.08); }
+        .setup-banner{background:linear-gradient(135deg,#fff3cd,#ffeeba);border:2px solid #ffc107;border-radius:12px;padding:1rem 1.5rem;margin:1rem 2rem;max-width:1400px;margin-left:auto;margin-right:auto}
+        .setup-banner h3{color:#856404;font-size:0.95rem;margin-bottom:0.5rem}
+        .setup-banner p{color:#856404;font-size:0.8rem;line-height:1.6}
+        .setup-banner code{background:#fff;padding:2px 6px;border-radius:4px;font-size:0.75rem;border:1px solid #ddd}
+        .setup-banner.hidden{display:none}
 
-        .main-layout { display: flex; max-width: 1400px; margin: 0 auto; gap: 1.5rem; padding: 1rem 2rem; min-height: calc(100vh - 70px); }
-        .left-panel { flex: 1; min-width: 0; }
-        .right-panel { width: 340px; flex-shrink: 0; }
+        .main-layout{display:flex;max-width:1400px;margin:0 auto;gap:1.5rem;padding:1rem 2rem;min-height:calc(100vh - 70px)}
+        .left-panel{flex:1;min-width:0}
+        .right-panel{width:340px;flex-shrink:0}
 
-        .search-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
-        .search-bar input { flex: 1; padding: 0.8rem 1.2rem; border: 2px solid #eee; border-radius: 12px; font-size: 1rem; transition: border 0.3s; }
-        .search-bar input:focus { outline: none; border-color: #e94560; }
-        .search-bar button { padding: 0.8rem 1.5rem; background: linear-gradient(135deg, #e94560, #d63851); border: none; border-radius: 12px; color: #fff; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
-        .search-bar button:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(233,69,96,0.3); }
+        .search-bar{display:flex;gap:0.5rem;margin-bottom:1rem}
+        .search-bar input{flex:1;padding:0.8rem 1.2rem;border:2px solid #eee;border-radius:12px;font-size:1rem;transition:border 0.3s}
+        .search-bar input:focus{outline:none;border-color:#e94560}
+        .search-bar button{padding:0.8rem 1.5rem;background:linear-gradient(135deg,#e94560,#d63851);border:none;border-radius:12px;color:#fff;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:0.5rem}
+        .search-bar button:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(233,69,96,0.3)}
 
-        .player-container { background: #fff; border-radius: 16px; padding: 1.2rem; box-shadow: 0 4px 24px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
-        .video-wrapper { position: relative; padding-bottom: 56.25%; border-radius: 12px; overflow: hidden; background: #000; }
-        .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .player-container{background:#fff;border-radius:16px;padding:1.2rem;box-shadow:0 4px 24px rgba(0,0,0,0.06);margin-bottom:1rem}
+        .video-wrapper{position:relative;padding-bottom:56.25%;border-radius:12px;overflow:hidden;background:#000}
+        .video-wrapper iframe{position:absolute;top:0;left:0;width:100%;height:100%}
+        .player-controls{display:flex;align-items:center;justify-content:center;gap:0.8rem;padding:1rem 0}
+        .ctrl-btn{width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;font-size:1rem;background:#f5f5f5;color:#555}
+        .ctrl-btn:hover{background:#e94560;color:#fff;transform:scale(1.08)}
+        .ctrl-btn.play-btn{width:52px;height:52px;background:linear-gradient(135deg,#e94560,#d63851);color:#fff;font-size:1.2rem}
+        .ctrl-btn.active{background:#e94560;color:#fff}
+        .now-playing{text-align:center;padding:0.3rem 0 0.5rem}
+        .now-playing small{color:#999}
+        .now-playing h4{color:#333;font-size:0.95rem;margin-top:0.2rem}
 
-        .player-controls { display: flex; align-items: center; justify-content: center; gap: 0.8rem; padding: 1rem 0; }
-        .ctrl-btn { width: 42px; height: 42px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 1rem; background: #f5f5f5; color: #555; }
-        .ctrl-btn:hover { background: #e94560; color: #fff; transform: scale(1.08); }
-        .ctrl-btn.play-btn { width: 52px; height: 52px; background: linear-gradient(135deg, #e94560, #d63851); color: #fff; font-size: 1.2rem; }
-        .ctrl-btn.active { background: #e94560; color: #fff; }
-        .now-playing { text-align: center; padding: 0.3rem 0 0.5rem; }
-        .now-playing small { color: #999; }
-        .now-playing h4 { color: #333; font-size: 0.95rem; margin-top: 0.2rem; }
+        .tabs{display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap}
+        .tab-btn{padding:0.5rem 1.2rem;background:#fff;border:2px solid #e94560;border-radius:25px;color:#e94560;cursor:pointer;font-weight:500;font-size:0.85rem;transition:all 0.3s}
+        .tab-btn.active{background:#e94560;color:#fff}
 
-        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
-        .tab-btn { padding: 0.5rem 1.2rem; background: #fff; border: 2px solid #e94560; border-radius: 25px; color: #e94560; cursor: pointer; font-weight: 500; font-size: 0.85rem; transition: all 0.3s; }
-        .tab-btn.active { background: #e94560; color: #fff; }
+        .queue-section{background:#fff;border-radius:12px;padding:1rem;box-shadow:0 2px 12px rgba(0,0,0,0.04);margin-bottom:1rem}
+        .queue-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem}
+        .queue-header h3{font-size:1rem;color:#333}
+        .queue-list{max-height:250px;overflow-y:auto}
+        .queue-item{display:flex;align-items:center;gap:0.8rem;padding:0.5rem;border-radius:8px;cursor:pointer;transition:background 0.2s}
+        .queue-item:hover{background:#f8f8f8}
+        .queue-item.active{background:#fff0f2;border-left:3px solid #e94560}
+        .queue-item img{width:42px;height:42px;border-radius:6px;object-fit:cover}
+        .queue-item-info{flex:1;min-width:0}
+        .queue-item-title{font-size:0.8rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .queue-item-artist{font-size:0.7rem;color:#999}
+        .queue-item-remove{background:none;border:none;color:#ccc;cursor:pointer;font-size:0.85rem}
+        .queue-item-remove:hover{color:#e94560}
+        .queue-empty{text-align:center;padding:1.5rem;color:#ccc;font-size:0.85rem}
 
-        .queue-section { background: #fff; border-radius: 12px; padding: 1rem; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
-        .queue-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
-        .queue-header h3 { font-size: 1rem; color: #333; }
-        .clear-queue-btn { padding: 0.3rem 0.8rem; background: #ff4757; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 0.8rem; }
-        .queue-list { max-height: 300px; overflow-y: auto; }
-        .queue-item { display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
-        .queue-item:hover { background: #f8f8f8; }
-        .queue-item.active { background: #fff0f2; border-left: 3px solid #e94560; }
-        .queue-item img { width: 45px; height: 45px; border-radius: 6px; object-fit: cover; }
-        .queue-item-info { flex: 1; min-width: 0; }
-        .queue-item-title { font-size: 0.85rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .queue-item-artist { font-size: 0.75rem; color: #999; }
-        .queue-item-remove { background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.9rem; }
-        .queue-item-remove:hover { color: #e94560; }
-        .queue-empty { text-align: center; padding: 2rem; color: #ccc; }
+        .playlist-section{background:#fff;border-radius:12px;padding:1rem;box-shadow:0 2px 12px rgba(0,0,0,0.04);margin-top:0.5rem}
+        .song-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.8rem}
+        .song-card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;transition:all 0.3s;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+        .song-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,0.1)}
+        .song-card img{width:100%;aspect-ratio:1;object-fit:cover}
+        .song-card-info{padding:0.6rem}
+        .song-card-title{font-size:0.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .song-card-artist{font-size:0.68rem;color:#999;margin-top:0.2rem}
 
-        .playlist-section { background: #fff; border-radius: 12px; padding: 1rem; box-shadow: 0 2px 12px rgba(0,0,0,0.04); margin-top: 1rem; }
-        .song-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.8rem; }
-        .song-card { background: #fff; border-radius: 10px; overflow: hidden; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .song-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
-        .song-card img { width: 100%; aspect-ratio: 1; object-fit: cover; }
-        .song-card-info { padding: 0.6rem; }
-        .song-card-title { font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .song-card-artist { font-size: 0.7rem; color: #999; margin-top: 0.2rem; }
+        .chat-panel{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.06);display:flex;flex-direction:column;height:calc(100vh - 100px);position:sticky;top:80px}
+        .chat-header{padding:1rem;border-bottom:1px solid #eee;display:flex;align-items:center;gap:0.5rem}
+        .chat-header i{color:#e94560;font-size:1.1rem}
+        .chat-header h3{font-size:0.9rem;color:#333;flex:1}
+        .online-count{font-size:0.7rem;color:#27ae60;display:flex;align-items:center;gap:0.3rem}
+        .online-dot{width:7px;height:7px;background:#27ae60;border-radius:50%;display:inline-block}
+        .chat-online-list{padding:0.4rem 1rem;font-size:0.7rem;color:#999;border-bottom:1px solid #f0f0f0;min-height:1.5rem}
+        .chat-messages{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:0.6rem}
+        .chat-msg{max-width:85%}
+        .chat-msg.self{align-self:flex-end}
+        .chat-msg.other{align-self:flex-start}
+        .chat-msg.system{align-self:center}
+        .chat-msg-author{font-size:0.65rem;font-weight:600;margin-bottom:0.15rem}
+        .chat-msg.self .chat-msg-author{color:#e94560;text-align:right}
+        .chat-msg.other .chat-msg-author{color:#3498db}
+        .chat-msg.system .chat-msg-author{color:#999;font-style:italic;font-weight:400}
+        .chat-msg-bubble{padding:0.45rem 0.75rem;border-radius:12px;font-size:0.82rem;line-height:1.4;word-wrap:break-word}
+        .chat-msg.self .chat-msg-bubble{background:linear-gradient(135deg,#e94560,#d63851);color:#fff;border-bottom-right-radius:4px}
+        .chat-msg.other .chat-msg-bubble{background:#f0f0f0;color:#333;border-bottom-left-radius:4px}
+        .chat-msg.system .chat-msg-bubble{background:none;color:#bbb;font-size:0.72rem;padding:0.2rem}
+        .chat-msg-time{font-size:0.55rem;color:#bbb;margin-top:0.15rem}
+        .chat-msg.self .chat-msg-time{text-align:right}
+        .chat-input-area{padding:0.8rem;border-top:1px solid #eee;display:flex;gap:0.5rem}
+        .chat-input-area input{flex:1;padding:0.6rem 1rem;border:2px solid #eee;border-radius:20px;font-size:0.85rem}
+        .chat-input-area input:focus{outline:none;border-color:#e94560}
+        .chat-send-btn{width:38px;height:38px;border-radius:50%;border:none;background:linear-gradient(135deg,#e94560,#d63851);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
-        /* CHAT PANEL */
-        .chat-panel { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); display: flex; flex-direction: column; height: calc(100vh - 100px); position: sticky; top: 80px; }
-        .chat-header { padding: 1rem; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 0.5rem; }
-        .chat-header i { color: #e94560; font-size: 1.1rem; }
-        .chat-header h3 { font-size: 0.95rem; color: #333; flex: 1; }
-        .online-count { font-size: 0.75rem; color: #27ae60; display: flex; align-items: center; gap: 0.3rem; }
-        .online-dot { width: 7px; height: 7px; background: #27ae60; border-radius: 50%; display: inline-block; }
+        .username-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center}
+        .username-modal.show{display:flex}
+        .username-box{background:#fff;padding:2rem;border-radius:16px;text-align:center;width:350px;box-shadow:0 10px 40px rgba(0,0,0,0.2)}
+        .username-box h2{color:#e94560;margin-bottom:0.5rem}
+        .username-box p{color:#999;margin-bottom:1rem;font-size:0.85rem}
+        .username-box input{width:100%;padding:0.8rem;border:2px solid #eee;border-radius:10px;font-size:1rem;margin-bottom:1rem;text-align:center}
+        .username-box input:focus{outline:none;border-color:#e94560}
+        .username-box button{width:100%;padding:0.8rem;background:linear-gradient(135deg,#e94560,#d63851);border:none;border-radius:10px;color:#fff;font-size:1rem;font-weight:600;cursor:pointer}
 
-        .chat-messages { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
-        .chat-msg { max-width: 85%; }
-        .chat-msg.self { align-self: flex-end; }
-        .chat-msg.other { align-self: flex-start; }
-        .chat-msg.system { align-self: center; }
-        .chat-msg-author { font-size: 0.7rem; font-weight: 600; margin-bottom: 0.2rem; }
-        .chat-msg.self .chat-msg-author { color: #e94560; text-align: right; }
-        .chat-msg.other .chat-msg-author { color: #3498db; }
-        .chat-msg.system .chat-msg-author { color: #999; font-style: italic; font-weight: 400; }
-        .chat-msg-bubble { padding: 0.5rem 0.8rem; border-radius: 12px; font-size: 0.85rem; line-height: 1.4; word-wrap: break-word; }
-        .chat-msg.self .chat-msg-bubble { background: linear-gradient(135deg, #e94560, #d63851); color: #fff; border-bottom-right-radius: 4px; }
-        .chat-msg.other .chat-msg-bubble { background: #f0f0f0; color: #333; border-bottom-left-radius: 4px; }
-        .chat-msg.system .chat-msg-bubble { background: none; color: #bbb; font-size: 0.75rem; padding: 0.2rem; }
-        .chat-msg-time { font-size: 0.6rem; color: #bbb; margin-top: 0.2rem; }
-        .chat-msg.self .chat-msg-time { text-align: right; }
-
-        .chat-input-area { padding: 0.8rem; border-top: 1px solid #eee; display: flex; gap: 0.5rem; }
-        .chat-input-area input { flex: 1; padding: 0.6rem 1rem; border: 2px solid #eee; border-radius: 20px; font-size: 0.85rem; }
-        .chat-input-area input:focus { outline: none; border-color: #e94560; }
-        .chat-send-btn { width: 38px; height: 38px; border-radius: 50%; border: none; background: linear-gradient(135deg, #e94560, #d63851); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
-        .username-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; }
-        .username-modal.show { display: flex; }
-        .username-box { background: #fff; padding: 2rem; border-radius: 16px; text-align: center; width: 350px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
-        .username-box h2 { color: #e94560; margin-bottom: 0.5rem; }
-        .username-box p { color: #999; margin-bottom: 1rem; font-size: 0.85rem; }
-        .username-box input { width: 100%; padding: 0.8rem; border: 2px solid #eee; border-radius: 10px; font-size: 1rem; margin-bottom: 1rem; text-align: center; }
-        .username-box input:focus { outline: none; border-color: #e94560; }
-        .username-box button { width: 100%; padding: 0.8rem; background: linear-gradient(135deg, #e94560, #d63851); border: none; border-radius: 10px; color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer; }
-
-        footer { background: rgba(255,255,255,0.95); padding: 2rem; text-align: center; color: #999; font-size: 0.8rem; margin-top: 2rem; }
-
-        @media (max-width: 900px) {
-            .main-layout { flex-direction: column; padding: 1rem; }
-            .right-panel { width: 100%; }
-            .chat-panel { height: 400px; position: static; }
-        }
+        footer{background:rgba(255,255,255,0.95);padding:2rem;text-align:center;color:#999;font-size:0.8rem;margin-top:2rem}
+        @media(max-width:900px){.main-layout{flex-direction:column;padding:1rem}.right-panel{width:100%}.chat-panel{height:400px;position:static}.setup-banner{margin:1rem}}
     </style>
 </head>
 <body>
@@ -126,10 +125,10 @@
 <div class="username-modal show" id="usernameModal">
     <div class="username-box">
         <i class="fas fa-user-circle" style="font-size:3rem;color:#e94560;margin-bottom:0.5rem"></i>
-        <h2>Chào mừng bạn!</h2>
-        <p>Nhập tên để bắt đầu chat và nghe nhạc</p>
-        <input type="text" id="usernameInput" placeholder="Nhập tên của bạn..." maxlength="20" autocomplete="off">
-        <button id="usernameSubmit">Bắt đầu</button>
+        <h2>Chao mung ban!</h2>
+        <p>Nhap ten de bat dau chat va nghe nhac</p>
+        <input type="text" id="usernameInput" placeholder="Nhap ten cua ban..." maxlength="20" autocomplete="off">
+        <button id="usernameSubmit">Bat dau</button>
     </div>
 </div>
 
@@ -137,17 +136,29 @@
     <nav>
         <div class="logo"><i class="fas fa-music"></i><a href="#">Music Blog</a></div>
         <ul class="nav-links">
-            <li><a href="#" class="active" id="navHome"><i class="fas fa-home"></i> Trang chủ</a></li>
-            <li><a href="#" id="navQueue"><i class="fas fa-list-ol"></i> Hàng chờ</a></li>
+            <li><a href="#" class="active"><i class="fas fa-home"></i> Trang chu</a></li>
+            <li><span class="conn-badge conn-err" id="connStatus"><i class="fas fa-circle"></i> Dang ket noi...</span></li>
         </ul>
     </nav>
 </header>
 
+<div class="setup-banner" id="setupBanner">
+    <h3><i class="fas fa-exclamation-triangle"></i> CANH BAO: Firebase Rules chua duoc setup!</h3>
+    <p>
+        <strong>Chat va dong bo nhac se KHONG hoat dong</strong> neu ban khong lam buoc nay:<br><br>
+        <strong>Buoc 1:</strong> Vao <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a> > Chon du an <code>planning-with-ai-142c8</code><br>
+        <strong>Buoc 2:</strong> Menu trai > <code>Realtime Database</code> > Nhan <code>Create Database</code> > Chon <code>Start in test mode</code> > <code>Enable</code><br>
+        <strong>Buoc 3:</strong> Nhan tab <code>Rules</code> (goc tren cung) > Xoa het, paste vao:<br>
+        <code>{ "rules": { ".read": true, ".write": true } }</code><br>
+        <strong>Buoc 4:</strong> Nhan <code>Publish</code> > Refresh lai trang nay
+    </p>
+</div>
+
 <div class="main-layout">
     <div class="left-panel">
         <div class="search-bar">
-            <input type="text" id="linkInput" placeholder="Dán link YouTube vào đây (vd: https://youtube.com/watch?v=xxx)..." autocomplete="off">
-            <button id="addLinkBtn"><i class="fas fa-plus"></i> Thêm</button>
+            <input type="text" id="linkInput" placeholder="Dan link YouTube vao day (vd: https://youtube.com/watch?v=xxx)..." autocomplete="off">
+            <button id="addLinkBtn"><i class="fas fa-plus"></i> Them</button>
         </div>
 
         <div class="player-container">
@@ -155,48 +166,51 @@
                 <iframe id="mainPlayer" src="https://www.youtube.com/embed/mw7Y0jQ8_BU?enablejsapi=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
             <div class="player-controls">
-                <button class="ctrl-btn" id="shuffleBtn" title="Trộn bài"><i class="fas fa-random"></i></button>
-                <button class="ctrl-btn" id="prevBtn" title="Bài trước"><i class="fas fa-backward"></i></button>
-                <button class="ctrl-btn play-btn" id="playPauseBtn" title="Phát/Tạm dừng"><i class="fas fa-play"></i></button>
-                <button class="ctrl-btn" id="nextBtn" title="Bài tiếp"><i class="fas fa-forward"></i></button>
-                <button class="ctrl-btn" id="repeatBtn" title="Lặp lại"><i class="fas fa-redo"></i></button>
+                <button class="ctrl-btn" id="shuffleBtn" title="Tron bai"><i class="fas fa-random"></i></button>
+                <button class="ctrl-btn" id="prevBtn" title="Bai truoc"><i class="fas fa-backward"></i></button>
+                <button class="ctrl-btn play-btn" id="playPauseBtn" title="Phat/Tam dung"><i class="fas fa-play"></i></button>
+                <button class="ctrl-btn" id="nextBtn" title="Bai tiep"><i class="fas fa-forward"></i></button>
+                <button class="ctrl-btn" id="repeatBtn" title="Lap lai"><i class="fas fa-redo"></i></button>
             </div>
             <div class="now-playing">
-                <small>Đang phát:</small>
-                <h4 id="nowPlayingTitle">Hai Phút Hơn - Pháo</h4>
+                <small>Dang phat:</small>
+                <h4 id="nowPlayingTitle">Chon bai de phat</h4>
             </div>
         </div>
 
         <div class="queue-section">
             <div class="queue-header">
-                <h3><i class="fas fa-list-ol" style="color:#e94560"></i> Hàng chờ phát nhạc</h3>
+                <h3><i class="fas fa-list-ol" style="color:#e94560"></i> Hang cho phat nhac</h3>
+                <span style="font-size:0.75rem;color:#999" id="queueCount">0 bai</span>
             </div>
-            <div class="queue-list" id="queueList"></div>
+            <div class="queue-list" id="queueList">
+                <div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chua co bai nao<br>Nhan vao bai hat de them vao hang cho</div>
+            </div>
         </div>
 
         <div class="tabs">
-            <button class="tab-btn active" data-category="nhacviet">🎵 Nhạc Việt</button>
-            <button class="tab-btn" data-category="nhacphim">🎬 Nhạc Phim</button>
+            <button class="tab-btn active" data-category="nhacviet">Nhac Viet</button>
+            <button class="tab-btn" data-category="nhacphim">Nhac Phim</button>
         </div>
 
         <div class="category active" id="nhacviet">
             <div class="playlist-section">
-                <h3 style="margin-bottom:0.8rem;font-size:1rem"><i class="fas fa-fire" style="color:#e94560"></i> Hót Tháng 7</h3>
+                <h3 style="margin-bottom:0.8rem;font-size:0.95rem"><i class="fas fa-fire" style="color:#e94560"></i> Hot Thang 7</h3>
                 <div class="song-grid" id="hotGrid"></div>
             </div>
-            <div class="playlist-section" style="margin-top:1rem">
-                <h3 style="margin-bottom:0.8rem;font-size:1rem"><i class="fas fa-heart" style="color:#e94560"></i> Nhạc Trẻ</h3>
+            <div class="playlist-section" style="margin-top:0.8rem">
+                <h3 style="margin-bottom:0.8rem;font-size:0.95rem"><i class="fas fa-heart" style="color:#e94560"></i> Nhac Tre</h3>
                 <div class="song-grid" id="treGrid"></div>
             </div>
         </div>
 
         <div class="category" id="nhacphim">
             <div class="playlist-section">
-                <h3 style="margin-bottom:0.8rem;font-size:1rem"><i class="fas fa-star" style="color:#e94560"></i> Vườn Sao Băng</h3>
+                <h3 style="margin-bottom:0.8rem;font-size:0.95rem"><i class="fas fa-star" style="color:#e94560"></i> Vuon Sao Bang</h3>
                 <div class="song-grid" id="vsbGrid"></div>
             </div>
-            <div class="playlist-section" style="margin-top:1rem">
-                <h3 style="margin-bottom:0.8rem;font-size:1rem"><i class="fas fa-dragon" style="color:#e94560"></i> Tứ Thần Ký</h3>
+            <div class="playlist-section" style="margin-top:0.8rem">
+                <h3 style="margin-bottom:0.8rem;font-size:0.95rem"><i class="fas fa-dragon" style="color:#e94560"></i> Tu Than Ky</h3>
                 <div class="song-grid" id="ttkGrid"></div>
             </div>
         </div>
@@ -206,28 +220,25 @@
         <div class="chat-panel">
             <div class="chat-header">
                 <i class="fas fa-comments"></i>
-                <h3>Chat trực tuyến</h3>
+                <h3>Chat truc tuyen</h3>
                 <span class="online-count"><span class="online-dot"></span> <span id="onlineCount">0</span> online</span>
             </div>
-            <div style="padding:0.5rem 1rem;font-size:0.75rem;color:#999;border-bottom:1px solid #f0f0f0">
-                <i class="fas fa-users" style="color:#e94560"></i> <span id="onlineNames">Đang tải...</span>
-                <span id="djLabel" style="display:none;background:#e94560;color:#fff;padding:1px 6px;border-radius:8px;font-size:0.65rem;margin-left:4px">DJ</span>
-            </div>
+            <div class="chat-online-list" id="onlineNames">Dang tai...</div>
             <div class="chat-messages" id="chatMessages">
                 <div class="chat-msg system">
-                    <div class="chat-msg-author">Hệ thống</div>
-                    <div class="chat-msg-bubble">Chào mừng đến Music Blog! Nhập tên để chat.</div>
+                    <div class="chat-msg-author">He thong</div>
+                    <div class="chat-msg-bubble">Chao mung den Music Blog! Nhap ten de bat dau chat.</div>
                 </div>
             </div>
             <div class="chat-input-area">
-                <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." maxlength="500" disabled>
+                <input type="text" id="chatInput" placeholder="Nhap tin nhan..." maxlength="500" disabled>
                 <button class="chat-send-btn" id="chatSendBtn" disabled><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </div>
 </div>
 
-<footer><p>&copy; 2026 Music Blog. Tất cả quyền được bảo lưu.</p></footer>
+<footer><p>&copy; 2026 Music Blog. Tat ca quyen duoc bao luu.</p></footer>
 
 <script>
 // ====== FIREBASE ======
@@ -242,209 +253,231 @@ var firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 var db = firebase.database();
+
+// References - moi thu deu qua Firebase, khong co local state rieng
 var chatRef = db.ref('chat');
 var presenceRef = db.ref('presence');
-var playerRef = db.ref('player');
-var queueRef = db.ref('queue');
+var sharedPlayerRef = db.ref('sharedPlayer');
+var sharedQueueRef = db.ref('sharedQueue');
 
 // ====== STATE ======
 var username = localStorage.getItem('musicblog_username') || '';
-var userColor = localStorage.getItem('musicblog_color') || generateColor();
-var userId = localStorage.getItem('musicblog_uid') || ('u_' + Math.random().toString(36).substr(2,9));
-localStorage.setItem('musicblog_uid', userId);
-localStorage.setItem('musicblog_color', userColor);
-var isDJ = false;
-var isRemoteUpdate = false;
+var userColor = localStorage.getItem('musicblog_color') || (function(){
+    var c=['#e94560','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e74c3c'];
+    var pick=c[Math.floor(Math.random()*c.length)];
+    localStorage.setItem('musicblog_color',pick);
+    return pick;
+})();
+var userId = localStorage.getItem('musicblog_uid') || ('u_'+Math.random().toString(36).substr(2,9));
+localStorage.setItem('musicblog_uid',userId);
+var isSyncing = false;
 
-function generateColor() {
-    var c = ['#e94560','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e74c3c'];
-    return c[Math.floor(Math.random() * c.length)];
-}
+// ====== FIREBASE CONNECTION CHECK ======
+db.ref('.info/connected').on('value', function(snap){
+    var el = document.getElementById('connStatus');
+    var banner = document.getElementById('setupBanner');
+    if(snap.val()){
+        el.className='conn-badge conn-ok';
+        el.innerHTML='<i class="fas fa-check-circle'></i> Da ket noi';
+    } else {
+        el.className='conn-badge conn-err';
+        el.innerHTML='<i class="fas fa-times-circle'))"></i> Mat ket noi';
+    }
+});
+
+// Check if Firebase Rules are working - try to write a test
+sharedPlayerRef.child('_test').set(true).then(function(){
+    sharedPlayerRef.child('_test').remove();
+    document.getElementById('setupBanner').classList.add('hidden');
+}).catch(function(err){
+    console.error('Firebase Rules error:', err);
+    document.getElementById('setupBanner').classList.remove('hidden');
+});
 
 // ====== SONGS DATA ======
 var allSongs = {
     hot: [
-        {id:'mw7Y0jQ8_BU', title:'2 Phút Hơn (KAIZ Remix)', artist:'Pháo'},
-        {id:'Y29OrOVJUKs', title:'Em Gái Mưa', artist:'Hương Tràm'},
-        {id:'CtW5JvL2hbE', title:'Sóng Gió', artist:'Jack'},
-        {id:'qoSJYmhqdfI', title:'Nhất Nghệ Tinh', artist:'Luffy'},
-        {id:'F16h2-jCkvs', title:'Cắt Đôi Nỗi Sầu', artist:'Tăng Duy Tân'},
-        {id:'w85wHQ3dQbI', title:'Đám Cưới Nắng', artist:'Ricky Star'},
-        {id:'gMxWnJZ0v1s', title:'Có Chắc Yêu Không', artist:'Du Uyên'},
-        {id:'5Z2dV3VQxps', title:'Locket', artist:'Doan Thuy Trang'},
-        {id:'xJ5bN9bqK9o', title:'Thiên Lý Ơi', artist:'Masew ft. Orange'}
+        {id:'mw7Y0jQ8_BU',title:'2 Phut Hon (KAIZ Remix)',artist:'Phao'},
+        {id:'Y29OrOVJUKs',title:'Em Gai Mua',artist:'Huong Tram'},
+        {id:'CtW5JvL2hbE',title:'Song Gio',artist:'Jack'},
+        {id:'qoSJYmhqdfI',title:'Nhat Nghe Tinh',artist:'Luffy'},
+        {id:'F16h2-jCkvs',title:'Cat Doi Noi Sau',artist:'Tang Duy Tan'},
+        {id:'w85wHQ3dQbI',title:'Dam Cuoi Nang',artist:'Ricky Star'},
+        {id:'gMxWnJZ0v1s',title:'Co chac yeu khong',artist:'Du Uyen'},
+        {id:'5Z2dV3VQxps',title:'Locket',artist:'Doan Thuy Trang'},
+        {id:'xJ5bN9bqK9o',title:'Thien Ly Oi',artist:'Masew ft. Orange'}
     ],
     tre: [
-        {id:'w85wHQ3dQbI', title:'Đám Cưới Nắng', artist:'Ricky Star'},
-        {id:'gMxWnJZ0v1s', title:'Có Chắc Yêu Không', artist:'Du Uyên'},
-        {id:'5Z2dV3VQxps', title:'Locket', artist:'Doan Thuy Trang'},
-        {id:'xJ5bN9bqK9o', title:'Thiên Lý Ơi', artist:'Masew ft. Orange'},
-        {id:'pRpeEdMmmQ0', title:'Nơi Này Có Anh', artist:'Son Tung M-TP'},
-        {id:'09R8_2nJtjg', title:'Phía Sau Một Cô Gái', artist:'Soobin Hoàng Sơn'},
-        {id:'CevxZvSJLk8', title:'Buông', artist:'Trương Quỳnh Anh'}
+        {id:'w85wHQ3dQbI',title:'Dam Cuoi Nang',artist:'Ricky Star'},
+        {id:'gMxWnJZ0v1s',title:'Co chac yeu khong',artist:'Du Uyen'},
+        {id:'5Z2dV3VQxps',title:'Locket',artist:'Doan Thuy Trang'},
+        {id:'xJ5bN9bqK9o',title:'Thien Ly Oi',artist:'Masew ft. Orange'},
+        {id:'pRpeEdMmmQ0',title:'Noi Nay Co Anh',artist:'Son Tung M-TP'},
+        {id:'09R8_2nJtjg',title:'Phia Sau Mot Co Gai',artist:'Soobin Hoang Son'},
+        {id:'CevxZvSJLk8',title:'Buong',artist:'Truong Quynh Anh'}
     ],
     vsb: [
-        {id:'F2fCkZu3FYo', title:'流星雨 (Mưa Sao Băng)', artist:'F4'},
-        {id:'KQ7b0V1VjYg', title:'情非得已', artist:'Harlem Yu'},
-        {id:'x5H3rDw5sVQ', title:'第一时间', artist:'F4'},
-        {id:'y8JXoQ3wG9M', title:'你要的爱', artist:'Penny Tai'},
-        {id:'hT_nvWreIhg', title:'重温最美旧时光', artist:'F4'}
+        {id:'F2fCkZu3FYo',title:'Luu Chuy (Mua Sao Bang)',artist:'F4'},
+        {id:'KQ7b0V1VjYg',title:'Tinh Phai Duy Nhat',artist:'Harlem Yu'},
+        {id:'x5H3rDw5sVQ',title:'Thu Nhat Thoi Gian',artist:'F4'},
+        {id:'y8JXoQ3wG9M',title:'Nghi Dung Ai',artist:'Penny Tai'},
+        {id:'hT_nvWreIhg',title:'Trong Lai My Cuoi Thoi Quang',artist:'F4'}
     ],
     ttk: [
-        {id:'lp-EO5I60KA', title:'Tứ Thần Ký OST', artist:'Various'},
-        {id:'YQHsXMglC9A', title:'Phong Lạc', artist:'Lưu Vũ Ninh'},
-        {id:'RgKAFK5djSk', title:'Yêu Em Hơn Mỗi Ngày', artist:'Hoắc Tôn'},
-        {id:'fJ9rUzIMcZQ', title:'Vô Cương', artist:'Hứa Hạc Thần'},
-        {id:'pRpeEdMmmQ0', title:'Mộng Huyễn', artist:'Trương Bích Thần'}
+        {id:'lp-EO5I60KA',title:'Tu Than Ky OST',artist:'Various'},
+        {id:'YQHsXMglC9A',title:'Phong Lac',artist:'Luu Vu Ninh'},
+        {id:'RgKAFK5djSk',title:'Yeu Em Hon Moi Ngay',artist:'Hoac Ton'},
+        {id:'fJ9rUzIMcZQ',title:'Vo Cuong',artist:'Hua Hac Than'},
+        {id:'pRpeEdMmmQ0',title:'Mong Huyen',artist:'Truong Bich Than'}
     ]
 };
 
-// ====== QUEUE (sync qua Firebase) ======
-var queue = [];
-var currentQueueIndex = -1;
-
+// ====== RENDER SONGS GRID ======
 function renderSongGrid(songs, containerId) {
     var container = document.getElementById(containerId);
     var html = '';
     for (var i = 0; i < songs.length; i++) {
         var s = songs[i];
-        html += '<div class="song-card" data-id="' + s.id + '" data-title="' + s.title + '" data-artist="' + s.artist + '">' +
-            '<img src="https://img.youtube.com/vi/' + s.id + '/mqdefault.jpg" alt="' + s.title + '">' +
-            '<div class="song-card-info"><div class="song-card-title">' + s.title + '</div><div class="song-card-artist">' + s.artist + '</div></div></div>';
+        html += '<div class="song-card" data-id="'+s.id+'" data-title="'+s.title+'" data-artist="'+s.artist+'">' +
+            '<img src="https://img.youtube.com/vi/'+s.id+'/mqdefault.jpg" alt="'+s.title+'">' +
+            '<div class="song-card-info"><div class="song-card-title">'+s.title+'</div><div class="song-card-artist">'+s.artist+'</div></div></div>';
     }
     container.innerHTML = html;
-    container.querySelectorAll('.song-card').forEach(function(card) {
-        card.addEventListener('click', function() {
-            addToQueue({id: card.dataset.id, title: card.dataset.title, artist: card.dataset.artist});
+    container.querySelectorAll('.song-card').forEach(function(card){
+        card.addEventListener('click', function(){
+            addSongToSharedQueue({id:card.dataset.id, title:card.dataset.title, artist:card.dataset.artist});
         });
     });
 }
 
-function addToQueue(song) {
-    if (queue.find(function(q){return q.id===song.id;})) return;
-    queue.push(song);
-    if (currentQueueIndex === -1) currentQueueIndex = 0;
-    syncQueueToFirebase();
-    playFromQueue(currentQueueIndex);
-}
-
-function addMultipleToQueue(songs) {
-    songs.forEach(function(s) {
-        if (!queue.find(function(q){return q.id===s.id;})) queue.push(s);
+// ====== SHARED QUEUE (via Firebase) ======
+function addSongToSharedQueue(song) {
+    sharedQueueRef.transaction(function(currentQueue){
+        if(!currentQueue) currentQueue = {songs: [], currentIndex: 0};
+        var exists = currentQueue.songs.find(function(q){return q.id===song.id;});
+        if(!exists){
+            currentQueue.songs.push(song);
+        }
+        if(currentQueue.currentIndex < 0) currentQueue.currentIndex = 0;
+        return currentQueue;
+    }).then(function(result){
+        if(result.committed){
+            playSongAt(result.snapshot.val().currentIndex);
+        }
     });
-    if (currentQueueIndex === -1) currentQueueIndex = 0;
-    syncQueueToFirebase();
-    playFromQueue(currentQueueIndex);
 }
 
-function playFromQueue(index) {
-    if (index < 0 || index >= queue.length) return;
-    currentQueueIndex = index;
-    var song = queue[index];
-    document.getElementById('mainPlayer').src = 'https://www.youtube.com/embed/' + song.id + '?autoplay=1&enablejsapi=1';
-    document.getElementById('nowPlayingTitle').textContent = song.title + ' - ' + song.artist;
+function playSongAt(index) {
+    sharedQueueRef.transaction(function(q){
+        if(!q || !q.songs || index < 0 || index >= q.songs.length) return q;
+        q.currentIndex = index;
+        return q;
+    }).then(function(result){
+        if(result.committed){
+            var data = result.snapshot.val();
+            if(data && data.songs && data.songs[index]){
+                var song = data.songs[index];
+                sharedPlayerRef.set({
+                    videoId: song.id,
+                    title: song.title,
+                    artist: song.artist,
+                    by: userId,
+                    ts: firebase.database.ServerValue.TIMESTAMP
+                });
+            }
+        }
+    });
+}
+
+function playNextSong() {
+    sharedQueueRef.transaction(function(q){
+        if(!q || !q.songs || q.songs.length === 0) return q;
+        q.currentIndex = (q.currentIndex + 1) % q.songs.length;
+        return q;
+    }).then(function(result){
+        if(result.committed){
+            var data = result.snapshot.val();
+            playSongAt(data.currentIndex);
+        }
+    });
+}
+
+function playPrevSong() {
+    sharedQueueRef.transaction(function(q){
+        if(!q || !q.songs || q.songs.length === 0) return q;
+        q.currentIndex = (q.currentIndex - 1 + q.songs.length) % q.songs.length;
+        return q;
+    }).then(function(result){
+        if(result.committed){
+            var data = result.snapshot.val();
+            playSongAt(data.currentIndex);
+        }
+    });
+}
+
+function removeSongFromQueue(index) {
+    sharedQueueRef.transaction(function(q){
+        if(!q || !q.songs) return q;
+        q.songs.splice(index, 1);
+        if(q.currentIndex >= q.songs.length) q.currentIndex = q.songs.length - 1;
+        if(q.currentIndex < 0) q.currentIndex = 0;
+        return q;
+    });
+}
+
+// ====== LISTEN FOR SHARED PLAYER CHANGES ======
+sharedPlayerRef.on('value', function(snap){
+    var data = snap.val();
+    if(!data || !data.videoId) return;
+    var player = document.getElementById('mainPlayer');
+    var newSrc = 'https://www.youtube.com/embed/'+data.videoId+'?autoplay=1&enablejsapi=1';
+    if(player.src !== newSrc){
+        player.src = newSrc;
+        isSyncing = true;
+        setTimeout(function(){ isSyncing = false; }, 2000);
+    }
+    document.getElementById('nowPlayingTitle').textContent = data.title + ' - ' + data.artist;
     document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause"></i>';
-    renderQueue();
-    if (!isRemoteUpdate) syncPlayerToFirebase();
-}
+});
 
-function playNext() {
-    if (queue.length === 0) return;
-    var next = (currentQueueIndex + 1) % queue.length;
-    playFromQueue(next);
-}
+// ====== LISTEN FOR SHARED QUEUE CHANGES ======
+sharedQueueRef.on('value', function(snap){
+    var data = snap.val();
+    if(!data || !data.songs) return;
+    renderQueueUI(data.songs, data.currentIndex);
+});
 
-function playPrev() {
-    if (queue.length === 0) return;
-    var prev = (currentQueueIndex - 1 + queue.length) % queue.length;
-    playFromQueue(prev);
-}
-
-function removeFromQueue(index) {
-    queue.splice(index, 1);
-    if (currentQueueIndex >= queue.length) currentQueueIndex = queue.length - 1;
-    if (currentQueueIndex < 0) currentQueueIndex = -1;
-    syncQueueToFirebase();
-    if (currentQueueIndex >= 0) playFromQueue(currentQueueIndex);
-    else { renderQueue(); document.getElementById('nowPlayingTitle').textContent = 'Chọn bài để phát'; }
-}
-
-function renderQueue() {
+function renderQueueUI(songs, currentIndex) {
     var container = document.getElementById('queueList');
-    if (!container) return;
-    if (queue.length === 0) {
-        container.innerHTML = '<div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chưa có bài nào<br>Nhấn vào bài hát để thêm</div>';
+    var countEl = document.getElementById('queueCount');
+    countEl.textContent = songs.length + ' bai';
+    if(songs.length === 0){
+        container.innerHTML = '<div class="queue-empty"><i class="fas fa-music" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>Chua co bai nao<br>Nhan vao bai hat de them</div>';
         return;
     }
     var html = '';
-    for (var i = 0; i < queue.length; i++) {
-        var s = queue[i];
-        var active = i === currentQueueIndex ? ' active' : '';
-        html += '<div class="queue-item' + active + '" data-index="' + i + '">' +
-            '<img src="https://img.youtube.com/vi/' + s.id + '/mqdefault.jpg" alt="">' +
-            '<div class="queue-item-info"><div class="queue-item-title">' + s.title + '</div><div class="queue-item-artist">' + s.artist + '</div></div>' +
-            '<button class="queue-item-remove" data-index="' + i + '"><i class="fas fa-times"></i></button></div>';
+    for(var i=0; i<songs.length; i++){
+        var s = songs[i];
+        var active = i === currentIndex ? ' active' : '';
+        html += '<div class="queue-item'+active+'" data-index="'+i+'">' +
+            '<img src="https://img.youtube.com/vi/'+s.id+'/mqdefault.jpg" alt="">' +
+            '<div class="queue-item-info"><div class="queue-item-title">'+s.title+'</div><div class="queue-item-artist">'+s.artist+'</div></div>' +
+            '<button class="queue-item-remove" data-index="'+i+'"><i class="fas fa-times"></i></button></div>';
     }
     container.innerHTML = html;
-    container.querySelectorAll('.queue-item').forEach(function(item) {
-        item.addEventListener('click', function(e) {
-            if (e.target.closest('.queue-item-remove')) return;
-            playFromQueue(parseInt(item.dataset.index));
+    container.querySelectorAll('.queue-item').forEach(function(item){
+        item.addEventListener('click', function(e){
+            if(e.target.closest('.queue-item-remove')) return;
+            playSongAt(parseInt(item.dataset.index));
         });
     });
-    container.querySelectorAll('.queue-item-remove').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
+    container.querySelectorAll('.queue-item-remove').forEach(function(btn){
+        btn.addEventListener('click', function(e){
             e.stopPropagation();
-            removeFromQueue(parseInt(btn.dataset.index));
+            removeSongFromQueue(parseInt(btn.dataset.index));
         });
     });
 }
-
-// ====== FIREBASE SYNC ======
-function syncPlayerToFirebase() {
-    if (!isDJ) return;
-    playerRef.set({
-        videoId: queue[currentQueueIndex] ? queue[currentQueueIndex].id : null,
-        title: queue[currentQueueIndex] ? queue[currentQueueIndex].title : '',
-        artist: queue[currentQueueIndex] ? queue[currentQueueIndex].artist : '',
-        currentIndex: currentQueueIndex,
-        updatedAt: firebase.database.ServerValue.TIMESTAMP,
-        updatedBy: userId
-    });
-}
-
-function syncQueueToFirebase() {
-    if (!isDJ) return;
-    queueRef.set({
-        songs: queue,
-        currentIndex: currentQueueIndex
-    });
-}
-
-// Listen for player changes (from DJ)
-playerRef.on('value', function(snap) {
-    var data = snap.val();
-    if (!data || !data.videoId) return;
-    if (data.updatedBy === userId) return;
-    isRemoteUpdate = true;
-    var player = document.getElementById('mainPlayer');
-    player.src = 'https://www.youtube.com/embed/' + data.videoId + '?autoplay=1&enablejsapi=1';
-    document.getElementById('nowPlayingTitle').textContent = data.title + ' - ' + data.artist;
-    document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause"></i>';
-    currentQueueIndex = data.currentIndex || 0;
-    renderQueue();
-    isRemoteUpdate = false;
-});
-
-// Listen for queue changes (from DJ)
-queueRef.on('value', function(snap) {
-    var data = snap.val();
-    if (!data || !data.songs) return;
-    if (isDJ) return;
-    queue = data.songs;
-    currentQueueIndex = data.currentIndex || 0;
-    renderQueue();
-});
 
 // ====== YOUTUBE LINK ======
 function extractVideoId(url) {
@@ -452,48 +485,44 @@ function extractVideoId(url) {
     return match ? match[1] : null;
 }
 
-document.getElementById('addLinkBtn').addEventListener('click', function() {
+document.getElementById('addLinkBtn').addEventListener('click', function(){
     var url = document.getElementById('linkInput').value.trim();
-    if (!url) { alert('Vui lòng dán link YouTube!'); return; }
+    if(!url){alert('Vui long dan link YouTube!');return;}
     var videoId = extractVideoId(url);
-    if (!videoId) { alert('Link không hợp lệ!\nDạng: https://youtube.com/watch?v=xxx\nhoặc: https://youtu.be/xxx'); return; }
-    addToQueue({id: videoId, title: 'Bài từ link YouTube', artist: 'YouTube'});
+    if(!videoId){alert('Link khong hop le!\nDang: https://youtube.com/watch?v=xxx\nhoac: https://youtu.be/xxx');return;}
+    addSongToSharedQueue({id:videoId, title:'Bai tu link YouTube', artist:'YouTube'});
     document.getElementById('linkInput').value = '';
 });
-document.getElementById('linkInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') document.getElementById('addLinkBtn').click();
+document.getElementById('linkInput').addEventListener('keypress', function(e){
+    if(e.key==='Enter') document.getElementById('addLinkBtn').click();
 });
 
-// Tab switching
-document.querySelectorAll('.tab-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-        document.querySelectorAll('.category').forEach(function(c) { c.classList.remove('active'); });
+// ====== TAB SWITCHING ======
+document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+        document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+        document.querySelectorAll('.category').forEach(function(c){c.classList.remove('active')});
         btn.classList.add('active');
         document.getElementById(btn.dataset.category).classList.add('active');
     });
 });
 
-// Player controls
-document.getElementById('playPauseBtn').addEventListener('click', function() {
+// ====== PLAYER CONTROLS ======
+document.getElementById('playPauseBtn').addEventListener('click', function(){
     var iframe = document.getElementById('mainPlayer');
     var src = iframe.src;
-    if (src.includes('autoplay=1')) {
-        iframe.src = src.replace('autoplay=1', 'autoplay=0');
+    if(src.includes('autoplay=1')){
+        iframe.src = src.replace('autoplay=1','autoplay=0');
         this.innerHTML = '<i class="fas fa-play"></i>';
     } else {
-        iframe.src = src.replace('autoplay=0', 'autoplay=1');
+        iframe.src = src.replace('autoplay=0','autoplay=1');
         this.innerHTML = '<i class="fas fa-pause"></i>';
     }
 });
-document.getElementById('nextBtn').addEventListener('click', playNext);
-document.getElementById('prevBtn').addEventListener('click', playPrev);
-document.getElementById('repeatBtn').addEventListener('click', function() {
-    this.classList.toggle('active');
-});
-document.getElementById('shuffleBtn').addEventListener('click', function() {
-    this.classList.toggle('active');
-});
+document.getElementById('nextBtn').addEventListener('click', playNextSong);
+document.getElementById('prevBtn').addEventListener('click', playPrevSong);
+document.getElementById('repeatBtn').addEventListener('click', function(){this.classList.toggle('active')});
+document.getElementById('shuffleBtn').addEventListener('click', function(){this.classList.toggle('active')});
 
 // ====== CHAT & PRESENCE ======
 var chatModal = document.getElementById('usernameModal');
@@ -501,98 +530,74 @@ var chatInput = document.getElementById('chatInput');
 var chatSendBtn = document.getElementById('chatSendBtn');
 var chatMessages = document.getElementById('chatMessages');
 
-if (username) { chatModal.classList.remove('show'); enableChat(); }
+if(username){ chatModal.classList.remove('show'); enableChat(); }
 
-document.getElementById('usernameSubmit').addEventListener('click', function() {
+document.getElementById('usernameSubmit').addEventListener('click', function(){
     var name = document.getElementById('usernameInput').value.trim();
-    if (name.length < 2) { alert('Tên phải có ít nhất 2 ký tự!'); return; }
+    if(name.length<2){alert('Ten phai co it nhat 2 ky tu!');return;}
     username = name;
     localStorage.setItem('musicblog_username', username);
     chatModal.classList.remove('show');
     enableChat();
-    sendSystemMessage(username + ' đã tham gia chat!');
+    chatRef.push({username:'He thong', text:username+' da tham gia chat!', time:firebase.database.ServerValue.TIMESTAMP, system:true});
 });
-document.getElementById('usernameInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') document.getElementById('usernameSubmit').click();
+document.getElementById('usernameInput').addEventListener('keypress', function(e){
+    if(e.key==='Enter') document.getElementById('usernameSubmit').click();
 });
 
-function enableChat() {
+function enableChat(){
     chatInput.disabled = false;
     chatSendBtn.disabled = false;
     chatInput.focus();
     setupPresence();
 }
 
-function setupPresence() {
-    var myPresence = presenceRef.child(userId);
-    myPresence.set({name: username, time: firebase.database.ServerValue.TIMESTAMP});
-    myPresence.onDisconnect().remove();
+function setupPresence(){
+    var myPres = presenceRef.child(userId);
+    myPres.set({name: username, time: firebase.database.ServerValue.TIMESTAMP});
+    myPres.onDisconnect().remove();
 
-    presenceRef.on('value', function(snap) {
+    presenceRef.on('value', function(snap){
         var users = snap.val() || {};
         var keys = Object.keys(users);
-        var count = keys.length;
-        document.getElementById('onlineCount').textContent = count;
-
-        var names = keys.map(function(k){ return users[k].name; }).join(', ');
-        document.getElementById('onlineNames').textContent = names || 'Không ai';
-
-        isDJ = (keys.length > 0 && keys[0] === userId);
-        var djLabel = document.getElementById('djLabel');
-        if (djLabel) {
-            djLabel.style.display = isDJ ? 'inline-block' : 'none';
-        }
+        document.getElementById('onlineCount').textContent = keys.length;
+        var names = keys.map(function(k){return users[k].name;}).join(', ');
+        document.getElementById('onlineNames').textContent = names || 'Khong ai';
     });
 }
 
-function sendMessage() {
+function sendMessage(){
     var text = chatInput.value.trim();
-    if (!text || !username) return;
-    chatRef.push({
-        username: username, color: userColor, text: text,
-        time: firebase.database.ServerValue.TIMESTAMP, userId: userId
-    });
+    if(!text || !username) return;
+    chatRef.push({username:username, color:userColor, text:text, time:firebase.database.ServerValue.TIMESTAMP, userId:userId});
     chatInput.value = '';
     chatInput.focus();
 }
 
-function sendSystemMessage(text) {
-    chatRef.push({
-        username: 'Hệ thống', text: text,
-        time: firebase.database.ServerValue.TIMESTAMP, system: true
-    });
-}
-
 chatSendBtn.addEventListener('click', sendMessage);
-chatInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') sendMessage(); });
+chatInput.addEventListener('keypress', function(e){ if(e.key==='Enter') sendMessage(); });
 
-chatRef.orderByChild('time').limitToLast(50).on('child_added', function(snap) {
+chatRef.orderByChild('time').limitToLast(50).on('child_added', function(snap){
     var msg = snap.val();
     var div = document.createElement('div');
     var isSelf = msg.userId === userId;
     div.className = 'chat-msg' + (msg.system ? ' system' : (isSelf ? ' self' : ' other'));
     var t = new Date(msg.time);
-    var ts = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
-    div.innerHTML = '<div class="chat-msg-author" style="' + (!isSelf && !msg.system ? 'color:'+msg.color : '') + '">' + msg.username + '</div>' +
-        '<div class="chat-msg-bubble">' + escapeHtml(msg.text) + '</div>' +
-        '<div class="chat-msg-time">' + ts + '</div>';
+    var ts = t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0');
+    div.innerHTML = '<div class="chat-msg-author" style="'+(!isSelf && !msg.system ? 'color:'+msg.color : '')+'">'+msg.username+'</div>'+
+        '<div class="chat-msg-bubble">'+escapeHtml(msg.text)+'</div>'+
+        '<div class="chat-msg-time">'+ts+'</div>';
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 });
 
-function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
 // ====== INIT ======
 renderSongGrid(allSongs.hot, 'hotGrid');
 renderSongGrid(allSongs.tre, 'treGrid');
 renderSongGrid(allSongs.vsb, 'vsbGrid');
 renderSongGrid(allSongs.ttk, 'ttkGrid');
-renderQueue();
-addMultipleToQueue([
-    allSongs.hot[0], allSongs.hot[1], allSongs.hot[2],
-    allSongs.vsb[0], allSongs.vsb[1],
-    allSongs.ttk[0]
-]);
 </script>
 </body>
 </html>
