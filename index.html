@@ -393,7 +393,7 @@ function playSongAt(index){
             videoId:song.id,title:song.title,artist:song.artist,
             currentTime:0,
             playing:true,
-            by:userId,ts:firebase.database.ServerValue.TIMESTAMP
+            by:userId,ts:Date.now()
         });
     });
 }
@@ -409,7 +409,7 @@ function playNextSong(){
         playerRef.set({
             videoId:song.id,title:song.title,artist:song.artist,
             currentTime:0,playing:true,
-            by:userId,ts:firebase.database.ServerValue.TIMESTAMP
+            by:userId,ts:Date.now()
         });
     });
 }
@@ -425,7 +425,7 @@ function playPrevSong(){
         playerRef.set({
             videoId:song.id,title:song.title,artist:song.artist,
             currentTime:0,playing:true,
-            by:userId,ts:firebase.database.ServerValue.TIMESTAMP
+            by:userId,ts:Date.now()
         });
     });
 }
@@ -433,17 +433,15 @@ function playPrevSong(){
 if(isAdmin){
     syncInterval = setInterval(function(){
         if(!ytPlayer||!ytPlayer.getCurrentTime) return;
-        var data = {
-            videoId: null,
-            currentTime: ytGetCurrentTime(),
-            playing: ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1
-        };
         playerRef.once('value').then(function(snap){
             var d = snap.val();
-            if(d){data.videoId = d.videoId; data.title = d.title; data.artist = d.artist; data.by = d.by; data.ts = d.ts;}
-            return playerRef.set(data);
+            if(!d||!d.videoId) return;
+            d.currentTime = ytGetCurrentTime();
+            d.playing = ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1;
+            d.ts = Date.now();
+            playerRef.set(d);
         });
-    }, 3000);
+    }, 1000);
 }
 
 var lastSyncedVideo = null;
@@ -454,14 +452,9 @@ playerRef.on('value',function(snap){
     document.getElementById('nowPlayingTitle').textContent=data.title+' - '+data.artist;
 
     var newVideo = data.videoId;
-    var shouldSync = false;
 
     if(newVideo !== lastSyncedVideo){
         lastSyncedVideo = newVideo;
-        shouldSync = true;
-    }
-
-    if(shouldSync){
         var startTime = data.currentTime || 0;
         if(!isAdmin && data.ts){
             var elapsed = (Date.now() - data.ts) / 1000;
@@ -469,12 +462,15 @@ playerRef.on('value',function(snap){
         }
         ytPlay(newVideo, startTime);
         console.log('[Sync] Playing:', newVideo, 'at', startTime.toFixed(1)+'s');
-    } else if(!isAdmin && data.currentTime !== undefined){
+    } else if(!isAdmin && data.currentTime !== undefined && data.ts){
+        var adminTime = data.currentTime;
+        var elapsed = (Date.now() - data.ts) / 1000;
+        var expectedTime = Math.max(0, adminTime + elapsed);
         var myTime = ytGetCurrentTime();
-        var diff = Math.abs(myTime - data.currentTime);
-        if(diff > 3){
-            console.log('[Sync] Correcting time diff:', diff.toFixed(1)+'s');
-            ytSeekTo(data.currentTime);
+        var diff = Math.abs(myTime - expectedTime);
+        if(diff > 1.5){
+            console.log('[Sync] Correcting:', diff.toFixed(1)+'s');
+            ytSeekTo(expectedTime);
         }
     }
 });
