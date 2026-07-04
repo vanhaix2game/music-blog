@@ -335,76 +335,75 @@ function renderSongGrid(songs, containerId) {
 
 // ====== SHARED QUEUE (via Firebase) ======
 function addSongToSharedQueue(song) {
-    sharedQueueRef.transaction(function(currentQueue){
-        if(!currentQueue) currentQueue = {songs: [], currentIndex: 0};
-        var exists = currentQueue.songs.find(function(q){return q.id===song.id;});
+    sharedQueueRef.once('value').then(function(snap){
+        var q = snap.val() || {songs:[], currentIndex:0};
+        if(!q.songs) q.songs = [];
+        var exists = false;
+        for(var i=0;i<q.songs.length;i++){
+            if(q.songs[i].id === song.id){exists=true;break;}
+        }
         if(!exists){
-            currentQueue.songs.push(song);
+            q.songs.push(song);
         }
-        if(currentQueue.currentIndex < 0) currentQueue.currentIndex = 0;
-        return currentQueue;
-    }).then(function(result){
-        if(result.committed){
-            playSongAt(result.snapshot.val().currentIndex);
+        if(q.currentIndex < 0) q.currentIndex = 0;
+        return sharedQueueRef.set(q);
+    }).then(function(){
+        return sharedQueueRef.once('value');
+    }).then(function(snap){
+        var q = snap.val();
+        if(q && q.songs && q.currentIndex >= 0){
+            playSongAt(q.currentIndex);
         }
+    }).catch(function(err){
+        console.error('[Queue] Error:', err);
     });
 }
 
 function playSongAt(index) {
-    sharedQueueRef.transaction(function(q){
-        if(!q || !q.songs || index < 0 || index >= q.songs.length) return q;
+    sharedQueueRef.once('value').then(function(snap){
+        var q = snap.val();
+        if(!q || !q.songs || index < 0 || index >= q.songs.length) return;
         q.currentIndex = index;
-        return q;
-    }).then(function(result){
-        if(result.committed){
-            var data = result.snapshot.val();
-            if(data && data.songs && data.songs[index]){
-                var song = data.songs[index];
-                sharedPlayerRef.set({
-                    videoId: song.id,
-                    title: song.title,
-                    artist: song.artist,
-                    by: userId,
-                    ts: firebase.database.ServerValue.TIMESTAMP
-                });
-            }
-        }
+        var song = q.songs[index];
+        sharedQueueRef.set(q);
+        sharedPlayerRef.set({
+            videoId: song.id,
+            title: song.title,
+            artist: song.artist,
+            by: userId,
+            ts: firebase.database.ServerValue.TIMESTAMP
+        });
     });
 }
 
 function playNextSong() {
-    sharedQueueRef.transaction(function(q){
-        if(!q || !q.songs || q.songs.length === 0) return q;
+    sharedQueueRef.once('value').then(function(snap){
+        var q = snap.val();
+        if(!q || !q.songs || q.songs.length === 0) return;
         q.currentIndex = (q.currentIndex + 1) % q.songs.length;
-        return q;
-    }).then(function(result){
-        if(result.committed){
-            var data = result.snapshot.val();
-            playSongAt(data.currentIndex);
-        }
+        sharedQueueRef.set(q);
+        playSongAt(q.currentIndex);
     });
 }
 
 function playPrevSong() {
-    sharedQueueRef.transaction(function(q){
-        if(!q || !q.songs || q.songs.length === 0) return q;
+    sharedQueueRef.once('value').then(function(snap){
+        var q = snap.val();
+        if(!q || !q.songs || q.songs.length === 0) return;
         q.currentIndex = (q.currentIndex - 1 + q.songs.length) % q.songs.length;
-        return q;
-    }).then(function(result){
-        if(result.committed){
-            var data = result.snapshot.val();
-            playSongAt(data.currentIndex);
-        }
+        sharedQueueRef.set(q);
+        playSongAt(q.currentIndex);
     });
 }
 
 function removeSongFromQueue(index) {
-    sharedQueueRef.transaction(function(q){
-        if(!q || !q.songs) return q;
+    sharedQueueRef.once('value').then(function(snap){
+        var q = snap.val();
+        if(!q || !q.songs) return;
         q.songs.splice(index, 1);
         if(q.currentIndex >= q.songs.length) q.currentIndex = q.songs.length - 1;
         if(q.currentIndex < 0) q.currentIndex = 0;
-        return q;
+        sharedQueueRef.set(q);
     });
 }
 
