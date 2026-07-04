@@ -435,18 +435,19 @@ function playPrevSong(){
     });
 }
 
-var mySyncInterval = setInterval(function(){
-    if(!ytPlayer||!ytPlayer.getCurrentTime) return;
-    playerRef.once('value').then(function(snap){
-        var d = snap.val();
-        if(!d||!d.videoId) return;
-        if(d.by !== userId) return;
-        d.currentTime = ytGetCurrentTime();
-        d.playing = ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1;
-        d.ts = Date.now();
-        playerRef.set(d);
-    });
-}, 1000);
+if(isAdmin){
+    setInterval(function(){
+        if(!ytPlayer||!ytPlayer.getCurrentTime) return;
+        playerRef.once('value').then(function(snap){
+            var d = snap.val();
+            if(!d||!d.videoId) return;
+            d.currentTime = ytGetCurrentTime();
+            d.playing = ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1;
+            d.ts = Date.now();
+            playerRef.set(d);
+        });
+    }, 1000);
+}
 
 var lastSyncedVideo = null;
 playerRef.on('value',function(snap){
@@ -467,12 +468,11 @@ playerRef.on('value',function(snap){
         ytPlay(newVideo, startTime);
         console.log('[Sync] Playing:', newVideo, 'at', startTime.toFixed(1)+'s');
     } else if(!isAdmin && data.currentTime !== undefined && data.ts){
-        var adminTime = data.currentTime;
         var elapsed = (Date.now() - data.ts) / 1000;
-        var expectedTime = Math.max(0, adminTime + elapsed);
+        var expectedTime = Math.max(0, data.currentTime + elapsed);
         var myTime = ytGetCurrentTime();
         var diff = Math.abs(myTime - expectedTime);
-        if(diff > 1.5){
+        if(diff > 3){
             console.log('[Sync] Correcting:', diff.toFixed(1)+'s');
             ytSeekTo(expectedTime);
         }
