@@ -106,6 +106,11 @@
         .chat-input-area input{flex:1;padding:0.6rem 1rem;border:2px solid #eee;border-radius:20px;font-size:0.85rem}
         .chat-input-area input:focus{outline:none;border-color:#e94560}
         .chat-send-btn{width:38px;height:38px;border-radius:50%;border:none;background:linear-gradient(135deg,#e94560,#d63851);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .chat-user-bar{padding:0.5rem 1rem;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;background:#fafafa;border-radius:0 0 16px 16px}
+        .chat-user-name{font-size:0.8rem;font-weight:600;color:#e94560;display:flex;align-items:center;gap:0.4rem}
+        .chat-user-name::before{content:'';width:8px;height:8px;background:#27ae60;border-radius:50%;display:inline-block}
+        .chat-change-name-btn{background:none;border:1px solid #ddd;padding:0.3rem 0.7rem;border-radius:8px;font-size:0.7rem;color:#888;cursor:pointer;transition:all 0.2s}
+        .chat-change-name-btn:hover{border-color:#e94560;color:#e94560}
 
         .username-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center}
         .username-modal.show{display:flex}
@@ -233,6 +238,10 @@
             <div class="chat-input-area">
                 <input type="text" id="chatInput" placeholder="Nhap tin nhan..." maxlength="500" disabled>
                 <button class="chat-send-btn" id="chatSendBtn" disabled><i class="fas fa-paper-plane"></i></button>
+            </div>
+            <div class="chat-user-bar">
+                <span class="chat-user-name" id="chatUserName">Khach</span>
+                <button class="chat-change-name-btn" id="changeNameBtn"><i class="fas fa-pen"></i> Doi ten</button>
             </div>
         </div>
     </div>
@@ -543,7 +552,7 @@ var chatInput = document.getElementById('chatInput');
 var chatSendBtn = document.getElementById('chatSendBtn');
 var chatMessages = document.getElementById('chatMessages');
 
-if(username){ chatModal.classList.remove('show'); enableChat(); }
+if(username){ chatModal.classList.remove('show'); enableChat(); document.getElementById('chatUserName').textContent = username; }
 
 document.getElementById('usernameSubmit').addEventListener('click', function(){
     var name = document.getElementById('usernameInput').value.trim();
@@ -551,11 +560,26 @@ document.getElementById('usernameSubmit').addEventListener('click', function(){
     username = name;
     localStorage.setItem('musicblog_username', username);
     chatModal.classList.remove('show');
+    document.getElementById('chatUserName').textContent = username;
     enableChat();
     chatRef.push({username:'He thong', text:username+' da tham gia chat!', time:firebase.database.ServerValue.TIMESTAMP, system:true});
 });
 document.getElementById('usernameInput').addEventListener('keypress', function(e){
     if(e.key==='Enter') document.getElementById('usernameSubmit').click();
+});
+
+// Change name button
+document.getElementById('changeNameBtn').addEventListener('click', function(){
+    var newName = prompt('Nhap ten moi:', username);
+    if(!newName) return;
+    newName = newName.trim();
+    if(newName.length < 2){ alert('Ten phai co it nhat 2 ky tu!'); return; }
+    var oldName = username;
+    username = newName;
+    localStorage.setItem('musicblog_username', username);
+    document.getElementById('chatUserName').textContent = username;
+    setupPresence();
+    chatRef.push({username:'He thong', text:oldName+' da doi ten thanh '+username, time:firebase.database.ServerValue.TIMESTAMP, system:true});
 });
 
 function enableChat(){
