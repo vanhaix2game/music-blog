@@ -65,16 +65,6 @@
         .queue-item-remove:hover { color: #e94560; }
         .queue-empty { text-align: center; padding: 2rem; color: #ccc; }
 
-        .youtube-results { max-height: 350px; overflow-y: auto; }
-        .yt-item { display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 0.3rem; }
-        .yt-item:hover { background: #f0f0f0; }
-        .yt-item img { width: 80px; height: 60px; border-radius: 6px; object-fit: cover; }
-        .yt-item-info { flex: 1; }
-        .yt-item-title { font-size: 0.85rem; font-weight: 500; color: #333; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .yt-item-channel { font-size: 0.75rem; color: #999; }
-        .yt-item-add { padding: 0.4rem 0.8rem; background: #e94560; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 0.75rem; white-space: nowrap; }
-        .yt-item-add:hover { background: #d63851; }
-
         .playlist-section { background: #fff; border-radius: 12px; padding: 1rem; box-shadow: 0 2px 12px rgba(0,0,0,0.04); margin-top: 1rem; }
         .song-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.8rem; }
         .song-card { background: #fff; border-radius: 10px; overflow: hidden; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
@@ -156,8 +146,8 @@
 <div class="main-layout">
     <div class="left-panel">
         <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="Tìm bài hát trên YouTube..." autocomplete="off">
-            <button id="searchBtn"><i class="fas fa-search"></i> Tìm</button>
+            <input type="text" id="linkInput" placeholder="Dán link YouTube vào đây (vd: https://youtube.com/watch?v=xxx)..." autocomplete="off">
+            <button id="addLinkBtn"><i class="fas fa-plus"></i> Thêm</button>
         </div>
 
         <div class="player-container">
@@ -176,8 +166,6 @@
                 <h4 id="nowPlayingTitle">Hai Phút Hơn - Pháo</h4>
             </div>
         </div>
-
-        <div id="youtubeResults" class="youtube-results" style="display:none; background:#fff; border-radius:12px; padding:0.8rem; margin-bottom:1rem; box-shadow:0 2px 12px rgba(0,0,0,0.04);"></div>
 
         <div class="tabs">
             <button class="tab-btn active" data-category="nhacviet">🎵 Nhạc Việt</button>
@@ -406,42 +394,24 @@ function renderQueue() {
     });
 }
 
-// YouTube Search
-var ytApiKey = 'AIzaSyDemo_Thay_API_Key_Cua_Ban'; // THAY API KEY YOUTUBE CỦA BẠN
+// ====== YOUTUBE LINK ======
+function extractVideoId(url) {
+    var match = url.match(/(?:v=|youtu\.be\/|embed\/|\/v\/|\/e\/)([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : null;
+}
 
-document.getElementById('searchBtn').addEventListener('click', searchYouTube);
-document.getElementById('searchInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') searchYouTube();
+document.getElementById('addLinkBtn').addEventListener('click', function() {
+    var url = document.getElementById('linkInput').value.trim();
+    if (!url) { alert('Vui lòng dán link YouTube!'); return; }
+    var videoId = extractVideoId(url);
+    if (!videoId) { alert('Link YouTube không hợp lệ! Hãy dán link dạng:\n- https://youtube.com/watch?v=xxx\n- https://youtu.be/xxx'); return; }
+    addToQueue({id: videoId, title: 'Bài từ link YouTube', artist: 'YouTube'});
+    document.getElementById('linkInput').value = '';
 });
 
-function searchYouTube() {
-    var query = document.getElementById('searchInput').value.trim();
-    if (!query) return;
-    
-    var url = 'https://www.googleapis.com/youtube/v3/search?part=snippet&q=' + encodeURIComponent(query) + '&type=video&videoCategoryId=10&maxResults=10&key=' + ytApiKey;
-    
-    fetch(url)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (!data.items) { alert('Lỗi tìm kiếm. Kiểm tra API Key.'); return; }
-            var resultsDiv = document.getElementById('youtubeResults');
-            resultsDiv.style.display = 'block';
-            var html = '<h3 style="margin-bottom:0.5rem;font-size:0.9rem;color:#999">Kết quả tìm kiếm</h3>';
-            data.items.forEach(function(item) {
-                html += '<div class="yt-item" data-id="' + item.id.videoId + '" data-title="' + item.snippet.title.replace(/"/g, '&quot;') + '" data-channel="' + item.snippet.channelTitle + '">' +
-                    '<img src="' + item.snippet.thumbnails.medium.url + '" alt="">' +
-                    '<div class="yt-item-info"><div class="yt-item-title">' + item.snippet.title + '</div><div class="yt-item-channel">' + item.snippet.channelTitle + '</div></div>' +
-                    '<button class="yt-item-add"><i class="fas fa-plus"></i> Thêm</button></div>';
-            });
-            resultsDiv.innerHTML = html;
-            resultsDiv.querySelectorAll('.yt-item').forEach(function(item) {
-                item.addEventListener('click', function() {
-                    addToQueue({id: item.dataset.id, title: item.dataset.title, artist: item.dataset.channel});
-                });
-            });
-        })
-        .catch(function() { alert('Lỗi kết nối. Kiểm tra API Key YouTube.'); });
-}
+document.getElementById('linkInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') document.getElementById('addLinkBtn').click();
+});
 
 // Tab switching
 document.querySelectorAll('.tab-btn').forEach(function(btn) {
