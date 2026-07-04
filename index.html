@@ -220,9 +220,319 @@
         </div>
     </footer>
 
-    <!-- Load script.js first -->
-    <script src="script.js"></script>
-    <!-- YouTube IFrame API - must load after script.js defines onYouTubeIframeAPIReady -->
+    <!-- Playlist Data - Embedded directly -->
+    <script>
+    // Playlist Data - Using real YouTube video IDs
+    const playlists = {
+        vietnamese: [
+            { id: 'vWBIxXcEssI', title: 'Hai Phút Hơn', artist: 'Pháo', duration: '3:24', thumbnail: 'https://img.youtube.com/vi/vWBIxXcEssI/mqdefault.jpg' },
+            { id: 'kTJczYoc5Oo', title: 'Em Gái Mưa', artist: 'Hương Tràm', duration: '4:12', thumbnail: 'https://img.youtube.com/vi/kTJczYoc5Oo/mqdefault.jpg' },
+            { id: 'CtW5JvL2hbE', title: 'Sóng Gió', artist: 'Jack', duration: '3:45', thumbnail: 'https://img.youtube.com/vi/CtW5JvL2hbE/mqdefault.jpg' },
+            { id: 'qoSJYmhqdfI', title: 'Nhất Nghệ Tinh', artist: 'Luffy', duration: '3:18', thumbnail: 'https://img.youtube.com/vi/qoSJYmhqdfI/mqdefault.jpg' },
+            { id: 'F16h2-jCkvs', title: 'Cắt Đôi Nỗi Sầu', artist: 'Tăng Duy Tân', duration: '3:56', thumbnail: 'https://img.youtube.com/vi/F16h2-jCkvs/mqdefault.jpg' }
+        ],
+        english: [
+            { id: 'JGwWNGJdvx8', title: 'Shape of You', artist: 'Ed Sheeran', duration: '3:53', thumbnail: 'https://img.youtube.com/vi/JGwWNGJdvx8/mqdefault.jpg' },
+            { id: 'kJQP7kiw5Fk', title: 'Despacito', artist: 'Luis Fonsi', duration: '4:22', thumbnail: 'https://img.youtube.com/vi/kJQP7kiw5Fk/mqdefault.jpg' },
+            { id: '09R8_2nJtjg', title: 'Sugar', artist: 'Maroon 5', duration: '3:55', thumbnail: 'https://img.youtube.com/vi/09R8_2nJtjg/mqdefault.jpg' },
+            { id: 'fJ9rUzIMcZQ', title: 'Bohemian Rhapsody', artist: 'Queen', duration: '5:55', thumbnail: 'https://img.youtube.com/vi/fJ9rUzIMcZQ/mqdefault.jpg' },
+            { id: 'lp-EO5I60KA', title: 'Faded', artist: 'Alan Walker', duration: '3:32', thumbnail: 'https://img.youtube.com/vi/lp-EO5I60KA/mqdefault.jpg' }
+        ],
+        remix: [
+            { id: 'vWBIxXcEssI', title: 'Hai Phút Hơn (Remix)', artist: 'Pháo', duration: '3:45', thumbnail: 'https://img.youtube.com/vi/vWBIxXcEssI/mqdefault.jpg' },
+            { id: 'kJQP7kiw5Fk', title: 'Despacito (Remix)', artist: 'Luis Fonsi', duration: '4:45', thumbnail: 'https://img.youtube.com/vi/kJQP7kiw5Fk/mqdefault.jpg' },
+            { id: 'lp-EO5I60KA', title: 'Faded (Remix)', artist: 'Alan Walker', duration: '3:55', thumbnail: 'https://img.youtube.com/vi/lp-EO5I60KA/mqdefault.jpg' }
+        ]
+    };
+    </script>
+
+    <!-- Player Script -->
+    <script>
+    // Global State
+    let player;
+    let currentPlaylist = 'vietnamese';
+    let currentSongIndex = 0;
+    let isPlaying = false;
+    let playerReady = false;
+
+    // This function is called by YouTube IFrame API
+    function onYouTubeIframeAPIReady() {
+        console.log('YouTube IFrame API Ready');
+        player = new YT.Player('youtubePlayer', {
+            height: '100%',
+            width: '100%',
+            videoId: 'vWBIxXcEssI',
+            playerVars: {
+                'autoplay': 0,
+                'controls': 1,
+                'disablekb': 0,
+                'enablejsapi': 1,
+                'fs': 1,
+                'iv_load_policy': 3,
+                'modestbranding': 1,
+                'rel': 0,
+                'showinfo': 0
+            },
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange
+            }
+        });
+    }
+
+    function onPlayerReady(event) {
+        console.log('YouTube Player Ready');
+        playerReady = true;
+        renderPlaylist(currentPlaylist);
+        player.setVolume(70);
+    }
+
+    function onPlayerStateChange(event) {
+        console.log('Player State:', event.data);
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        
+        if (event.data === YT.PlayerState.PLAYING) {
+            isPlaying = true;
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            updateProgress();
+        } else if (event.data === YT.PlayerState.PAUSED) {
+            isPlaying = false;
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+        } else if (event.data === YT.PlayerState.ENDED) {
+            playNext();
+        }
+    }
+
+    function updateProgress() {
+        if (player && playerReady && typeof player.getDuration === 'function') {
+            const duration = player.getDuration();
+            const currentTime = player.getCurrentTime();
+            const progress = document.getElementById('progress');
+            const currentTimeEl = document.getElementById('currentTime');
+            const durationEl = document.getElementById('duration');
+            
+            if (duration > 0) {
+                const percent = (currentTime / duration) * 100;
+                progress.style.width = percent + '%';
+                currentTimeEl.textContent = formatTime(currentTime);
+                durationEl.textContent = formatTime(duration);
+            }
+            
+            if (isPlaying) {
+                requestAnimationFrame(updateProgress);
+            }
+        }
+    }
+
+    function formatTime(seconds) {
+        if (isNaN(seconds)) return '0:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return mins + ':' + secs.toString().padStart(2, '0');
+    }
+
+    function renderPlaylist(playlistName) {
+        const playlist = playlists[playlistName];
+        const container = document.getElementById(playlistName + 'List');
+        
+        if (!container || !playlist) return;
+        
+        container.innerHTML = playlist.map(function(song, index) {
+            var playingClass = (index === currentSongIndex && playlistName === currentPlaylist) ? ' playing' : '';
+            return '<div class="song-item' + playingClass + '" data-index="' + index + '" data-playlist="' + playlistName + '">' +
+                '<span class="song-number">' + (index + 1) + '</span>' +
+                '<img src="' + song.thumbnail + '" alt="' + song.title + '" class="song-thumbnail" loading="lazy">' +
+                '<div class="song-info">' +
+                    '<div class="song-title">' + song.title + '</div>' +
+                    '<div class="song-artist">' + song.artist + '</div>' +
+                '</div>' +
+                '<span class="song-duration">' + song.duration + '</span>' +
+                '<div class="song-actions">' +
+                    '<button class="play-btn-small" data-index="' + index + '" data-playlist="' + playlistName + '">' +
+                        '<i class="fas fa-play"></i>' +
+                    '</button>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+        
+        // Add click events
+        container.querySelectorAll('.song-item').forEach(function(item) {
+            item.addEventListener('click', function(e) {
+                if (!e.target.closest('.song-actions')) {
+                    var index = parseInt(item.dataset.index);
+                    var playlist = item.dataset.playlist;
+                    playSong(playlist, index);
+                }
+            });
+        });
+        
+        container.querySelectorAll('.play-btn-small').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var index = parseInt(btn.dataset.index);
+                var playlist = btn.dataset.playlist;
+                playSong(playlist, index);
+            });
+        });
+    }
+
+    function playSong(playlistName, index) {
+        if (!playerReady) {
+            console.log('Player not ready yet');
+            alert('Player đang tải, vui lòng thử lại sau!');
+            return;
+        }
+        
+        currentPlaylist = playlistName;
+        currentSongIndex = index;
+        var song = playlists[playlistName][index];
+        
+        console.log('Playing:', song.title);
+        
+        player.loadVideoById(song.id);
+        
+        // Update UI
+        document.getElementById('currentSongTitle').textContent = song.title + ' - ' + song.artist;
+        document.getElementById('controlSongTitle').textContent = song.title;
+        document.getElementById('controlArtist').textContent = song.artist;
+        
+        // Update playing state
+        document.querySelectorAll('.song-item').forEach(function(item) {
+            item.classList.remove('playing');
+        });
+        
+        var activeItem = document.querySelector('[data-playlist="' + playlistName + '"][data-index="' + index + '"]');
+        if (activeItem) {
+            activeItem.classList.add('playing');
+        }
+    }
+
+    function playNext() {
+        var playlist = playlists[currentPlaylist];
+        currentSongIndex = (currentSongIndex + 1) % playlist.length;
+        playSong(currentPlaylist, currentSongIndex);
+    }
+
+    function playPrev() {
+        var playlist = playlists[currentPlaylist];
+        currentSongIndex = (currentSongIndex - 1 + playlist.length) % playlist.length;
+        playSong(currentPlaylist, currentSongIndex);
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM Loaded');
+        
+        // Mobile Menu Toggle
+        var menuToggle = document.getElementById('menuToggle');
+        var navLinks = document.querySelector('.nav-links');
+        if (menuToggle) {
+            menuToggle.addEventListener('click', function() {
+                navLinks.classList.toggle('active');
+            });
+        }
+        
+        // Playlist Tabs
+        document.querySelectorAll('.tab-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+                document.querySelectorAll('.playlist').forEach(function(p) { p.classList.remove('active'); });
+                
+                btn.classList.add('active');
+                var tab = btn.dataset.tab;
+                document.getElementById(tab).classList.add('active');
+                renderPlaylist(tab);
+            });
+        });
+        
+        // Play All Button
+        document.querySelectorAll('.play-all-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var playlist = btn.dataset.playlist;
+                playSong(playlist, 0);
+            });
+        });
+        
+        // Player Controls
+        var playPauseBtn = document.getElementById('playPauseBtn');
+        var prevBtn = document.getElementById('prevBtn');
+        var nextBtn = document.getElementById('nextBtn');
+        var volumeSlider = document.getElementById('volumeSlider');
+        var progressBar = document.querySelector('.progress-bar');
+        
+        if (playPauseBtn) {
+            playPauseBtn.addEventListener('click', function() {
+                if (!playerReady) return;
+                if (isPlaying) {
+                    player.pauseVideo();
+                } else {
+                    player.playVideo();
+                }
+            });
+        }
+        
+        if (prevBtn) {
+            prevBtn.addEventListener('click', playPrev);
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', playNext);
+        }
+        
+        if (volumeSlider) {
+            volumeSlider.addEventListener('input', function(e) {
+                if (!playerReady) return;
+                player.setVolume(e.target.value);
+            });
+        }
+        
+        if (progressBar) {
+            progressBar.addEventListener('click', function(e) {
+                if (!playerReady) return;
+                var rect = progressBar.getBoundingClientRect();
+                var percent = (e.clientX - rect.left) / rect.width;
+                var duration = player.getDuration();
+                player.seekTo(percent * duration, true);
+            });
+        }
+        
+        // Search
+        var searchBtn = document.getElementById('searchBtn');
+        var searchInput = document.getElementById('searchInput');
+        
+        if (searchBtn) {
+            searchBtn.addEventListener('click', function() {
+                var query = searchInput.value.trim();
+                if (query) {
+                    for (var playlistName in playlists) {
+                        var songs = playlists[playlistName];
+                        for (var i = 0; i < songs.length; i++) {
+                            if (songs[i].title.toLowerCase().includes(query.toLowerCase()) || 
+                                songs[i].artist.toLowerCase().includes(query.toLowerCase())) {
+                                playSong(playlistName, i);
+                                return;
+                            }
+                        }
+                    }
+                    alert('Không tìm thấy bài hát!');
+                }
+            });
+        }
+        
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchBtn.click();
+                }
+            });
+        }
+        
+        // Initialize first playlist
+        renderPlaylist('vietnamese');
+    });
+    </script>
+
+    <!-- YouTube IFrame API - Load LAST -->
     <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
