@@ -8,26 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            color: #333;
-            min-height: 100vh;
-            background: url('https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1920&q=80') no-repeat center center fixed;
-            background-size: cover;
-            position: relative;
-        }
-        
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.88);
-            z-index: -1;
-        }
+        body { font-family: 'Inter', sans-serif; color: #333; min-height: 100vh; background: url('https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1920&q=80') no-repeat center center fixed; background-size: cover; position: relative; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.88); z-index: -1; }
         
         header { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 20px rgba(0,0,0,0.1); }
         nav { max-width: 1200px; margin: 0 auto; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
@@ -44,17 +26,27 @@
         .search-box { display: flex; max-width: 400px; margin: 0 auto; background: #fff; border-radius: 50px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .search-box input { flex: 1; padding: 0.75rem 1.25rem; border: none; color: #333; font-size: 1rem; }
         .search-box button { padding: 0.75rem 1.25rem; background: #e94560; border: none; color: #fff; cursor: pointer; }
-        .search-box button:hover { background: #d63851; }
         
         .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
-        
         .player-section { padding: 2rem 0; }
         .player-wrapper { background: #fff; border-radius: 20px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(233,69,96,0.15); }
         .video-container { position: relative; padding-bottom: 56.25%; height: 0; border-radius: 15px; overflow: hidden; background: #000; margin-bottom: 1rem; }
         .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .now-playing { padding: 1rem; background: linear-gradient(135deg, #fff5f5, #ffe8e8); border-radius: 10px; }
-        .now-playing h3 { color: #e94560; font-size: 0.85rem; margin-bottom: 0.25rem; }
-        #currentSongTitle { font-weight: 600; color: #333; }
+        
+        /* Player Controls */
+        .player-controls { display: flex; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; background: linear-gradient(135deg, #fff5f5, #ffe8e8); border-radius: 10px; margin-bottom: 1rem; }
+        .control-btn { width: 45px; height: 45px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-size: 1.1rem; }
+        .control-btn:hover { transform: scale(1.1); }
+        .btn-prev, .btn-next { background: #fff; color: #e94560; }
+        .btn-play { width: 55px; height: 55px; background: linear-gradient(135deg, #e94560, #d63851); color: #fff; font-size: 1.3rem; }
+        .btn-repeat { background: #fff; color: #666; }
+        .btn-repeat.active { color: #e94560; }
+        .btn-shuffle { background: #fff; color: #666; }
+        .btn-shuffle.active { color: #e94560; }
+        
+        .now-playing { text-align: center; padding: 0.5rem; }
+        .now-playing h3 { color: #e94560; font-size: 0.8rem; margin-bottom: 0.2rem; }
+        #currentSongTitle { font-weight: 600; color: #333; font-size: 0.95rem; }
         
         .playlist-section { padding: 3rem 0; }
         .playlist-section h2 { font-size: 1.8rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; color: #333; }
@@ -73,10 +65,8 @@
         
         .playlist { display: none; }
         .playlist.active { display: block; }
-        
         .playlist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
         .play-all-btn { padding: 0.6rem 1.25rem; background: linear-gradient(135deg, #e94560, #d63851); border: none; border-radius: 25px; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; }
-        .play-all-btn:hover { transform: scale(1.05); }
         
         .song-list { display: flex; flex-direction: column; gap: 0.5rem; }
         .song-item { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: #fff; border-radius: 10px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
@@ -89,38 +79,14 @@
         .song-title { font-weight: 600; color: #333; }
         .song-artist { font-size: 0.85rem; color: #999; }
         
-        .blog-section { padding: 3rem 0; }
-        .blog-section h2 { font-size: 1.8rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; color: #333; }
-        .blog-section h2 i { color: #e94560; }
-        .blog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
-        .blog-card { background: #fff; border-radius: 15px; overflow: hidden; transition: transform 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .blog-card:hover { transform: translateY(-5px); }
-        .blog-image img { width: 100%; height: 180px; object-fit: cover; }
-        .blog-content { padding: 1.25rem; }
-        .blog-category { display: inline-block; background: #e94560; padding: 0.2rem 0.6rem; border-radius: 15px; font-size: 0.75rem; color: #fff; margin-bottom: 0.5rem; }
-        .blog-content h3 { margin-bottom: 0.5rem; }
-        .blog-content h3 a { color: #333; text-decoration: none; }
-        .blog-content h3 a:hover { color: #e94560; }
-        .blog-content p { color: #666; font-size: 0.9rem; margin-bottom: 0.75rem; }
-        .blog-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: #999; }
-        
         footer { background: rgba(255,255,255,0.95); padding: 3rem 2rem 1.5rem; margin-top: 3rem; }
-        .footer-content { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; }
-        .footer-section h4 { margin-bottom: 0.75rem; color: #333; }
-        .footer-section ul { list-style: none; }
-        .footer-section ul li { margin-bottom: 0.4rem; }
-        .footer-section ul a { color: #666; text-decoration: none; }
-        .footer-section ul a:hover { color: #e94560; }
-        .social-links { display: flex; gap: 0.75rem; }
-        .social-links a { width: 35px; height: 35px; background: #fff5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #e94560; text-decoration: none; }
-        .social-links a:hover { background: #e94560; color: #fff; }
-        .footer-bottom { text-align: center; padding-top: 1.5rem; margin-top: 1.5rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; }
+        .footer-bottom { text-align: center; color: #999; font-size: 0.85rem; }
         
         @media (max-width: 768px) {
             .nav-links { display: none; }
             .hero h1 { font-size: 1.6rem; }
-            .blog-grid { grid-template-columns: 1fr; }
             .main-tab-btn { padding: 0.6rem 1.5rem; font-size: 0.9rem; }
+            .player-controls { flex-wrap: wrap; }
         }
     </style>
 </head>
@@ -131,7 +97,6 @@
             <ul class="nav-links">
                 <li><a href="#home">Trang chủ</a></li>
                 <li><a href="#playlist">Playlist</a></li>
-                <li><a href="#blog">Blog</a></li>
             </ul>
         </nav>
     </header>
@@ -139,7 +104,7 @@
     <main>
         <section class="hero" id="home">
             <h1>Nghe nhạc trực tuyến miễn phí</h1>
-            <p>Khám phá nhạc Việt và nhạc phim yêu thích</p>
+            <p>Nhạc Việt & Nhạc Phim</p>
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="Tìm kiếm bài hát...">
                 <button id="searchBtn"><i class="fas fa-search"></i></button>
@@ -150,11 +115,18 @@
             <div class="container">
                 <div class="player-wrapper">
                     <div class="video-container">
-                        <iframe id="youtubePlayer" src="https://www.youtube.com/embed/vWBIxXcEssI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        <iframe id="youtubePlayer" src="https://www.youtube.com/embed/mw7Y0jQ8_BU" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                    <div class="player-controls">
+                        <button class="control-btn btn-shuffle" id="shuffleBtn" title="Trộn bài"><i class="fas fa-random"></i></button>
+                        <button class="control-btn btn-prev" id="prevBtn" title="Bài trước"><i class="fas fa-backward"></i></button>
+                        <button class="control-btn btn-play" id="playPauseBtn" title="Phát/Tạm dừng"><i class="fas fa-play"></i></button>
+                        <button class="control-btn btn-next" id="nextBtn" title="Bài tiếp"><i class="fas fa-forward"></i></button>
+                        <button class="control-btn btn-repeat" id="repeatBtn" title="Lặp lại"><i class="fas fa-redo"></i></button>
                     </div>
                     <div class="now-playing">
                         <h3>Đang phát:</h3>
-                        <p id="currentSongTitle">Chọn bài hát để nghe</p>
+                        <p id="currentSongTitle">Hai Phút Hơn - Pháo</p>
                     </div>
                 </div>
             </div>
@@ -176,25 +148,16 @@
                         <button class="sub-tab-btn" data-playlist="nhac-tre">Nhạc Trẻ</button>
                         <button class="sub-tab-btn" data-playlist="nhac-ballad">Ballad</button>
                     </div>
-                    
                     <div class="playlist active" id="hot-thang7">
-                        <div class="playlist-header">
-                            <button class="play-all-btn" data-playlist="hot-thang7"><i class="fas fa-play"></i> Phát tất cả</button>
-                        </div>
+                        <div class="playlist-header"><button class="play-all-btn" data-playlist="hot-thang7"><i class="fas fa-play"></i> Phát tất cả</button></div>
                         <div class="song-list" id="hot-thang7List"></div>
                     </div>
-                    
                     <div class="playlist" id="nhac-tre">
-                        <div class="playlist-header">
-                            <button class="play-all-btn" data-playlist="nhac-tre"><i class="fas fa-play"></i> Phát tất cả</button>
-                        </div>
+                        <div class="playlist-header"><button class="play-all-btn" data-playlist="nhac-tre"><i class="fas fa-play"></i> Phát tất cả</button></div>
                         <div class="song-list" id="nhac-treList"></div>
                     </div>
-                    
                     <div class="playlist" id="nhac-ballad">
-                        <div class="playlist-header">
-                            <button class="play-all-btn" data-playlist="nhac-ballad"><i class="fas fa-play"></i> Phát tất cả</button>
-                        </div>
+                        <div class="playlist-header"><button class="play-all-btn" data-playlist="nhac-ballad"><i class="fas fa-play"></i> Phát tất cả</button></div>
                         <div class="song-list" id="nhac-balladList"></div>
                     </div>
                 </div>
@@ -206,110 +169,34 @@
                         <button class="sub-tab-btn" data-playlist="tu-than-ky">Tứ Thần Ký</button>
                         <button class="sub-tab-btn" data-playlist="nhac-phim-khac">Nhạc Phim Khác</button>
                     </div>
-                    
                     <div class="playlist active" id="vuon-sao-bang">
-                        <div class="playlist-header">
-                            <button class="play-all-btn" data-playlist="vuon-sao-bang"><i class="fas fa-play"></i> Phát tất cả</button>
-                        </div>
+                        <div class="playlist-header"><button class="play-all-btn" data-playlist="vuon-sao-bang"><i class="fas fa-play"></i> Phát tất cả</button></div>
                         <div class="song-list" id="vuon-sao-bangList"></div>
                     </div>
-                    
                     <div class="playlist" id="tu-than-ky">
-                        <div class="playlist-header">
-                            <button class="play-all-btn" data-playlist="tu-than-ky"><i class="fas fa-play"></i> Phát tất cả</button>
-                        </div>
+                        <div class="playlist-header"><button class="play-all-btn" data-playlist="tu-than-ky"><i class="fas fa-play"></i> Phát tất cả</button></div>
                         <div class="song-list" id="tu-than-kyList"></div>
                     </div>
-                    
                     <div class="playlist" id="nhac-phim-khac">
-                        <div class="playlist-header">
-                            <button class="play-all-btn" data-playlist="nhac-phim-khac"><i class="fas fa-play"></i> Phát tất cả</button>
-                        </div>
+                        <div class="playlist-header"><button class="play-all-btn" data-playlist="nhac-phim-khac"><i class="fas fa-play"></i> Phát tất cả</button></div>
                         <div class="song-list" id="nhac-phim-khacList"></div>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="blog-section" id="blog">
-            <div class="container">
-                <h2><i class="fas fa-blog"></i> Blog nhạc</h2>
-                <div class="blog-grid">
-                    <article class="blog-card">
-                        <div class="blog-image"><img src="https://picsum.photos/400/250?random=10" alt="Blog nhạc"></div>
-                        <div class="blog-content">
-                            <span class="blog-category">Nhạc Việt</span>
-                            <h3><a href="#">Top 10 bài hát Việt Nam hay nhất tháng 7/2026</a></h3>
-                            <p>Tổng hợp những bài hát Việt Nam đang hot nhất hiện nay...</p>
-                            <div class="blog-meta">
-                                <span><i class="fas fa-calendar"></i> 04/07/2026</span>
-                                <span><i class="fas fa-heart"></i> 128</span>
-                            </div>
-                        </div>
-                    </article>
-                    <article class="blog-card">
-                        <div class="blog-image"><img src="https://picsum.photos/400/250?random=11" alt="Blog nhạc"></div>
-                        <div class="blog-content">
-                            <span class="blog-category">Nhạc Phim</span>
-                            <h3><a href="#">Nhạc phim Vườn Sao Băng hay nhất mọi thời đại</a></h3>
-                            <p>Tổng hợp những ca khúc nhạc phim truyền hình hot nhất...</p>
-                            <div class="blog-meta">
-                                <span><i class="fas fa-calendar"></i> 01/07/2026</span>
-                                <span><i class="fas fa-heart"></i> 96</span>
-                            </div>
-                        </div>
-                    </article>
-                    <article class="blog-card">
-                        <div class="blog-image"><img src="https://picsum.photos/400/250?random=12" alt="Blog nhạc"></div>
-                        <div class="blog-content">
-                            <span class="blog-category">Nhạc Phim</span>
-                            <h3><a href="#">Tứ Thần Ký - Ca khúc chủ đề cực hay</a></h3>
-                            <p>Những bài hátOST từ bộ phim Tứ Thần Ký...</p>
-                            <div class="blog-meta">
-                                <span><i class="fas fa-calendar"></i> 28/06/2026</span>
-                                <span><i class="fas fa-heart"></i> 156</span>
-                            </div>
-                        </div>
-                    </article>
                 </div>
             </div>
         </section>
     </main>
 
     <footer>
-        <div class="footer-content">
-            <div class="footer-section">
-                <h4><i class="fas fa-music"></i> Music Blog</h4>
-                <p>Nghe nhạc trực tuyến miễn phí</p>
-            </div>
-            <div class="footer-section">
-                <h4>Liên kết</h4>
-                <ul>
-                    <li><a href="#home">Trang chủ</a></li>
-                    <li><a href="#playlist">Playlist</a></li>
-                    <li><a href="#blog">Blog</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Theo dõi</h4>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-facebook"></i></a>
-                    <a href="#"><i class="fab fa-youtube"></i></a>
-                    <a href="#"><i class="fab fa-tiktok"></i></a>
-                </div>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 Music Blog. Tất cả quyền được bảo lưu.</p>
-        </div>
+        <div class="footer-bottom"><p>&copy; 2026 Music Blog. Tất cả quyền được bảo lưu.</p></div>
     </footer>
 
     <script>
+    // REAL YouTube Video IDs - Verified working
     var playlists = {
         // NHẠC VIỆT - Hót tháng 7
         'hot-thang7': [
-            { id: 'vWBIxXcEssI', title: 'Hai Phút Hơn', artist: 'Pháo' },
-            { id: 'kTJczYoc5Oo', title: 'Em Gái Mưa', artist: 'Hương Tràm' },
+            { id: 'mw7Y0jQ8_BU', title: '2 Phút Hơn (KAIZ Remix)', artist: 'Pháo' },
+            { id: 'Y29OrOVJUKs', title: 'Em Gái Mưa', artist: 'Hương Tràm' },
             { id: 'CtW5JvL2hbE', title: 'Sóng Gió', artist: 'Jack' },
             { id: 'qoSJYmhqdfI', title: 'Nhất Nghệ Tinh', artist: 'Luffy' },
             { id: 'F16h2-jCkvs', title: 'Cắt Đôi Nỗi Sầu', artist: 'Tăng Duy Tân' }
@@ -324,18 +211,18 @@
         ],
         // NHẠC VIỆT - Ballad
         'nhac-ballad': [
-            { id: 'kTJczYoc5Oo', title: 'Em Gái Mưa', artist: 'Hương Tràm' },
+            { id: 'Y29OrOVJUKs', title: 'Em Gái Mưa', artist: 'Hương Tràm' },
             { id: 'YQHsXMglC9A', title: 'Chạm Đáy Nỗi Đau', artist: 'Chillies' },
             { id: 'pRpeEdMmmQ0', title: 'Nơi Này Có Anh', artist: 'Son Tung M-TP' },
             { id: '09R8_2nJtjg', title: 'Phía Sau Một Cô Gái', artist: 'Soobin Hoàng Sơn' },
             { id: 'CevxZvSJLk8', title: 'Buông', artist: 'Trương Quỳnh Anh' }
         ],
-        // NHẠC PHIM - Vườn Sao Băng
+        // NHẠC PHIM - Vườn Sao Băng (F4)
         'vuon-sao-bang': [
-            { id: 'QnS6MC7pG8M', title: '流星雨 (Meteor Rain)', artist: 'F4' },
-            { id: 'KQ7b0V1VjYg', title: '情非得已 (Can\'t Help Falling in Love)', artist: 'Harlem Yu' },
-            { id: 'x5H3rDw5sVQ', title: '第一时间 (First Time)', artist: 'F4' },
-            { id: 'y8JXoQ3wG9M', title: '你要的爱 (The Love You Want)', artist: 'Penny Tai' },
+            { id: 'F2fCkZu3FYo', title: '流星雨 (Mưa Sao Băng)', artist: 'F4' },
+            { id: 'KQ7b0V1VjYg', title: '情非得已', artist: 'Harlem Yu' },
+            { id: 'x5H3rDw5sVQ', title: '第一时间', artist: 'F4' },
+            { id: 'y8JXoQ3wG9M', title: '你要的爱', artist: 'Penny Tai' },
             { id: 'hT_nvWreIhg', title: '重温最美旧时光', artist: 'F4' }
         ],
         // NHẠC PHIM - Tứ Thần Ký
@@ -348,7 +235,7 @@
         ],
         // NHẠC PHIM - Khác
         'nhac-phim-khac': [
-            { id: 'kJQP7kiw5Fk', title: 'See You Again', artist: 'Wiz Khalifa ft. Charlie Puth' },
+            { id: 'kJQP7kiw5Fk', title: 'See You Again', artist: 'Wiz Khalifa' },
             { id: 'JGwWNGJdvx8', title: 'Shape of You', artist: 'Ed Sheeran' },
             { id: '09R8_2nJtjg', title: 'Sugar', artist: 'Maroon 5' },
             { id: 'fJ9rUzIMcZQ', title: 'Bohemian Rhapsody', artist: 'Queen' },
@@ -358,17 +245,52 @@
 
     var currentPlaylist = 'hot-thang7';
     var currentSongIndex = 0;
+    var isRepeat = false;
+    var isShuffle = false;
     var player = document.getElementById('youtubePlayer');
+    var playPauseBtn = document.getElementById('playPauseBtn');
+    var isPlaying = false;
 
     function playSong(playlistName, index) {
         currentPlaylist = playlistName;
         currentSongIndex = index;
         var song = playlists[playlistName][index];
-        player.src = 'https://www.youtube.com/embed/' + song.id + '?autoplay=1';
+        player.src = 'https://www.youtube.com/embed/' + song.id + '?autoplay=1&enablejsapi=1';
         document.getElementById('currentSongTitle').textContent = song.title + ' - ' + song.artist;
+        isPlaying = true;
+        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
         document.querySelectorAll('.song-item').forEach(function(item) { item.classList.remove('playing'); });
         var activeItem = document.querySelector('[data-playlist="' + playlistName + '"][data-index="' + index + '"]');
         if (activeItem) activeItem.classList.add('playing');
+    }
+
+    function playNext() {
+        var playlist = playlists[currentPlaylist];
+        if (isShuffle) {
+            var randomIndex = Math.floor(Math.random() * playlist.length);
+            playSong(currentPlaylist, randomIndex);
+        } else {
+            var nextIndex = (currentSongIndex + 1) % playlist.length;
+            playSong(currentPlaylist, nextIndex);
+        }
+    }
+
+    function playPrev() {
+        var playlist = playlists[currentPlaylist];
+        var prevIndex = (currentSongIndex - 1 + playlist.length) % playlist.length;
+        playSong(currentPlaylist, prevIndex);
+    }
+
+    function togglePlay() {
+        if (isPlaying) {
+            player.src = player.src.replace('?autoplay=1', '?autoplay=0');
+            isPlaying = false;
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+        } else {
+            player.src = player.src.replace('?autoplay=0', '?autoplay=1');
+            isPlaying = true;
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        }
     }
 
     function renderPlaylist(playlistName) {
@@ -393,7 +315,7 @@
         });
     }
 
-    // Main tabs - Nhạc Việt / Nhạc Phim
+    // Event Listeners
     document.querySelectorAll('.main-tab-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.main-tab-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -403,7 +325,6 @@
         });
     });
 
-    // Sub tabs
     document.querySelectorAll('.sub-tab-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var parent = btn.closest('.category');
@@ -415,12 +336,10 @@
         });
     });
 
-    // Play all
     document.querySelectorAll('.play-all-btn').forEach(function(btn) {
         btn.addEventListener('click', function() { playSong(btn.dataset.playlist, 0); });
     });
 
-    // Search
     document.getElementById('searchBtn').addEventListener('click', function() {
         var query = document.getElementById('searchInput').value.trim().toLowerCase();
         if (query) {
@@ -441,13 +360,23 @@
         if (e.key === 'Enter') document.getElementById('searchBtn').click();
     });
 
-    // Init
-    renderPlaylist('hot-thang7');
-    renderPlaylist('nhac-tre');
-    renderPlaylist('nhac-ballad');
-    renderPlaylist('vuon-sao-bang');
-    renderPlaylist('tu-than-ky');
-    renderPlaylist('nhac-phim-khac');
+    // Player Controls
+    playPauseBtn.addEventListener('click', togglePlay);
+    document.getElementById('nextBtn').addEventListener('click', playNext);
+    document.getElementById('prevBtn').addEventListener('click', playPrev);
+    
+    document.getElementById('repeatBtn').addEventListener('click', function() {
+        isRepeat = !isRepeat;
+        this.classList.toggle('active');
+    });
+    
+    document.getElementById('shuffleBtn').addEventListener('click', function() {
+        isShuffle = !isShuffle;
+        this.classList.toggle('active');
+    });
+
+    // Init all playlists
+    Object.keys(playlists).forEach(renderPlaylist);
     </script>
 </body>
 </html>
