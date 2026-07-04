@@ -247,7 +247,12 @@ function onYouTubeIframeAPIReady(){
         events: {
             onReady: function(){ console.log('[YT] Player ready'); },
             onStateChange: function(e){
-                if(e.data === YT.PlayerState.ENDED){ playNextSong(); }
+                if(e.data === YT.PlayerState.ENDED){
+                    playerRef.once('value').then(function(snap){
+                        var d = snap.val();
+                        if(d && d.by === userId){ playNextSong(); }
+                    });
+                }
             }
         }
     });
@@ -400,7 +405,6 @@ function playSongAt(index){
 }
 
 function playNextSong(){
-    if(!isAdmin)return;
     queueRef.once('value').then(function(snap){
         var q=snap.val();
         if(!q||!q.songs||q.songs.length===0)return;
