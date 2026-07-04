@@ -247,14 +247,15 @@ var firebaseConfig = {
     authDomain: "planning-with-ai-142c8.firebaseapp.com",
     databaseURL: "https://planning-with-ai-142c8-default-rtdb.firebaseio.com",
     projectId: "planning-with-ai-142c8",
-    storageBucket: "planning-with-ai-142c8.appspot.com",
+    storageBucket: "planning-with-ai-142c8.firebasestorage.app",
     messagingSenderId: "260848244627",
     appId: "1:260848244627:web:f75ac226aeafd755cd7a66"
 };
 firebase.initializeApp(firebaseConfig);
 var db = firebase.database();
+console.log('[Firebase] Config loaded. Database URL:', db.ref().toString());
 
-// References - moi thu deu qua Firebase, khong co local state rieng
+// References
 var chatRef = db.ref('chat');
 var presenceRef = db.ref('presence');
 var sharedPlayerRef = db.ref('sharedPlayer');
@@ -270,19 +271,31 @@ var userColor = localStorage.getItem('musicblog_color') || (function(){
 })();
 var userId = localStorage.getItem('musicblog_uid') || ('u_'+Math.random().toString(36).substr(2,9));
 localStorage.setItem('musicblog_uid',userId);
-var isSyncing = false;
 
 // ====== FIREBASE CONNECTION CHECK ======
 db.ref('.info/connected').on('value', function(snap){
     var el = document.getElementById('connStatus');
     var banner = document.getElementById('setupBanner');
-    if(snap.val()){
+    var connected = snap.val();
+    console.log('[Firebase] Connected:', connected);
+    if(connected){
         el.className='conn-badge conn-ok';
-        el.innerHTML='<i class="fas fa-check-circle'></i> Da ket noi';
+        el.innerHTML='<i class="fas fa-check-circle"></i> Da ket noi';
     } else {
         el.className='conn-badge conn-err';
-        el.innerHTML='<i class="fas fa-times-circle'))"></i> Mat ket noi';
+        el.innerHTML='<i class="fas fa-times-circle"></i> Mat ket noi';
     }
+});
+
+// Check if Firebase Rules are working - try to write a test
+db.ref('_healthCheck').set({ts: Date.now()}).then(function(){
+    console.log('[Firebase] Rules OK - write test passed');
+    db.ref('_healthCheck').remove();
+    document.getElementById('setupBanner').classList.add('hidden');
+}).catch(function(err){
+    console.error('[Firebase] Rules BLOCKED:', err.message);
+    document.getElementById('setupBanner').classList.remove('hidden');
+    document.getElementById('setupBanner').querySelector('h3').innerHTML = '<i class="fas fa-exclamation-triangle"></i> LOI: Firebase Rules chan write! Error: ' + err.message;
 });
 
 // Check if Firebase Rules are working - try to write a test
