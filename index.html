@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Music Blog - Nghe nhạc trực tuyến</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -26,490 +25,109 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.88);
             z-index: -1;
         }
         
-        /* Header */
-        header {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-        }
+        header { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 20px rgba(0,0,0,0.1); }
+        nav { max-width: 1200px; margin: 0 auto; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .logo { display: flex; align-items: center; gap: 0.5rem; }
+        .logo i { font-size: 1.5rem; color: #e94560; }
+        .logo a { font-size: 1.5rem; font-weight: 700; color: #e94560; text-decoration: none; }
+        .nav-links { display: flex; list-style: none; gap: 2rem; }
+        .nav-links a { color: #666; text-decoration: none; font-weight: 500; }
+        .nav-links a:hover { color: #e94560; }
+        
+        .hero { padding: 3rem 2rem; text-align: center; background: linear-gradient(135deg, rgba(233,69,96,0.2), rgba(255,182,193,0.2)); }
+        .hero h1 { font-size: 2.2rem; margin-bottom: 0.5rem; color: #333; }
+        .hero p { color: #666; margin-bottom: 1.5rem; }
+        .search-box { display: flex; max-width: 400px; margin: 0 auto; background: #fff; border-radius: 50px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .search-box input { flex: 1; padding: 0.75rem 1.25rem; border: none; color: #333; font-size: 1rem; }
+        .search-box button { padding: 0.75rem 1.25rem; background: #e94560; border: none; color: #fff; cursor: pointer; }
+        .search-box button:hover { background: #d63851; }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        
+        .player-section { padding: 2rem 0; }
+        .player-wrapper { background: #fff; border-radius: 20px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(233,69,96,0.15); }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; border-radius: 15px; overflow: hidden; background: #000; margin-bottom: 1rem; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .now-playing { padding: 1rem; background: linear-gradient(135deg, #fff5f5, #ffe8e8); border-radius: 10px; }
+        .now-playing h3 { color: #e94560; font-size: 0.85rem; margin-bottom: 0.25rem; }
+        #currentSongTitle { font-weight: 600; color: #333; }
+        
+        .playlist-section { padding: 3rem 0; }
+        .playlist-section h2 { font-size: 1.8rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; color: #333; }
+        .playlist-section h2 i { color: #e94560; }
+        
+        .main-tabs { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .main-tab-btn { padding: 0.8rem 2rem; background: #fff; border: 2px solid #e94560; border-radius: 30px; color: #e94560; cursor: pointer; font-weight: 600; font-size: 1rem; transition: all 0.3s; }
+        .main-tab-btn.active, .main-tab-btn:hover { background: #e94560; color: #fff; }
+        
+        .category { display: none; }
+        .category.active { display: block; }
+        
+        .sub-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .sub-tab-btn { padding: 0.5rem 1rem; background: #fff; border: 1px solid #ddd; border-radius: 20px; color: #666; cursor: pointer; font-size: 0.9rem; transition: all 0.3s; }
+        .sub-tab-btn.active, .sub-tab-btn:hover { background: #e94560; border-color: #e94560; color: #fff; }
+        
+        .playlist { display: none; }
+        .playlist.active { display: block; }
+        
+        .playlist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .play-all-btn { padding: 0.6rem 1.25rem; background: linear-gradient(135deg, #e94560, #d63851); border: none; border-radius: 25px; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; }
+        .play-all-btn:hover { transform: scale(1.05); }
+        
+        .song-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .song-item { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: #fff; border-radius: 10px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .song-item:hover { transform: translateX(5px); box-shadow: 0 4px 15px rgba(233,69,96,0.2); }
+        .song-item.playing { background: linear-gradient(135deg, #fff5f5, #ffe8e8); border-left: 4px solid #e94560; }
+        .song-number { width: 25px; text-align: center; color: #999; }
+        .song-item.playing .song-number { color: #e94560; }
+        .song-thumbnail { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; }
+        .song-info { flex: 1; }
+        .song-title { font-weight: 600; color: #333; }
+        .song-artist { font-size: 0.85rem; color: #999; }
+        
+        .blog-section { padding: 3rem 0; }
+        .blog-section h2 { font-size: 1.8rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; color: #333; }
+        .blog-section h2 i { color: #e94560; }
+        .blog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .blog-card { background: #fff; border-radius: 15px; overflow: hidden; transition: transform 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .blog-card:hover { transform: translateY(-5px); }
+        .blog-image img { width: 100%; height: 180px; object-fit: cover; }
+        .blog-content { padding: 1.25rem; }
+        .blog-category { display: inline-block; background: #e94560; padding: 0.2rem 0.6rem; border-radius: 15px; font-size: 0.75rem; color: #fff; margin-bottom: 0.5rem; }
+        .blog-content h3 { margin-bottom: 0.5rem; }
+        .blog-content h3 a { color: #333; text-decoration: none; }
+        .blog-content h3 a:hover { color: #e94560; }
+        .blog-content p { color: #666; font-size: 0.9rem; margin-bottom: 0.75rem; }
+        .blog-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: #999; }
+        
+        footer { background: rgba(255,255,255,0.95); padding: 3rem 2rem 1.5rem; margin-top: 3rem; }
+        .footer-content { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; }
+        .footer-section h4 { margin-bottom: 0.75rem; color: #333; }
+        .footer-section ul { list-style: none; }
+        .footer-section ul li { margin-bottom: 0.4rem; }
+        .footer-section ul a { color: #666; text-decoration: none; }
+        .footer-section ul a:hover { color: #e94560; }
+        .social-links { display: flex; gap: 0.75rem; }
+        .social-links a { width: 35px; height: 35px; background: #fff5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #e94560; text-decoration: none; }
+        .social-links a:hover { background: #e94560; color: #fff; }
+        .footer-bottom { text-align: center; padding-top: 1.5rem; margin-top: 1.5rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; }
         
-        nav {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .logo i {
-            font-size: 1.5rem;
-            color: #ff69b4;
-        }
-        
-        .logo a {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #ff69b4;
-            text-decoration: none;
-        }
-        
-        .nav-links {
-            display: flex;
-            list-style: none;
-            gap: 2rem;
-        }
-        
-        .nav-links a {
-            color: #666;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-        
-        .nav-links a:hover {
-            color: #ff69b4;
-        }
-        
-        /* Hero */
-        .hero {
-            padding: 4rem 2rem;
-            text-align: center;
-            background: linear-gradient(135deg, rgba(255, 105, 180, 0.3), rgba(255, 182, 193, 0.3));
-        }
-        
-        .hero h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            color: #333;
-        }
-        
-        .hero p {
-            color: #666;
-            margin-bottom: 1.5rem;
-        }
-        
-        .search-box {
-            display: flex;
-            max-width: 400px;
-            margin: 0 auto;
-            background: #fff;
-            border-radius: 50px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .search-box input {
-            flex: 1;
-            padding: 0.75rem 1.25rem;
-            border: none;
-            background: transparent;
-            color: #333;
-            font-size: 1rem;
-        }
-        
-        .search-box input::placeholder {
-            color: #999;
-        }
-        
-        .search-box button {
-            padding: 0.75rem 1.25rem;
-            background: #ff69b4;
-            border: none;
-            color: #fff;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        
-        .search-box button:hover {
-            background: #ff1493;
-        }
-        
-        /* Container */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-        
-        /* Player Section */
-        .player-section {
-            padding: 2rem 0;
-        }
-        
-        .player-wrapper {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 20px;
-            padding: 1.5rem;
-            box-shadow: 0 8px 32px rgba(255, 105, 180, 0.2);
-        }
-        
-        .video-container {
-            position: relative;
-            padding-bottom: 56.25%;
-            height: 0;
-            border-radius: 15px;
-            overflow: hidden;
-            background: #000;
-            margin-bottom: 1rem;
-        }
-        
-        .video-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-        
-        .now-playing {
-            padding: 1rem;
-            background: linear-gradient(135deg, #fff0f5, #ffe4e1);
-            border-radius: 10px;
-        }
-        
-        .now-playing h3 {
-            color: #ff69b4;
-            font-size: 0.85rem;
-            margin-bottom: 0.25rem;
-        }
-        
-        #currentSongTitle {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #333;
-        }
-        
-        /* Playlist Section */
-        .playlist-section {
-            padding: 3rem 0;
-        }
-        
-        .playlist-section h2 {
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #333;
-        }
-        
-        .playlist-section h2 i {
-            color: #ff69b4;
-        }
-        
-        .playlist-tabs {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
-        
-        .tab-btn {
-            padding: 0.6rem 1.25rem;
-            background: #fff;
-            border: 2px solid #ffb6c1;
-            border-radius: 25px;
-            color: #ff69b4;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 500;
-        }
-        
-        .tab-btn.active {
-            background: #ff69b4;
-            border-color: #ff69b4;
-            color: #fff;
-        }
-        
-        .tab-btn:hover {
-            background: #ff69b4;
-            border-color: #ff69b4;
-            color: #fff;
-        }
-        
-        .playlist {
-            display: none;
-        }
-        
-        .playlist.active {
-            display: block;
-        }
-        
-        .playlist-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        
-        .play-all-btn {
-            padding: 0.6rem 1.25rem;
-            background: linear-gradient(135deg, #ff69b4, #ff1493);
-            border: none;
-            border-radius: 25px;
-            color: #fff;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: transform 0.3s;
-        }
-        
-        .play-all-btn:hover {
-            transform: scale(1.05);
-        }
-        
-        /* Song List */
-        .song-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        
-        .song-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.75rem 1rem;
-            background: #fff;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-        
-        .song-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.2);
-        }
-        
-        .song-item.playing {
-            background: linear-gradient(135deg, #fff0f5, #ffe4e1);
-            border-left: 4px solid #ff69b4;
-        }
-        
-        .song-number {
-            width: 25px;
-            text-align: center;
-            color: #999;
-            font-size: 0.9rem;
-        }
-        
-        .song-item.playing .song-number {
-            color: #ff69b4;
-        }
-        
-        .song-thumbnail {
-            width: 45px;
-            height: 45px;
-            border-radius: 6px;
-            object-fit: cover;
-        }
-        
-        .song-info {
-            flex: 1;
-        }
-        
-        .song-title {
-            font-weight: 600;
-            font-size: 0.95rem;
-            color: #333;
-        }
-        
-        .song-artist {
-            font-size: 0.8rem;
-            color: #999;
-        }
-        
-        /* Blog Section */
-        .blog-section {
-            padding: 3rem 0;
-        }
-        
-        .blog-section h2 {
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #333;
-        }
-        
-        .blog-section h2 i {
-            color: #ff69b4;
-        }
-        
-        .blog-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-        
-        .blog-card {
-            background: #fff;
-            border-radius: 15px;
-            overflow: hidden;
-            transition: transform 0.3s;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .blog-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .blog-image img {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-        }
-        
-        .blog-content {
-            padding: 1.25rem;
-        }
-        
-        .blog-category {
-            display: inline-block;
-            background: linear-gradient(135deg, #ff69b4, #ff1493);
-            padding: 0.2rem 0.6rem;
-            border-radius: 15px;
-            font-size: 0.75rem;
-            color: #fff;
-            margin-bottom: 0.5rem;
-        }
-        
-        .blog-content h3 {
-            margin-bottom: 0.5rem;
-            font-size: 1.1rem;
-        }
-        
-        .blog-content h3 a {
-            color: #333;
-            text-decoration: none;
-        }
-        
-        .blog-content h3 a:hover {
-            color: #ff69b4;
-        }
-        
-        .blog-content p {
-            color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 0.75rem;
-        }
-        
-        .blog-meta {
-            display: flex;
-            gap: 1rem;
-            font-size: 0.8rem;
-            color: #999;
-        }
-        
-        /* Footer */
-        footer {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 3rem 2rem 1.5rem;
-            margin-top: 3rem;
-            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
-        }
-        
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2rem;
-        }
-        
-        .footer-section h4 {
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #333;
-        }
-        
-        .footer-section h4 i {
-            color: #ff69b4;
-        }
-        
-        .footer-section ul {
-            list-style: none;
-        }
-        
-        .footer-section ul li {
-            margin-bottom: 0.4rem;
-        }
-        
-        .footer-section ul a {
-            color: #666;
-            text-decoration: none;
-        }
-        
-        .footer-section ul a:hover {
-            color: #ff69b4;
-        }
-        
-        .social-links {
-            display: flex;
-            gap: 0.75rem;
-        }
-        
-        .social-links a {
-            width: 35px;
-            height: 35px;
-            background: #fff0f5;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #ff69b4;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-        
-        .social-links a:hover {
-            background: #ff69b4;
-            color: #fff;
-        }
-        
-        .footer-bottom {
-            text-align: center;
-            padding-top: 1.5rem;
-            margin-top: 1.5rem;
-            border-top: 1px solid #ffb6c1;
-            color: #999;
-            font-size: 0.85rem;
-        }
-        
-        /* Responsive */
         @media (max-width: 768px) {
             .nav-links { display: none; }
-            .hero h1 { font-size: 1.8rem; }
+            .hero h1 { font-size: 1.6rem; }
             .blog-grid { grid-template-columns: 1fr; }
+            .main-tab-btn { padding: 0.6rem 1.5rem; font-size: 0.9rem; }
         }
     </style>
 </head>
 <body>
     <header>
         <nav>
-            <div class="logo">
-                <i class="fas fa-music"></i>
-                <a href="#">Music Blog</a>
-            </div>
+            <div class="logo"><i class="fas fa-music"></i><a href="#">Music Blog</a></div>
             <ul class="nav-links">
                 <li><a href="#home">Trang chủ</a></li>
                 <li><a href="#playlist">Playlist</a></li>
@@ -521,7 +139,7 @@
     <main>
         <section class="hero" id="home">
             <h1>Nghe nhạc trực tuyến miễn phí</h1>
-            <p>Khám phá và nghe nhạc yêu thích từ YouTube</p>
+            <p>Khám phá nhạc Việt và nhạc phim yêu thích</p>
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="Tìm kiếm bài hát...">
                 <button id="searchBtn"><i class="fas fa-search"></i></button>
@@ -536,7 +154,7 @@
                     </div>
                     <div class="now-playing">
                         <h3>Đang phát:</h3>
-                        <p id="currentSongTitle">Hai Phút Hơn - Pháo</p>
+                        <p id="currentSongTitle">Chọn bài hát để nghe</p>
                     </div>
                 </div>
             </div>
@@ -546,37 +164,69 @@
             <div class="container">
                 <h2><i class="fas fa-list"></i> Playlist</h2>
                 
-                <div class="playlist-tabs">
-                    <button class="tab-btn active" data-tab="vietnamese">Nhạc Việt</button>
-                    <button class="tab-btn" data-tab="english">Nhạc Quốc Tế</button>
-                    <button class="tab-btn" data-tab="remix">Remix</button>
+                <div class="main-tabs">
+                    <button class="main-tab-btn active" data-category="nhacviet">🎵 Nhạc Việt</button>
+                    <button class="main-tab-btn" data-category="nhacphim">🎬 Nhạc Phim</button>
                 </div>
 
-                <div class="playlist active" id="vietnamese">
-                    <div class="playlist-header">
-                        <button class="play-all-btn" data-playlist="vietnamese">
-                            <i class="fas fa-play"></i> Phát tất cả
-                        </button>
+                <!-- NHẠC VIỆT -->
+                <div class="category active" id="nhacviet">
+                    <div class="sub-tabs">
+                        <button class="sub-tab-btn active" data-playlist="hot-thang7">Hót Tháng 7</button>
+                        <button class="sub-tab-btn" data-playlist="nhac-tre">Nhạc Trẻ</button>
+                        <button class="sub-tab-btn" data-playlist="nhac-ballad">Ballad</button>
                     </div>
-                    <div class="song-list" id="vietnameseList"></div>
+                    
+                    <div class="playlist active" id="hot-thang7">
+                        <div class="playlist-header">
+                            <button class="play-all-btn" data-playlist="hot-thang7"><i class="fas fa-play"></i> Phát tất cả</button>
+                        </div>
+                        <div class="song-list" id="hot-thang7List"></div>
+                    </div>
+                    
+                    <div class="playlist" id="nhac-tre">
+                        <div class="playlist-header">
+                            <button class="play-all-btn" data-playlist="nhac-tre"><i class="fas fa-play"></i> Phát tất cả</button>
+                        </div>
+                        <div class="song-list" id="nhac-treList"></div>
+                    </div>
+                    
+                    <div class="playlist" id="nhac-ballad">
+                        <div class="playlist-header">
+                            <button class="play-all-btn" data-playlist="nhac-ballad"><i class="fas fa-play"></i> Phát tất cả</button>
+                        </div>
+                        <div class="song-list" id="nhac-balladList"></div>
+                    </div>
                 </div>
 
-                <div class="playlist" id="english">
-                    <div class="playlist-header">
-                        <button class="play-all-btn" data-playlist="english">
-                            <i class="fas fa-play"></i> Phát tất cả
-                        </button>
+                <!-- NHẠC PHIM -->
+                <div class="category" id="nhacphim">
+                    <div class="sub-tabs">
+                        <button class="sub-tab-btn active" data-playlist="vuon-sao-bang">Vườn Sao Băng</button>
+                        <button class="sub-tab-btn" data-playlist="tu-than-ky">Tứ Thần Ký</button>
+                        <button class="sub-tab-btn" data-playlist="nhac-phim-khac">Nhạc Phim Khác</button>
                     </div>
-                    <div class="song-list" id="englishList"></div>
-                </div>
-
-                <div class="playlist" id="remix">
-                    <div class="playlist-header">
-                        <button class="play-all-btn" data-playlist="remix">
-                            <i class="fas fa-play"></i> Phát tất cả
-                        </button>
+                    
+                    <div class="playlist active" id="vuon-sao-bang">
+                        <div class="playlist-header">
+                            <button class="play-all-btn" data-playlist="vuon-sao-bang"><i class="fas fa-play"></i> Phát tất cả</button>
+                        </div>
+                        <div class="song-list" id="vuon-sao-bangList"></div>
                     </div>
-                    <div class="song-list" id="remixList"></div>
+                    
+                    <div class="playlist" id="tu-than-ky">
+                        <div class="playlist-header">
+                            <button class="play-all-btn" data-playlist="tu-than-ky"><i class="fas fa-play"></i> Phát tất cả</button>
+                        </div>
+                        <div class="song-list" id="tu-than-kyList"></div>
+                    </div>
+                    
+                    <div class="playlist" id="nhac-phim-khac">
+                        <div class="playlist-header">
+                            <button class="play-all-btn" data-playlist="nhac-phim-khac"><i class="fas fa-play"></i> Phát tất cả</button>
+                        </div>
+                        <div class="song-list" id="nhac-phim-khacList"></div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -586,12 +236,10 @@
                 <h2><i class="fas fa-blog"></i> Blog nhạc</h2>
                 <div class="blog-grid">
                     <article class="blog-card">
-                        <div class="blog-image">
-                            <img src="https://picsum.photos/400/250?random=10" alt="Blog nhạc">
-                        </div>
+                        <div class="blog-image"><img src="https://picsum.photos/400/250?random=10" alt="Blog nhạc"></div>
                         <div class="blog-content">
                             <span class="blog-category">Nhạc Việt</span>
-                            <h3><a href="#">Top 10 bài hát Việt Nam hay nhất 2026</a></h3>
+                            <h3><a href="#">Top 10 bài hát Việt Nam hay nhất tháng 7/2026</a></h3>
                             <p>Tổng hợp những bài hát Việt Nam đang hot nhất hiện nay...</p>
                             <div class="blog-meta">
                                 <span><i class="fas fa-calendar"></i> 04/07/2026</span>
@@ -600,13 +248,11 @@
                         </div>
                     </article>
                     <article class="blog-card">
-                        <div class="blog-image">
-                            <img src="https://picsum.photos/400/250?random=11" alt="Blog nhạc">
-                        </div>
+                        <div class="blog-image"><img src="https://picsum.photos/400/250?random=11" alt="Blog nhạc"></div>
                         <div class="blog-content">
-                            <span class="blog-category">Quốc Tế</span>
-                            <h3><a href="#">Những ca khúc US-UK nổi bật tháng 7</a></h3>
-                            <p>Cập nhật những bài hát quốc tế đang làm mưa làm gió...</p>
+                            <span class="blog-category">Nhạc Phim</span>
+                            <h3><a href="#">Nhạc phim Vườn Sao Băng hay nhất mọi thời đại</a></h3>
+                            <p>Tổng hợp những ca khúc nhạc phim truyền hình hot nhất...</p>
                             <div class="blog-meta">
                                 <span><i class="fas fa-calendar"></i> 01/07/2026</span>
                                 <span><i class="fas fa-heart"></i> 96</span>
@@ -614,13 +260,11 @@
                         </div>
                     </article>
                     <article class="blog-card">
-                        <div class="blog-image">
-                            <img src="https://picsum.photos/400/250?random=12" alt="Blog nhạc">
-                        </div>
+                        <div class="blog-image"><img src="https://picsum.photos/400/250?random=12" alt="Blog nhạc"></div>
                         <div class="blog-content">
-                            <span class="blog-category">Remix</span>
-                            <h3><a href="#">Playlist remix sôi động cho summer</a></h3>
-                            <p>Tuyển chọn những bản remix hot nhất cho mùa hè...</p>
+                            <span class="blog-category">Nhạc Phim</span>
+                            <h3><a href="#">Tứ Thần Ký - Ca khúc chủ đề cực hay</a></h3>
+                            <p>Những bài hátOST từ bộ phim Tứ Thần Ký...</p>
                             <div class="blog-meta">
                                 <span><i class="fas fa-calendar"></i> 28/06/2026</span>
                                 <span><i class="fas fa-heart"></i> 156</span>
@@ -636,7 +280,7 @@
         <div class="footer-content">
             <div class="footer-section">
                 <h4><i class="fas fa-music"></i> Music Blog</h4>
-                <p>Nghe nhạc trực tuyến miễn phí từ YouTube</p>
+                <p>Nghe nhạc trực tuyến miễn phí</p>
             </div>
             <div class="footer-section">
                 <h4>Liên kết</h4>
@@ -662,28 +306,57 @@
 
     <script>
     var playlists = {
-        vietnamese: [
+        // NHẠC VIỆT - Hót tháng 7
+        'hot-thang7': [
             { id: 'vWBIxXcEssI', title: 'Hai Phút Hơn', artist: 'Pháo' },
             { id: 'kTJczYoc5Oo', title: 'Em Gái Mưa', artist: 'Hương Tràm' },
             { id: 'CtW5JvL2hbE', title: 'Sóng Gió', artist: 'Jack' },
-            { id: 'F16h2-jCkvs', title: 'Cắt Đôi Nỗi Sầu', artist: 'Tăng Duy Tân' },
-            { id: 'w85wHQ3dQbI', title: 'Đám Cưới Nắng', artist: 'Ricky Star' }
+            { id: 'qoSJYmhqdfI', title: 'Nhất Nghệ Tinh', artist: 'Luffy' },
+            { id: 'F16h2-jCkvs', title: 'Cắt Đôi Nỗi Sầu', artist: 'Tăng Duy Tân' }
         ],
-        english: [
+        // NHẠC VIỆT - Nhạc Trẻ
+        'nhac-tre': [
+            { id: 'w85wHQ3dQbI', title: 'Đám Cưới Nắng', artist: 'Ricky Star' },
+            { id: 'gMxWnJZ0v1s', title: 'Có Chắt Yêu Không', artist: 'Du Uyên' },
+            { id: '5Z2dV3VQxps', title: 'Locket', artist: 'Doan Thuy Trang' },
+            { id: 'xJ5bN9bqK9o', title: 'Thiên Lý Ơi', artist: 'Masew ft. Orange' },
+            { id: 'CtW5JvL2hbE', title: 'Hồng Nhan', artist: 'Jack' }
+        ],
+        // NHẠC VIỆT - Ballad
+        'nhac-ballad': [
+            { id: 'kTJczYoc5Oo', title: 'Em Gái Mưa', artist: 'Hương Tràm' },
+            { id: 'YQHsXMglC9A', title: 'Chạm Đáy Nỗi Đau', artist: 'Chillies' },
+            { id: 'pRpeEdMmmQ0', title: 'Nơi Này Có Anh', artist: 'Son Tung M-TP' },
+            { id: '09R8_2nJtjg', title: 'Phía Sau Một Cô Gái', artist: 'Soobin Hoàng Sơn' },
+            { id: 'CevxZvSJLk8', title: 'Buông', artist: 'Trương Quỳnh Anh' }
+        ],
+        // NHẠC PHIM - Vườn Sao Băng
+        'vuon-sao-bang': [
+            { id: 'QnS6MC7pG8M', title: '流星雨 (Meteor Rain)', artist: 'F4' },
+            { id: 'KQ7b0V1VjYg', title: '情非得已 (Can\'t Help Falling in Love)', artist: 'Harlem Yu' },
+            { id: 'x5H3rDw5sVQ', title: '第一时间 (First Time)', artist: 'F4' },
+            { id: 'y8JXoQ3wG9M', title: '你要的爱 (The Love You Want)', artist: 'Penny Tai' },
+            { id: 'hT_nvWreIhg', title: '重温最美旧时光', artist: 'F4' }
+        ],
+        // NHẠC PHIM - Tứ Thần Ký
+        'tu-than-ky': [
+            { id: 'lp-EO5I60KA', title: 'Tứ Thần Ký OST', artist: 'Various Artists' },
+            { id: 'YQHsXMglC9A', title: 'Phong Lạc', artist: 'Lưu Vũ Ninh' },
+            { id: 'RgKAFK5djSk', title: 'Yêu Em Hơn Mỗi Ngày', artist: 'Hoắc Tôn' },
+            { id: 'fJ9rUzIMcZQ', title: 'Vô Cương', artist: 'Hứa Hạc Thần' },
+            { id: 'pRpeEdMmmQ0', title: 'Mộng Huyễn', artist: 'Trương Bích Thần' }
+        ],
+        // NHẠC PHIM - Khác
+        'nhac-phim-khac': [
+            { id: 'kJQP7kiw5Fk', title: 'See You Again', artist: 'Wiz Khalifa ft. Charlie Puth' },
             { id: 'JGwWNGJdvx8', title: 'Shape of You', artist: 'Ed Sheeran' },
-            { id: 'kJQP7kiw5Fk', title: 'Despacito', artist: 'Luis Fonsi' },
             { id: '09R8_2nJtjg', title: 'Sugar', artist: 'Maroon 5' },
             { id: 'fJ9rUzIMcZQ', title: 'Bohemian Rhapsody', artist: 'Queen' },
             { id: 'lp-EO5I60KA', title: 'Faded', artist: 'Alan Walker' }
-        ],
-        remix: [
-            { id: 'vWBIxXcEssI', title: 'Hai Phút Hơn (Remix)', artist: 'Pháo' },
-            { id: 'kJQP7kiw5Fk', title: 'Despacito (Remix)', artist: 'Luis Fonsi' },
-            { id: 'lp-EO5I60KA', title: 'Faded (Remix)', artist: 'Alan Walker' }
         ]
     };
 
-    var currentPlaylist = 'vietnamese';
+    var currentPlaylist = 'hot-thang7';
     var currentSongIndex = 0;
     var player = document.getElementById('youtubePlayer');
 
@@ -691,26 +364,17 @@
         currentPlaylist = playlistName;
         currentSongIndex = index;
         var song = playlists[playlistName][index];
-        
         player.src = 'https://www.youtube.com/embed/' + song.id + '?autoplay=1';
         document.getElementById('currentSongTitle').textContent = song.title + ' - ' + song.artist;
-        
-        document.querySelectorAll('.song-item').forEach(function(item) {
-            item.classList.remove('playing');
-        });
-        
+        document.querySelectorAll('.song-item').forEach(function(item) { item.classList.remove('playing'); });
         var activeItem = document.querySelector('[data-playlist="' + playlistName + '"][data-index="' + index + '"]');
-        if (activeItem) {
-            activeItem.classList.add('playing');
-        }
+        if (activeItem) activeItem.classList.add('playing');
     }
 
     function renderPlaylist(playlistName) {
         var playlist = playlists[playlistName];
         var container = document.getElementById(playlistName + 'List');
-        
         if (!container || !playlist) return;
-        
         var html = '';
         for (var i = 0; i < playlist.length; i++) {
             var song = playlist[i];
@@ -718,42 +382,45 @@
             html += '<div class="song-item' + playingClass + '" data-index="' + i + '" data-playlist="' + playlistName + '">' +
                 '<span class="song-number">' + (i + 1) + '</span>' +
                 '<img src="https://img.youtube.com/vi/' + song.id + '/mqdefault.jpg" alt="' + song.title + '" class="song-thumbnail">' +
-                '<div class="song-info">' +
-                    '<div class="song-title">' + song.title + '</div>' +
-                    '<div class="song-artist">' + song.artist + '</div>' +
-                '</div>' +
+                '<div class="song-info"><div class="song-title">' + song.title + '</div><div class="song-artist">' + song.artist + '</div></div>' +
             '</div>';
         }
         container.innerHTML = html;
-        
         container.querySelectorAll('.song-item').forEach(function(item) {
             item.addEventListener('click', function() {
-                var index = parseInt(item.dataset.index);
-                var playlist = item.dataset.playlist;
-                playSong(playlist, index);
+                playSong(item.dataset.playlist, parseInt(item.dataset.index));
             });
         });
     }
 
-    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    // Main tabs - Nhạc Việt / Nhạc Phim
+    document.querySelectorAll('.main-tab-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-            document.querySelectorAll('.playlist').forEach(function(p) { p.classList.remove('active'); });
-            
+            document.querySelectorAll('.main-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+            document.querySelectorAll('.category').forEach(function(c) { c.classList.remove('active'); });
             btn.classList.add('active');
-            var tab = btn.dataset.tab;
-            document.getElementById(tab).classList.add('active');
-            renderPlaylist(tab);
+            document.getElementById(btn.dataset.category).classList.add('active');
         });
     });
 
-    document.querySelectorAll('.play-all-btn').forEach(function(btn) {
+    // Sub tabs
+    document.querySelectorAll('.sub-tab-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            var playlist = btn.dataset.playlist;
-            playSong(playlist, 0);
+            var parent = btn.closest('.category');
+            parent.querySelectorAll('.sub-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+            parent.querySelectorAll('.playlist').forEach(function(p) { p.classList.remove('active'); });
+            btn.classList.add('active');
+            document.getElementById(btn.dataset.playlist).classList.add('active');
+            renderPlaylist(btn.dataset.playlist);
         });
     });
 
+    // Play all
+    document.querySelectorAll('.play-all-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() { playSong(btn.dataset.playlist, 0); });
+    });
+
+    // Search
     document.getElementById('searchBtn').addEventListener('click', function() {
         var query = document.getElementById('searchInput').value.trim().toLowerCase();
         if (query) {
@@ -771,12 +438,16 @@
     });
 
     document.getElementById('searchInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            document.getElementById('searchBtn').click();
-        }
+        if (e.key === 'Enter') document.getElementById('searchBtn').click();
     });
 
-    renderPlaylist('vietnamese');
+    // Init
+    renderPlaylist('hot-thang7');
+    renderPlaylist('nhac-tre');
+    renderPlaylist('nhac-ballad');
+    renderPlaylist('vuon-sao-bang');
+    renderPlaylist('tu-than-ky');
+    renderPlaylist('nhac-phim-khac');
     </script>
 </body>
 </html>
