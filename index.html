@@ -167,6 +167,13 @@
             </div>
         </div>
 
+        <div class="queue-section">
+            <div class="queue-header">
+                <h3><i class="fas fa-list-ol" style="color:#e94560"></i> Hàng chờ phát nhạc</h3>
+            </div>
+            <div class="queue-list" id="queueList"></div>
+        </div>
+
         <div class="tabs">
             <button class="tab-btn active" data-category="nhacviet">🎵 Nhạc Việt</button>
             <button class="tab-btn" data-category="nhacphim">🎬 Nhạc Phim</button>
@@ -219,8 +226,14 @@
 <footer><p>&copy; 2026 Music Blog. Tất cả quyền được bảo lưu.</p></footer>
 
 <script>
-// Firebase Config - TẠO DỰ ÁN FIREBASE MIỄN PHÍ TẠI https://console.firebase.google.com
-// Sau đó thay thế thông tin bên dưới
+// Firebase Config - PHẢI SETUP FIREBASE RULES CHO PHÉP READ/WRITE
+// Vào Firebase Console > Realtime Database > Rules > Paste:
+// {
+//   "rules": {
+//     ".read": true,
+//     ".write": true
+//   }
+// }
 var firebaseConfig = {
     apiKey: "AIzaSyBM7Oysa5yni_3uFa_fkxiDLtO-hmD10HQ",
     authDomain: "planning-with-ai-142c8.firebaseapp.com",
@@ -235,8 +248,20 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 var db = firebase.database();
 var chatRef = db.ref('chat');
-var onlineRef = db.ref('online');
 var presenceRef = db.ref('presence');
+
+// Check Firebase connection
+db.ref('.info/connected').on('value', function(snap) {
+    var connected = snap.val();
+    var chatHeader = document.querySelector('.chat-header h3');
+    if (connected) {
+        chatHeader.textContent = 'Chat trực tuyến';
+        chatHeader.style.color = '#333';
+    } else {
+        chatHeader.textContent = 'Chat (mất kết nối)';
+        chatHeader.style.color = '#e94560';
+    }
+});
 
 // ====== DATA ======
 var allSongs = {
@@ -484,7 +509,7 @@ function updateOnlineStatus() {
     var userPresence = presenceRef.child(userId);
     userPresence.set({name: username, time: firebase.database.ServerValue.TIMESTAMP});
     userPresence.onDisconnect().remove();
-    onlineRef.on('value', function(snap) {
+    presenceRef.on('value', function(snap) {
         var count = snap.numChildren() || 1;
         document.getElementById('onlineCount').textContent = count;
     });
@@ -533,6 +558,12 @@ chatRef.orderByChild('time').limitToLast(100).on('child_added', function(snap) {
         '<div class="chat-msg-time">' + timeStr + '</div>';
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+}, function(error) {
+    console.error('Firebase chat error:', error);
+    var errorDiv = document.createElement('div');
+    errorDiv.className = 'chat-msg system';
+    errorDiv.innerHTML = '<div class="chat-msg-bubble" style="color:#e94560">Lỗi kết nối chat. Kiểm tra Firebase Rules!</div>';
+    chatMessages.appendChild(errorDiv);
 });
 
 function escapeHtml(str) {
