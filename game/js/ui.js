@@ -7,6 +7,7 @@ function getSkillCategory(s) {
 
 class GameUI {
   constructor(app) {
+    this.selectedOnlinePets = [];
     this.app = app;
     this.player = app.player;
     this.currentTab = 'home';
@@ -58,6 +59,7 @@ class GameUI {
           <button class="tab-btn" data-tab="shop">🏪 Shop</button>
           <button class="tab-btn" data-tab="rank">🏆 Hạng</button>
     <button class="tab-btn" data-tab="pvpOnline">🌐 PvP Online</button>
+    <button class="tab-btn" data-tab="mapOnline">🗺️ Bản đồ Online</button>
         </div>
 
         <div id="content">
@@ -69,6 +71,7 @@ class GameUI {
           <div id="tab-inventory" class="tab-content"></div>
           <div id="tab-shop" class="tab-content"></div>
           <div id="tab-rank" class="tab-content"></div>
+          <div id="tab-mapOnline" class="tab-content"></div>
           <div id="tab-pvpOnline" class="tab-content"></div>
         </div>
 
@@ -121,6 +124,13 @@ class GameUI {
     if (el) {
       el.classList.add('active');
       this['render' + tab.charAt(0).toUpperCase() + tab.slice(1)]();
+    // Reset selected online pets when switching tabs
+    if (tab !== 'pvpOnline') {
+      this.selectedOnlinePets = [];
+    }
+    if (tab === 'mapOnline') {
+      this.renderMapOnline();
+    }
     }
     if (tab !== 'pvpOnline') {
       this.selectedOnlinePets = [];
@@ -1453,26 +1463,15 @@ class GameUI {
   // M1: PvP Online UI
   // ====================
   renderPvpOnline() {
-    var self = this;
-    const el = document.getElementById('tab-pvp-online');
+    const el = document.getElementById('tab-pvpOnline');
     if (!el) return;
     el.innerHTML = `
-      <div class="section-title">🌐 PvP Online</div>
+      <div class="section-title">\ud83c\udf10 PvP Online</div>
       <div id="online-rooms" class="room-list"></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-        <button class="btn btn-primary" onclick="app.ui.createRoom()">🛠️ Tạo phòng</button>
-        <button class="btn btn-success" onclick="app.ui.showOnlinePetSelect()">🐾 Chọn pet cho PvP</button>
-        <button class="btn btn-secondary" onclick="app.ui.loadOnlineRooms()">🔄 Làm mới</button>
-      </div>
-      <div style="margin-top:12px;font-size:12px;color:var(--text-dim)">
-        Pet đã chọn: <span id="selected-pet-display">${this.selectedOnlinePets && this.selectedOnlinePets.length ? this.selectedOnlinePets.join(', ') : 'Chưa chọn'}</span>
-      </div>
+      <button class="btn btn-primary" onclick="app.ui.createRoom()">\ud83d\udee0\ufe0f T\u1ea1o ph\u00f2ng</button>
+      <button class="btn btn-success" onclick="app.ui.showOnlinePetSelect()">\ud83d\udc2b Ch\u1ecdn pet cho PvP</button>
     `;
     this.loadOnlineRooms();
-    pvpOnline.onJoined = function(room){
-      self.toast('👤 Đối thủ đã vào! Bắt đầu battle!');
-      app.startOnlineBattle(room);
-    };
   }
 
   async loadOnlineRooms() {
@@ -1480,12 +1479,11 @@ class GameUI {
       const rooms = await FirebaseOnline.getOpenRooms();
       const container = document.getElementById('online-rooms');
       if (!container) return;
-      const filtered = rooms.filter(r => r.status === 'waiting' && r.host.uid !== FirebaseOnline.uid);
-      if (!filtered || filtered.length === 0) {
-        container.innerHTML = '<div class="empty-msg">Kh\u00f4ng c\u00f3 ph\u00f2ng n\u00e0o \u0111ang ch\u1edd.</div>';
+      if (!rooms || rooms.length === 0) {
+        container.innerHTML = '<div class="empty-msg">Kh\u00f4ng c\u00f2ng ph\u00f2ng n\u00e0o \u0111ang ch\u1edd.</div>';
         return;
       }
-      container.innerHTML = filtered.map(r => {
+      container.innerHTML = rooms.map(r => {
         const host = r.host?.name || '???';
         const status = r.status || 'waiting';
         const btn = status === 'waiting' ? `<button class="btn btn-success" onclick="app.ui.joinRoom('${r.id}')">\ud83e\udd1d Tham gia</button>` : '';
@@ -1501,39 +1499,105 @@ class GameUI {
 
   async createRoom() {
     try {
-      var self = this;
-      var pets = this.selectedOnlinePets
-        ? this.selectedOnlinePets.map(function(id){ return self.player.getPet(id); }).filter(Boolean)
-        : this.player.pets.slice(0, 3);
-      var roomId = await pvpOnline.createRoom(pets);
-      if (!roomId) { this.toast('Tạo phòng thất bại'); return; }
-      this.toast('🛡️ Đã tạo phòng, chờ đối thủ...');
-      pvpOnline.onJoined = function(room){
-        self.toast('👤 Đối thủ đã vào! Bắt đầu battle!');
-        app.startOnlineBattle(room);
-      };
-      pvpOnline.onRoomClosed = function(){
-        self.toast('🛡️ Phòng đã đóng');
-      };
+      const myPets = this.player.pets.map(p => p.id);
+      const roomId = await FirebaseOnline.createRoom(myPets);
+      this.toast(`\u2705 \u0110\u00e3 t\u1ea1o ph\u00f2ng ${roomId}`);
+      this.loadOnlineRooms();
     } catch (e) {
-      this.toast('❌ Tạo phòng thất bại');
+      this.toast('\u274c T\u1ea1o ph\u00f2ng th\u1ea5t bại');
       console.error(e);
     }
   }
 
   async joinRoom(roomId) {
     try {
-      var self = this;
-      var pets = this.selectedOnlinePets
-        ? this.selectedOnlinePets.map(function(id){ return self.player.getPet(id); }).filter(Boolean)
-        : this.player.pets.slice(0, 3);
-      var room = await FirebaseOnline.joinRoom(roomId, pets);
-      if (!room) { this.toast('Tham gia phòng thất bại'); return; }
-      this.toast('🎮 Đã vào phòng, battle bắt đầu!');
-      app.startOnlineBattle(room);
+      const myPets = this.player.pets.map(p => p.id);
+      await FirebaseOnline.joinRoom(roomId, myPets);
+      this.toast(`\u2705 \u0110\u00e3 v\u00e0o ph\u00f2ng ${roomId}`);
+      this.selectedOnlinePets = myPets.slice(0, 3);
+      if (this.worldMap) this.worldMap.selectOnlinePets(this.selectedOnlinePets);
     } catch (e) {
-      this.toast('❌ Tham gia phòng thất bại');
+      this.toast('\u274c Tham gia ph\u00f2ng th\u1ea5t bại');
       console.error(e);
+    }
+  }
+
+  // New modal for selecting pets for online PvP
+  showOnlinePetSelect() {
+    const pets = this.player.pets.filter(p => !p.dead && p.hp > 0);
+    if (pets.length === 0) {
+      this.toast('Kh\u00f4ng c\u00f3 pet kh\u1ea3 d\u1ee5ng!');
+      return;
+    }
+    let html = `<div class="modal-title">\ud83d\udc2b Ch\u1ecdn t\u1ed1i \u0111a 3 pet cho PvP Online</div>`;
+    html += '<div class="pet-grid">';
+    pets.forEach(p => {
+      const checked = this.selectedOnlinePets && this.selectedOnlinePets.includes(p.id) ? 'checked' : '';
+      html += `<label class="pet-select-item" style="margin:4px;display:flex;align-items:center">
+        <input type="checkbox" class="online-pet-check" value="${p.id}" ${checked} />
+        <span style="margin-left:6px">${p.emoji} ${p.name} (Lv.${p.level})</span>
+      </label>`;
+    });
+    html += '</div>';
+    html += `<button class="btn btn-primary" onclick="app.ui.confirmOnlinePetSelect()">\u2714 X\u00e1c nh\u1eadn</button>`;
+    html += `<button class="btn btn-close" onclick="app.ui.closeModal()">\u274c \u0110\u00f3ng</button>`;
+    this.showModal(html);
+  }
+
+  confirmOnlinePetSelect() {
+    const checks = document.querySelectorAll('.online-pet-check:checked');
+    const ids = Array.from(checks).map(c => c.value);
+    if (ids.length === 0) {
+      this.toast('Ch\u01b0a ch\u1ecdn pet n\u00e0o!');
+      return;
+    }
+    if (ids.length > 3) {
+      this.toast('Ch\u1ec9 \u0111\u01b0\u1ee3c ch\u1ecdn t\u1ed1i \u0111a 3 pet');
+      return;
+    }
+    this.selectedOnlinePets = ids;
+    if (this.worldMap) this.worldMap.selectOnlinePets(ids);
+    this.toast(`\u2705 \u0110\u00e3 ch\u1ecdn ${ids.length} pet cho PvP`);
+    this.closeModal();
+  }
+
+  // ====================
+  // M1: Map Online UI
+  // ====================
+  renderMapOnline() {
+    var self = this;
+    const el = document.getElementById('tab-mapOnline');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="section-title">🗺️ Bản đồ Online</div>
+      <div id="map-online-rooms" class="room-list"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-primary" onclick="app.startMapOnline()">🆕 Tạo map online</button>
+        <button class="btn btn-secondary" onclick="app.ui.loadMapOnlineRooms()">🔄 Làm mới</button>
+      </div>
+    `;
+    this.loadMapOnlineRooms();
+  }
+
+  async loadMapOnlineRooms() {
+    try {
+      const rooms = await FirebaseOnline.getOpenWorldRooms();
+      const container = document.getElementById('map-online-rooms');
+      if (!container) return;
+      const filtered = rooms.filter(function(r){ return r.host.uid !== FirebaseOnline.uid; });
+      if (!filtered || filtered.length === 0) {
+        container.innerHTML = '<div class="empty-msg">Không có map online nào đang chờ</div>';
+        return;
+      }
+      container.innerHTML = filtered.map(function(r){
+        var host = r.host?.name || '???';
+        return '<div class="room-item" style="margin:4px 0;padding:6px;background:rgba(255,255,255,0.04);border-radius:4px">' +
+          '<span>🗺️ Map <strong>' + (r.mapId || r.id) + '</strong> — Chủ: ' + host + '</span>' +
+          '<button class="btn btn-success" onclick="app.joinMapOnline(\'' + r.id + '\')">🤝 Tham gia</button>' +
+        '</div>';
+      }).join('');
+    } catch (e) {
+      console.error('Load map rooms error', e);
     }
   }
 

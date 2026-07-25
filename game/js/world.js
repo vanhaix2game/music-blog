@@ -105,6 +105,64 @@ class WorldMap {
     this.monsterEffects = {};
     // CC immunity: { entityId: { effectType: remainingTicks } } — miễn nhiễm 3s sau khi dính CC
     this.ccImmunity = {};
+
+    // Online mode
+    this.isOnline = false;
+    this.onlineManager = null;
+    this._monsterIdCounter = 0;
+  }
+
+  getPlayerPosition() {
+    var pet = this.fieldPetIds.length > 0 ? this.player.getPet(this.fieldPetIds[0]) : null;
+    if (!pet) return null;
+    return { x: pet.gridCol || 6, y: pet.gridRow || 5 };
+  }
+
+  setOnlineMode(manager) {
+    this.onlineManager = manager;
+    this.isOnline = true;
+    var self = this;
+    manager.startSyncPosition(this);
+    manager.onMonstersUpdate = function(monsters){
+      self._syncMonstersFromFirebase(monsters);
+    };
+  }
+
+  _syncMonstersFromFirebase(firebaseMonsters) {
+    // Host: spawn monsters that exist in Firebase but not locally
+    // Guest: replace local monsters with Firebase monsters
+    if (this.isOnline && this.onlineManager && this.onlineManager.isHost) {
+      for (var id in firebaseMonsters) {
+        var fm = firebaseMonsters[id];
+        if (!fm || !fm.alive) continue;
+        var existing = this.monsters.find(function(m){ return m.firebaseId === id; });
+        if (!existing) {
+          var mon = spawnMonster(fm.level || 5, this.getBattlePets());
+          mon.firebaseId = id;
+          mon.gridCol = fm.x;
+          mon.gridRow = fm.y;
+          mon.hp = fm.hp || mon.hp;
+          mon.maxHp = fm.maxHp || mon.maxHp;
+          if (fm.element) mon.element = fm.element;
+          this.monsters.push(mon);
+        }
+      }
+    } else if (this.isOnline) {
+      // Guest: replace local monster array with Firebase data
+      this.monsters = [];
+      for (var mid in firebaseMonsters) {
+        var fm = firebaseMonsters[mid];
+        if (!fm || !fm.alive) continue;
+        var mon = spawnMonster(fm.level || 5, this.getBattlePets());
+        mon.firebaseId = mid;
+        mon.gridCol = fm.x;
+        mon.gridRow = fm.y;
+        mon.hp = fm.hp || mon.hp;
+        mon.maxHp = fm.maxHp || mon.maxHp;
+        if (fm.element) mon.element = fm.element;
+        this.monsters.push(mon);
+      }
+    }
   }
 
   getMapInfo() {
@@ -794,6 +852,17 @@ class WorldMap {
     mon.gridRow = cell.row;
     this.monsters.push(mon);
     this.scheduleUpdate();
+    if (this.isOnline && this.onlineManager && this.onlineManager.isHost) {
+      var fid = 'mon_' + (++this._monsterIdCounter);
+      mon.firebaseId = fid;
+      this.onlineManager.syncMonster(fid, {
+        x: mon.gridCol, y: mon.gridRow,
+        hp: mon.hp, maxHp: mon.maxHp,
+        atk: mon.atk, def: mon.def,
+        element: mon.element || 'fire',
+        level: mon.level, alive: true, name: mon.name, emoji: mon.emoji
+      });
+    }
     return mon;
   }
 
@@ -1053,6 +1122,23 @@ class WorldMap {
 
     // Remove dead monsters
     this.monsters = this.monsters.filter(m => m.hp > 0 || !m.dead);
+
+    // Sync monsters to Firebase when online host
+    if (this.isOnline && this.onlineManager && this.onlineManager.isHost) {
+      var self = this;
+      this.monsters.forEach(function(m){
+        if (m.firebaseId) {
+          self.onlineManager.syncMonster(m.firebaseId, {
+            x: m.gridCol, y: m.gridRow,
+            hp: m.hp, maxHp: m.maxHp,
+            atk: m.atk, def: m.def,
+            element: m.element || 'fire',
+            level: m.level, alive: m.hp > 0,
+            name: m.name, emoji: m.emoji
+          });
+        }
+      });
+    }
 
     // Check if all pets died
     const remainingPlayer = this.getBattlePets();
@@ -1911,3 +1997,17 @@ class WorldMap {
     return this.botPlayers.map(bp => bp.character).filter(Boolean);
   }
 }
+
+// Sync methods for online map data — added via prototype
+WorldMap.prototype.syncOnlinePlayers = function(players) {
+  this.onlinePlayers = players || [];
+  if (this.refreshWorldUI) this.refreshWorldUI();
+};
+WorldMap.prototype.syncOnlineMonsters = function(monsters) {
+  this.onlineMonsters = monsters || [];
+  if (this.refreshWorldUI) this.refreshWorldUI();
+};
+WorldMap.prototype.syncOnlineResources = function(resources) {
+  this.onlineResources = resources || [];
+  if (this.refreshWorldUI) this.refreshWorldUI();
+};

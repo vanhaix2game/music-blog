@@ -656,6 +656,50 @@ class App {
     }
   }
 
+  // New: start map online (join or create)
+  async startMapOnline() {
+    var name = localStorage.getItem('musicblog_username') || FirebaseOnline.uid;
+    var emoji = this.player.costume ? (DATA.COSTUMES.find(function(c){ return c.id === app.player.costume; })?.emoji || '🐉') : '🐉';
+    var result = await worldOnline.createWorld(name, emoji);
+    if (!result) { this.ui.toast('Tạo map online thất bại'); return; }
+    this.ui.toast('🌐 Đã tạo map online, chờ người join...');
+    this._startWorldExplore();
+  }
+
+  async joinMapOnline(roomId) {
+    var name = localStorage.getItem('musicblog_username') || FirebaseOnline.uid;
+    var emoji = this.player.costume ? (DATA.COSTUMES.find(function(c){ return c.id === app.player.costume; })?.emoji || '🐉') : '🐉';
+    var room = await worldOnline.joinWorld(roomId, name, emoji);
+    if (!room) { this.ui.toast('Tham gia map thất bại'); return; }
+    this.ui.toast('🌐 Đã vào map online!');
+    this._startWorldExplore();
+  }
+
+  _startWorldExplore() {
+    if (!this.ui.worldMap) {
+      this.ui.worldMap = new WorldMap(this.player);
+    }
+    this.ui.worldMap.setOnlineMode(worldOnline);
+    if (this.ui.worldMap.startExploring()) {
+      this.ui.currentTab = 'world';
+      this.ui.renderWorld();
+    }
+  }
+
+  stopExploring() {
+    if (!this.ui.worldMap) {
+      this.ui.toast('Lỗi hệ thống map!');
+      return;
+    }
+    if (this.ui.worldMap.startExploring()) {
+      this.ui.toast('⚔️ Bắt đầu khám phá map!');
+      this.ui.currentTab = 'world';
+      this.ui.renderWorld();
+    } else {
+      this.ui.toast('Cần pet còn sống để chiến đấu!');
+    }
+  }
+
   stopExploring() {
     if (this.ui.worldMap) {
       this.ui.worldMap.stopExploring();

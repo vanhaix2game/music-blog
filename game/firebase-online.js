@@ -24,6 +24,8 @@
     onRoomUpdate: null,
     onBattleUpdate: null,
     onError: null,
+    _worldRoomId: null,
+    _worldListeners: {},
 
     init: function(){
       return new Promise(function(resolve){
@@ -215,6 +217,150 @@
           });
         }
       });
+    },
+
+    // === World Map Online ===
+
+    getOpenWorldRooms: function(){
+      return new Promise(function(resolve){
+        db.ref('world_rooms').orderByChild('status').equalTo('waiting').once('value', function(snap){
+          var rooms = [];
+          snap.forEach(function(child){
+            var r = child.val();
+            r.id = child.key;
+            rooms.push(r);
+          });
+          resolve(rooms);
+        });
+      });
+    },
+
+    listenWorldRooms: function(callback){
+      var ref = db.ref('world_rooms').orderByChild('status').equalTo('waiting');
+      ref.on('value', function(snap){
+        var rooms = [];
+        snap.forEach(function(child){
+          var r = child.val();
+          r.id = child.key;
+          rooms.push(r);
+        });
+        callback(rooms);
+      });
+      return function(){ ref.off('value'); };
+    },
+
+    createWorldRoom: function(playerName, emoji){
+      return new Promise(function(resolve){
+        if(!FirebaseOnline.isLoggedIn){resolve(null);return;}
+        var roomRef = db.ref('world_rooms').push();
+        var mapId = 'map_'+Date.now();
+        var room = {
+          host: { uid: FirebaseOnline.uid, name: playerName, emoji: emoji },
+          status: 'waiting',
+          mapId: mapId,
+          created: firebase.database.ServerValue.TIMESTAMP
+        };
+        roomRef.set(room).then(function(){
+          FirebaseOnline._worldRoomId = roomRef.key;
+          FirebaseOnline._initWorldMap(mapId, playerName, emoji);
+          resolve({ roomId: roomRef.key, mapId: mapId });
+        });
+      });
+    },
+
+    joinWorldRoom: function(roomId, playerName, emoji){
+      return new Promise(function(resolve, reject){
+        if(!FirebaseOnline.isLoggedIn){ reject('Chưa đăng nhập'); return; }
+        var ref = db.ref('world_rooms/'+roomId);
+        ref.once('value').then(function(snap){
+          var room = snap.val();
+          if(!room){ reject('Phòng không tồn tại'); return; }
+          if(room.status !== 'waiting'){ reject('Phòng đã đầy hoặc kết thúc'); return; }
+          if(room.host.uid === FirebaseOnline.uid){ reject('Không thể join phòng của mình'); return; }
+          FirebaseOnline._worldRoomId = roomId;
+          ref.update({
+            status: 'playing',
+            guest: { uid: FirebaseOnline.uid, name: playerName, emoji: emoji }
+          }).then(function(){
+            FirebaseOnline._addPlayerToWorldMap(room.mapId, playerName, emoji);
+            resolve(room);
+          });
+        });
+      });
+    },
+
+    leaveWorldRoom: function(){
+      if(FirebaseOnline._worldRoomId){
+        db.ref('world_rooms/'+FirebaseOnline._worldRoomId).update({ status: 'ended' });
+        FirebaseOnline._worldRoomId = null;
+      }
+      FirebaseOnline._unwatchAllWorld();
+    },
+
+    _initWorldMap: function(mapId, hostName, hostEmoji){
+      var mapRef = db.ref('world_maps/'+mapId);
+      var mapData = {
+        host: FirebaseOnline.uid,
+        status: 'waiting',
+        players: {},
+        monsters: {},
+        resources: {}
+      };
+      mapData.players[FirebaseOnline.uid] = {
+        name: hostName, emoji: hostEmoji,
+        x: 5, y: 5, hp: 100, maxHp: 100,
+        alive: true, lastMove: Date.now()
+      };
+      mapRef.set(mapData);
+    },
+
+    _addPlayerToWorldMap: function(mapId, name, emoji){
+      db.ref('world_maps/'+mapId+'/players/'+FirebaseOnline.uid).set({
+        name: name, emoji: emoji,
+        x: 8, y: 5, hp: 100, maxHp: 100,
+        alive: true, lastMove: Date.now()
+      });
+    },
+
+    updatePlayerPosition: function(mapId, x, y){
+      if(!FirebaseOnline.isLoggedIn) return;
+      db.ref('world_maps/'+mapId+'/players/'+FirebaseOnline.uid).update({
+        x: x, y: y, lastMove: Date.now()
+      });
+    },
+
+    updatePlayerState: function(mapId, data){
+      if(!FirebaseOnline.isLoggedIn) return;
+      db.ref('world_maps/'+mapId+'/players/'+FirebaseOnline.uid).update(data);
+    },
+
+    watchWorldMap: function(mapId, callback){
+      var ref = db.ref('world_maps/'+mapId);
+      var listener = ref.on('value', function(snap){
+        callback(snap.val());
+      });
+      var key = 'map_'+mapId;
+      FirebaseOnline._worldListeners[key] = function(){ ref.off('value', listener); };
+      return FirebaseOnline._worldListeners[key];
+    },
+
+    updateWorldMonster: function(mapId, monsterId, data){
+      return db.ref('world_maps/'+mapId+'/monsters/'+monsterId).set(data);
+    },
+
+    removeWorldMonster: function(mapId, monsterId){
+      return db.ref('world_maps/'+mapId+'/monsters/'+monsterId).remove();
+    },
+
+    updateWorldResource: function(mapId, resId, data){
+      return db.ref('world_maps/'+mapId+'/resources/'+resId).set(data);
+    },
+
+    _unwatchAllWorld: function(){
+      for(var k in FirebaseOnline._worldListeners){
+        FirebaseOnline._worldListeners[k]();
+        delete FirebaseOnline._worldListeners[k];
+      }
     }
   };
 
