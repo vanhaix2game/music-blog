@@ -126,19 +126,8 @@
         .queue-empty{text-align:center;padding:1.5rem;color:rgba(0,0,0,0.25);font-size:0.85rem}
         body.dark .queue-empty{color:rgba(255,255,255,0.3)}
 
-        .song-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:0.8rem}
-        .song-card{border-radius:12px;overflow:hidden;cursor:pointer;background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);transition:transform 0.3s,box-shadow 0.3s}
-        body.dark .song-card{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.1)}
-        .song-card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(0,0,0,0.15)}
-        body.dark .song-card:hover{box-shadow:0 12px 30px rgba(0,0,0,0.4)}
-        .song-card img{width:100%;aspect-ratio:1;object-fit:cover}
-        .song-card-info{padding:0.6rem}
-        .song-card-title{font-size:0.78rem;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        body.dark .song-card-title{color:#fff}
-        .song-card-artist{font-size:0.68rem;color:rgba(0,0,0,0.4);margin-top:0.2rem}
-        body.dark .song-card-artist{color:rgba(255,255,255,0.5)}
-
         .playlist-section{border-radius:12px;padding:1rem}
+        .game-container{padding:1rem;min-height:0}
 
         .chat-panel{display:flex;flex-direction:column;height:calc(100vh - 100px);position:sticky;top:80px}
         .chat-header{padding:1rem;border-bottom:1px solid rgba(0,0,0,0.06);display:flex;align-items:center;gap:0.5rem;flex-shrink:0}
@@ -287,15 +276,14 @@
                 </div>
             </div>
 
-            <div class="playlist-section glass">
+            <div class="game-container glass" id="gameContainer">
                 <div class="queue-header">
-                    <h3><i class="fas fa-fire" style="color:#e94560"></i> Danh sách bài hát</h3>
-                    <div style="display:flex;gap:0.4rem">
-                        <button class="ctrl-btn" id="shuffleGridBtn" title="Xáo trộn" style="width:32px;height:32px;font-size:0.8rem"><i class="fas fa-random"></i></button>
-                        <button class="ctrl-btn" id="resetGridBtn" title="Đặt lại" style="width:32px;height:32px;font-size:0.8rem"><i class="fas fa-undo"></i></button>
-                    </div>
+                    <h3><i class="fas fa-gamepad" style="color:#e94560"></i> Game Pet</h3>
+                    <span style="font-size:0.75rem;color:rgba(0,0,0,0.3)">Nuôi pet online</span>
                 </div>
-                <div class="song-grid" id="allSongsGrid"></div>
+                <div style="position:relative;width:100%;height:600px;border-radius:12px;overflow:hidden">
+                    <iframe id="gameFrame" src="game/index.html" style="width:100%;height:100%;border:none;border-radius:12px" allowfullscreen></iframe>
+                </div>
             </div>
         </div>
 
@@ -546,7 +534,6 @@ function initApp(userUid){
         }
     });
 
-    renderSongGrid(allSongs,'allSongsGrid');
 }
 
 function extractVideoId(url){
@@ -663,23 +650,6 @@ setInterval(function(){
     });
 }, 2000);
 
-function renderSongGrid(songs, containerId){
-    var container = document.getElementById(containerId);
-    var html = '';
-    for(var i=0;i<songs.length;i++){
-        var s=songs[i];
-        html+='<div class="song-card" data-id="'+s.id+'" data-title="'+s.title+'" data-artist="'+s.artist+'">'+
-            '<img src="https://img.youtube.com/vi/'+s.id+'/mqdefault.jpg" alt="'+s.title+'">'+
-            '<div class="song-card-info"><div class="song-card-title">'+s.title+'</div><div class="song-card-artist">'+s.artist+'</div></div></div>';
-    }
-    container.innerHTML=html;
-    container.querySelectorAll('.song-card').forEach(function(card){
-        card.addEventListener('click',function(){
-            addToQueue({id:card.dataset.id,title:card.dataset.title,artist:card.dataset.artist});
-        });
-    });
-}
-
 function renderQueueUI(songs,currentIndex){
     var container=document.getElementById('queueList');
     var countEl=document.getElementById('queueCount');
@@ -720,24 +690,6 @@ function renderQueueUI(songs,currentIndex){
         });
     });
 }
-
-function shuffleArray(arr){
-    var a=arr.slice();
-    for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}
-    return a;
-}
-
-var currentSongOrder=allSongs.slice();
-
-document.getElementById('shuffleGridBtn').addEventListener('click',function(){
-    currentSongOrder=shuffleArray(allSongs);
-    renderSongGrid(currentSongOrder,'allSongsGrid');
-});
-
-document.getElementById('resetGridBtn').addEventListener('click',function(){
-    currentSongOrder=allSongs.slice();
-    renderSongGrid(currentSongOrder,'allSongsGrid');
-});
 
 // Chat
 var chatRef = db.ref('chat');

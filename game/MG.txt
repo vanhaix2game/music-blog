@@ -1,0 +1,43 @@
+PRD: My AI - Game Nuôi Pet
+
+Tổng Quan
+
+"My AI" là game nuôi pet trên thiết bị di động, hoàn toàn bằng tiếng Việt. Người chơi sở hữu nhiều pet, chăm sóc, chiến đấu tự động, thách đấu PvP trực tiếp, và kết hợp pet để sinh sản ra giống mới. Mục tiêu là nuôi pet mạnh nhất, sưu tầm đủ loại, và leo top bảng xếp hạng.
+
+Tính Năng Cốt Lõi
+
+Hệ Thống Pet
+
+Người chơi sở hữu nhiều pet cùng lúc trong tài khoản
+Pet thuộc 3 loại: động vật dễ thương, sinh vật huyền bí, robot
+Mỗi pet có các chỉ số: tấn công, phòng thủ, tốc độ, máu,... được sinh ra ngẫu nhiên
+Lần đầu vào game, người chơi được tặng 1 pet miễn phí với chỉ số ngẫu nhiên
+Chăm Sóc Pet
+
+Cho ăn: Tăng chỉ số và kinh nghiệm cho pet
+Tắm rửa: Hồi phục năng lượng của pet
+Chơi đùa: Tăng độ thân thiết, ảnh hưởng đến hiệu quả chiến đấu
+Huấn luyện: Tăng cấp độ và các chỉ số cơ bản
+Chiến Đấu
+
+Pet tự động chiến đấu khi vào trận
+Người chơi có thể dùng buff trong trận: tăng sát thương, hồi máu, tăng phòng thủ
+PvP trực tiếp: Thách đấu với người chơi khác, chọn pet ra trận
+Chiến thắng để nhận thêm pet mới
+Kết Hợp & Sinh Sản
+
+Khi pet đạt cấp 100: có thể kết hợp 2 pet để sinh sản
+Sau đó, cứ mỗi 50 cấp tiếp theo (cấp 150, 200, 250...) lại sinh sản được thêm
+Pet con có chỉ số = trung bình chỉ số bố mẹ + yếu tố đột biến ngẫu nhiên
+Bảng Xếp Hạng
+
+Xếp hạng dựa trên sức mạnh tổng đội pet hoặc thành tích PvP
+Khuyến khích cạnh tranh và sưu tầm
+Nội Dung
+
+Ngôn ngữ: Tiếng Việt
+Không có cốt truyện phức tạp, tập trung vào cơ chế nuôi, chiến đấu, sưu tầm và đua top
+Phong Cách Hình Ảnh
+
+Phong cách dễ thương, màu sắc tươi sáng
+Pet được thiết kế ngộ nghĩnh, phù hợp game di động có chợ trao đổi pet và vũ khí và giáp
