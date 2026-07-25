@@ -180,6 +180,7 @@
         <button class="auth-btn" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Đăng nhập</button>
         <p class="auth-toggle">Chưa có tài khoản? <a id="showRegister">Đăng ký ngay</a></p>
         <p class="auth-toggle" style="margin-top:0.3rem"><a href="index.html" style="color:rgba(0,0,0,0.4)"><i class="fas fa-arrow-left"></i> Quay về trang chủ</a></p>
+        <p class="auth-toggle" style="margin-top:0.5rem"><a id="showReset" style="color:#e74c3c;font-size:0.8rem"><i class="fas fa-key"></i> Quên mật khẩu?</a></p>
     </div>
     <div class="auth-box" id="registerBox" style="display:none">
         <h2><i class="fas fa-user-plus" style="font-size:2.5rem;display:block;margin-bottom:0.5rem"></i>Đăng ký</h2>
@@ -191,18 +192,14 @@
         <button class="auth-btn" id="registerBtn"><i class="fas fa-user-plus"></i> Đăng ký</button>
         <p class="auth-toggle">Đã có tài khoản? <a id="showLogin">Đăng nhập</a></p>
     </div>
-    <div class="auth-box" id="verifyBox" style="display:none">
-        <h2><i class="fas fa-envelope" style="font-size:2.5rem;display:block;margin-bottom:0.5rem"></i>Xác thực email</h2>
-        <p class="sub">Chúng tôi đã gửi email xác thực đến <strong id="verifyEmailDisplay"></strong></p>
-        <div class="auth-error" id="verifyError"></div>
-        <div style="text-align:center;padding:1rem 0">
-            <i class="fas fa-envelope-open-text" style="font-size:3rem;color:#e94560;opacity:0.6"></i>
-            <p style="font-size:0.85rem;color:rgba(0,0,0,0.4);margin-top:0.5rem">Vui lòng kiểm tra hộp thư và nhấn link xác thực, sau đó nhấn nút bên dưới.</p>
-            <p style="font-size:0.75rem;color:rgba(0,0,0,0.3);margin-top:0.3rem">(Kiểm tra cả mục Spam nếu không thấy)</p>
-        </div>
-        <button class="auth-btn" id="checkVerifyBtn"><i class="fas fa-sync-alt"></i> Tôi đã xác thực</button>
-        <button class="auth-btn" id="resendVerifyBtn" style="margin-top:0.5rem;background:linear-gradient(135deg,#666,#888)"><i class="fas fa-paper-plane"></i> Gửi lại email xác thực</button>
-        <p class="auth-toggle" style="margin-top:0.8rem"><a id="logoutFromVerify" style="color:rgba(0,0,0,0.4)"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></p>
+    <div class="auth-box" id="resetBox" style="display:none">
+        <h2><i class="fas fa-key" style="font-size:2.5rem;display:block;margin-bottom:0.5rem"></i>Quên mật khẩu</h2>
+        <p class="sub">Nhập email để nhận link đặt lại mật khẩu</p>
+        <div class="auth-error" id="resetError"></div>
+        <div class="auth-success" id="resetSuccess" style="display:none;color:#27ae60;font-size:0.85rem;text-align:center;margin-bottom:0.8rem"></div>
+        <input type="email" id="resetEmail" placeholder="Email của bạn..." autocomplete="email">
+        <button class="auth-btn" id="resetBtn"><i class="fas fa-paper-plane"></i> Gửi link đặt lại mật khẩu</button>
+        <p class="auth-toggle"><a id="showLoginFromReset">Quay lại đăng nhập</a></p>
     </div>
 </section>
 
@@ -321,13 +318,18 @@ var allSongs = [
 // Auth UI
 var loginBox = document.getElementById('loginBox');
 var registerBox = document.getElementById('registerBox');
+var resetBox = document.getElementById('resetBox');
 var authSection = document.getElementById('authSection');
 var appSection = document.getElementById('appSection');
 var authError = document.getElementById('authError');
 var regError = document.getElementById('regError');
+var resetError = document.getElementById('resetError');
+var resetSuccess = document.getElementById('resetSuccess');
 
-document.getElementById('showRegister').onclick = function(e){e.preventDefault();loginBox.style.display='none';registerBox.style.display='block';authError.style.display='none';};
-document.getElementById('showLogin').onclick = function(e){e.preventDefault();registerBox.style.display='none';loginBox.style.display='block';regError.style.display='none';};
+document.getElementById('showRegister').onclick = function(e){e.preventDefault();loginBox.style.display='none';registerBox.style.display='block';resetBox.style.display='none';authError.style.display='none';};
+document.getElementById('showLogin').onclick = function(e){e.preventDefault();registerBox.style.display='none';loginBox.style.display='block';resetBox.style.display='none';regError.style.display='none';};
+document.getElementById('showReset').onclick = function(e){e.preventDefault();loginBox.style.display='none';resetBox.style.display='block';authError.style.display='none';};
+document.getElementById('showLoginFromReset').onclick = function(e){e.preventDefault();resetBox.style.display='none';loginBox.style.display='block';resetError.style.display='none';resetSuccess.style.display='none';};
 
 function showAuthError(el, msg){el.textContent=msg;el.style.display='block';}
 function hideAuthError(el){el.style.display='none';}
@@ -346,6 +348,28 @@ document.getElementById('loginBtn').onclick = function(){
     });
 };
 
+document.getElementById('resetBtn').onclick = function(){
+    var email = document.getElementById('resetEmail').value.trim();
+    resetError.style.display='none';
+    resetSuccess.style.display='none';
+    if(!email){resetError.textContent='Vui lòng nhập email';resetError.style.display='block';return;}
+    document.getElementById('resetBtn').disabled=true;
+    document.getElementById('resetBtn').innerHTML='<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+    auth.sendPasswordResetEmail(email).then(function(){
+        resetSuccess.textContent='Đã gửi email đặt lại mật khẩu đến '+email+'. Kiểm tra hộp thư (cả Spam).';
+        resetSuccess.style.display='block';
+        document.getElementById('resetBtn').disabled=false;
+        document.getElementById('resetBtn').innerHTML='<i class="fas fa-paper-plane"></i> Gửi link đặt lại mật khẩu';
+    }).catch(function(err){
+        resetError.textContent=err.message;
+        resetError.style.display='block';
+        document.getElementById('resetBtn').disabled=false;
+        document.getElementById('resetBtn').innerHTML='<i class="fas fa-paper-plane"></i> Gửi link đặt lại mật khẩu';
+    });
+};
+
+document.getElementById('resetEmail').addEventListener('keypress',function(e){if(e.key==='Enter')document.getElementById('resetBtn').click();});
+
 document.getElementById('registerBtn').onclick = function(){
     var email = document.getElementById('regEmail').value.trim();
     var pass = document.getElementById('regPassword').value;
@@ -356,13 +380,7 @@ document.getElementById('registerBtn').onclick = function(){
     if(pass!==confirm){showAuthError(regError,'Mật khẩu không khớp');return;}
     document.getElementById('registerBtn').disabled = true;
     document.getElementById('registerBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng ký...';
-    auth.createUserWithEmailAndPassword(email, pass).then(function(){
-        loginBox.style.display='none';
-        registerBox.style.display='none';
-        hideAuthError(regError);
-        document.getElementById('registerBtn').disabled=false;
-        document.getElementById('registerBtn').innerHTML='<i class="fas fa-user-plus"></i> Đăng ký';
-    }).catch(function(err){
+    auth.createUserWithEmailAndPassword(email, pass).catch(function(err){
         showAuthError(regError, err.message);
         document.getElementById('registerBtn').disabled = false;
         document.getElementById('registerBtn').innerHTML = '<i class="fas fa-user-plus"></i> Đăng ký';
@@ -371,6 +389,7 @@ document.getElementById('registerBtn').onclick = function(){
 
 auth.onAuthStateChanged(function(user){
     if(user){
+        authSection.style.display = 'none';
         appSection.classList.add('show');
         document.getElementById('userBadge').style.display = 'inline';
         document.getElementById('userEmailDisplay').textContent = user.email;
@@ -392,50 +411,6 @@ auth.onAuthStateChanged(function(user){
 
 document.getElementById('logoutBtn').onclick = function(){auth.signOut();};
 document.getElementById('logoutLink').onclick = function(e){e.preventDefault();auth.signOut();};
-
-document.getElementById('resendVerifyBtn').onclick = function(){
-    var user=auth.currentUser;
-    if(!user) return;
-    document.getElementById('resendVerifyBtn').disabled=true;
-    document.getElementById('resendVerifyBtn').innerHTML='<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
-    user.sendEmailVerification().then(function(){
-        document.getElementById('verifyError').textContent='Đã gửi lại email xác thực!';
-        document.getElementById('verifyError').style.display='block';
-        document.getElementById('verifyError').style.color='#27ae60';
-        document.getElementById('resendVerifyBtn').disabled=false;
-        document.getElementById('resendVerifyBtn').innerHTML='<i class="fas fa-paper-plane"></i> Gửi lại email xác thực';
-    }).catch(function(err){
-        document.getElementById('verifyError').textContent=err.message;
-        document.getElementById('verifyError').style.display='block';
-        document.getElementById('verifyError').style.color='#e74c3c';
-        document.getElementById('resendVerifyBtn').disabled=false;
-        document.getElementById('resendVerifyBtn').innerHTML='<i class="fas fa-paper-plane"></i> Gửi lại email xác thực';
-    });
-};
-
-document.getElementById('checkVerifyBtn').onclick = function(){
-    var user=auth.currentUser;
-    if(!user) return;
-    document.getElementById('checkVerifyBtn').disabled=true;
-    document.getElementById('checkVerifyBtn').innerHTML='<i class="fas fa-spinner fa-spin"></i> Đang kiểm tra...';
-    user.reload().then(function(){
-        if(user.emailVerified){
-            document.getElementById('verifyBox').style.display='none';
-            authSection.style.display='none';
-            appSection.classList.add('show');
-            initApp(user.uid);
-} else {
-        document.getElementById('verifyBox').style.display='none';
-            document.getElementById('verifyError').textContent='Chưa xác thực. Vui lòng kiểm tra email và nhấn link xác thực.';
-            document.getElementById('verifyError').style.display='block';
-            document.getElementById('verifyError').style.color='#e74c3c';
-            document.getElementById('checkVerifyBtn').disabled=false;
-            document.getElementById('checkVerifyBtn').innerHTML='<i class="fas fa-sync-alt"></i> Tôi đã xác thực';
-        }
-    });
-};
-
-document.getElementById('logoutFromVerify').onclick = function(e){e.preventDefault();auth.signOut();};
 
 function onYouTubeIframeAPIReady(){
     ytPlayer = new YT.Player('mainPlayer', {
