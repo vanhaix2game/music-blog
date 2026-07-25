@@ -88,37 +88,57 @@ class PvPOnlineManager {
     this._cleanup();
   }
 
-  watchBattle(battleId, callback) {
-    this.currentBattleId = battleId;
-    this.onBattleUpdate = callback;
+  // Host starts battle engine and syncs to Firebase
+  startHostBattle(room) {
+    if (!room || !room.battleId) return;
+    this.currentBattleId = room.battleId;
+    var hostPets = (room.host.pets || []).map(function(d){ return Pet.fromJSON(d); });
+    var guestPets = (room.guest.pets || []).map(function(d){ return Pet.fromJSON(d); });
+    var pvp = new PVPBattle(null);
+    pvp.start(hostPets, guestPets, true);
+    pvp.onUpdate = function(b){
+      FirebaseOnline.updateBattle(room.battleId, {
+        turn: b.turn,
+        team1: b.playerTeam.map(function(p){ return p.toJSON(); }),
+        team2: b.enemyTeam.map(function(p){ return p.toJSON(); }),
+        winner: b.winner,
+        log: b.fightLog
+      });
+    };
+    pvp.onEnd = function(b){
+      FirebaseOnline.endBattle(room.battleId, b.winner);
+    };
+    return pvp;
+  }
+
+  startWatching(room, onData){
+    if (!room || !room.battleId) return;
+    this.currentBattleId = room.battleId;
     if (this._battleUnsub) this._battleUnsub();
-    this._battleUnsub = FirebaseOnline.watchBattle(battleId, (data) => {
-      if (this.onBattleUpdate) this.onBattleUpdate(data);
+    this._battleUnsub = FirebaseOnline.watchBattle(room.battleId, function(data){
+      if (onData) onData(data);
     });
   }
 
-  syncBattleState(battleId, battleState) {
-    return FirebaseOnline.updateBattle(battleId, battleState);
-  }
-
-  endBattle(battleId, winner) {
-    return FirebaseOnline.endBattle(battleId, winner);
+  stopWatching(){
+    if (this._battleUnsub){
+      this._battleUnsub();
+      this._battleUnsub = null;
+    }
   }
 
   _startWatchingRoom(roomId) {
     if (this._roomUnsub) this._roomUnsub();
-    this._roomUnsub = FirebaseOnline.watchRoom(roomId, (room) => {
+    var self = this;
+    this._roomUnsub = FirebaseOnline.watchRoom(roomId, function(room){
       if (!room || room.status === 'ended') {
-        if (this.onRoomClosed) this.onRoomClosed();
-        this._cleanup();
+        if (self.onRoomClosed) self.onRoomClosed();
+        self._cleanup();
         return;
       }
       if (room.status === 'ready' && room.battleId) {
-        this.currentBattleId = room.battleId;
-        if (this.isHost) {
-          FirebaseOnline._initBattle(room.battleId, room.host.pets, room.guest.pets);
-        }
-        if (this.onJoined) this.onJoined(room);
+        self.currentBattleId = room.battleId;
+        if (self.onJoined) self.onJoined(room);
       }
     });
   }

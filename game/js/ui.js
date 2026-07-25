@@ -1018,13 +1018,15 @@ class GameUI {
 
   leavePvP() {
     if (this.activePvPBattle) {
-      this.activePvPBattle.stop();
+      if (this.activePvPBattle.stop) this.activePvPBattle.stop();
       this.activePvPBattle = null;
     }
     if (this.activePvPMapView) {
       this.activePvPMapView.stop();
       this.activePvPMapView = null;
     }
+    pvpOnline.stopWatching();
+    if(pvpOnline.currentRoomId) pvpOnline.leaveRoom();
     this.renderBattle();
   }
 
@@ -1451,15 +1453,26 @@ class GameUI {
   // M1: PvP Online UI
   // ====================
   renderPvpOnline() {
+    var self = this;
     const el = document.getElementById('tab-pvp-online');
     if (!el) return;
     el.innerHTML = `
-      <div class="section-title">\ud83c\udf10 PvP Online</div>
+      <div class="section-title">🌐 PvP Online</div>
       <div id="online-rooms" class="room-list"></div>
-      <button class="btn btn-primary" onclick="app.ui.createRoom()">\ud83d\udee0\ufe0f T\u1ea1o ph\u00f2ng</button>
-      <button class="btn btn-success" onclick="app.ui.showOnlinePetSelect()">\ud83d\udc2b Ch\u1ecdn pet cho PvP</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-primary" onclick="app.ui.createRoom()">🛠️ Tạo phòng</button>
+        <button class="btn btn-success" onclick="app.ui.showOnlinePetSelect()">🐾 Chọn pet cho PvP</button>
+        <button class="btn btn-secondary" onclick="app.ui.loadOnlineRooms()">🔄 Làm mới</button>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--text-dim)">
+        Pet đã chọn: <span id="selected-pet-display">${this.selectedOnlinePets && this.selectedOnlinePets.length ? this.selectedOnlinePets.join(', ') : 'Chưa chọn'}</span>
+      </div>
     `;
     this.loadOnlineRooms();
+    pvpOnline.onJoined = function(room){
+      self.toast('👤 Đối thủ đã vào! Bắt đầu battle!');
+      app.startOnlineBattle(room);
+    };
   }
 
   async loadOnlineRooms() {
@@ -1488,30 +1501,38 @@ class GameUI {
 
   async createRoom() {
     try {
-      const pets = this.selectedOnlinePets
-        ? this.selectedOnlinePets.map(id => this.player.getPet(id)).filter(Boolean)
+      var self = this;
+      var pets = this.selectedOnlinePets
+        ? this.selectedOnlinePets.map(function(id){ return self.player.getPet(id); }).filter(Boolean)
         : this.player.pets.slice(0, 3);
-      const roomId = await FirebaseOnline.createRoom(pets);
-      this.toast(`\u2705 \u0110\u00e3 t\u1ea1o ph\u00f2ng ${roomId}`);
-      this.loadOnlineRooms();
+      var roomId = await pvpOnline.createRoom(pets);
+      if (!roomId) { this.toast('Tạo phòng thất bại'); return; }
+      this.toast('🛡️ Đã tạo phòng, chờ đối thủ...');
+      pvpOnline.onJoined = function(room){
+        self.toast('👤 Đối thủ đã vào! Bắt đầu battle!');
+        app.startOnlineBattle(room);
+      };
+      pvpOnline.onRoomClosed = function(){
+        self.toast('🛡️ Phòng đã đóng');
+      };
     } catch (e) {
-      this.toast('\u274c T\u1ea1o ph\u00f2ng th\u1ea5t b\u1ea1i');
+      this.toast('❌ Tạo phòng thất bại');
       console.error(e);
     }
   }
 
   async joinRoom(roomId) {
     try {
-      const pets = this.selectedOnlinePets
-        ? this.selectedOnlinePets.map(id => this.player.getPet(id)).filter(Boolean)
+      var self = this;
+      var pets = this.selectedOnlinePets
+        ? this.selectedOnlinePets.map(function(id){ return self.player.getPet(id); }).filter(Boolean)
         : this.player.pets.slice(0, 3);
-      await FirebaseOnline.joinRoom(roomId, pets);
-      this.toast(`\u2705 \u0110\u00e3 v\u00e0o ph\u00f2ng ${roomId}`);
-      const petIds = pets.map(p => p.id);
-      this.selectedOnlinePets = petIds.slice(0, 3);
-      if (this.worldMap) this.worldMap.selectOnlinePets(this.selectedOnlinePets);
+      var room = await FirebaseOnline.joinRoom(roomId, pets);
+      if (!room) { this.toast('Tham gia phòng thất bại'); return; }
+      this.toast('🎮 Đã vào phòng, battle bắt đầu!');
+      app.startOnlineBattle(room);
     } catch (e) {
-      this.toast('\u274c Tham gia ph\u00f2ng th\u1ea5t b\u1ea1i');
+      this.toast('❌ Tham gia phòng thất bại');
       console.error(e);
     }
   }
@@ -1551,6 +1572,8 @@ class GameUI {
     }
     this.selectedOnlinePets = ids;
     if (this.worldMap) this.worldMap.selectOnlinePets(ids);
+    var display = document.getElementById('selected-pet-display');
+    if (display) display.textContent = ids.join(', ');
     this.toast(`\u2705 Đã chọn ${ids.length} pet cho PvP`);
     this.closeModal();
   }

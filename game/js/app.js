@@ -699,6 +699,57 @@ class App {
     }
   }
 
+  startOnlineBattle(room) {
+    this.ui.closeModal();
+    var isHost = pvpOnline.isHost;
+    if (isHost) {
+      var pvp = pvpOnline.startHostBattle(room);
+      if (!pvp) { this.ui.toast('Lỗi khởi tạo battle'); return; }
+      this.ui.activePvPBattle = pvp;
+      this.ui.currentTab = 'battle';
+      this.ui.renderBattle();
+    }
+    pvpOnline.startWatching(room, function(data){
+      if (!data) return;
+      if (!isHost) {
+        var team1 = (data.team1 || []).map(function(d){ return Pet.fromJSON(d); });
+        var team2 = (data.team2 || []).map(function(d){ return Pet.fromJSON(d); });
+        var fake = {
+          playerTeam: team1,
+          enemyTeam: team2,
+          fightLog: data.log || [],
+          winner: data.winner,
+          getAlive: function(arr){ return arr.filter(function(p){ return !p.dead && p.hp > 0; }); },
+          getSummary: function(){
+            return { winner: data.winner, team1Alive: this.getAlive(team1).length, team2Alive: this.getAlive(team2).length, log: this.fightLog };
+          }
+        };
+        if (!app.ui.activePvPBattle) {
+          app.ui.activePvPBattle = fake;
+          app.ui.currentTab = 'battle';
+          app.ui.renderBattle();
+        }
+        app.ui._renderPvPBattleContent(document.getElementById('tab-battle'));
+      }
+      if (data.winner && data.winner !== 0) {
+        var msg = data.winner === 1 ? '🎉 Chiến thắng!' : '💔 Thua cuộc!';
+        app.ui.toast(msg);
+        if (isHost) {
+          app.player.addGold(data.winner === 1 ? 100 : 20);
+          if (data.winner === 1) app.player.pvpWins++;
+          else app.player.pvpLosses++;
+          app.saveGame();
+          app.ui.updateResources();
+        }
+        var summary = { winner: data.winner, team1Alive: data.team1 ? data.team1.filter(function(p){ return p.hp > 0; }).length : 0, team2Alive: data.team2 ? data.team2.filter(function(p){ return p.hp > 0; }).length : 0, log: data.log || [] };
+        setTimeout(function(){ app.ui.showBattleResult(summary, { gold: data.winner === 1 ? 100 : 20 }); }, 1500);
+        pvpOnline.stopWatching();
+        pvpOnline.leaveRoom();
+        app.ui.leavePvP();
+      }
+    });
+  }
+
   reviveAllPets() {
     if (this.ui.worldMap) {
       const count = this.ui.worldMap.reviveAll();
