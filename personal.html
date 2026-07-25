@@ -460,9 +460,8 @@ auth.onAuthStateChanged(function(user){
         document.getElementById('userBadge').style.display = 'inline';
         document.getElementById('userEmailDisplay').textContent = user.email;
         document.getElementById('logoutLink').style.display = 'inline';
-        document.getElementById('profileName').textContent = user.email.split('@')[0];
-        document.getElementById('profileEmail').textContent = user.email;
         initApp(user.uid);
+        initChat(user);
     } else {
         authSection.style.display = 'flex';
         appSection.classList.remove('show');
@@ -475,7 +474,6 @@ auth.onAuthStateChanged(function(user){
     }
 });
 
-document.getElementById('logoutBtn').onclick = function(){auth.signOut();};
 document.getElementById('logoutLink').onclick = function(e){e.preventDefault();auth.signOut();};
 
 function onYouTubeIframeAPIReady(){
@@ -744,12 +742,8 @@ document.getElementById('resetGridBtn').addEventListener('click',function(){
 // Chat
 var chatRef = db.ref('chat');
 var presenceRef = db.ref('presence');
-var chatInput = document.getElementById('chatInput');
-var chatSendBtn = document.getElementById('chatSendBtn');
-var chatMessages = document.getElementById('chatMessages');
 
-auth.onAuthStateChanged(function(user){
-    if(!user) return;
+function initChat(user){
     var emailName = user.email.split('@')[0];
     var storedName = localStorage.getItem('musicblog_username');
     var username = storedName || emailName;
@@ -779,14 +773,14 @@ auth.onAuthStateChanged(function(user){
     }
 
     function sendMessage(){
-        var text=chatInput.value.trim();
+        var text=document.getElementById('chatInput').value.trim();
         if(!text) return;
         chatRef.push({username:username,color:userColor,text:text,time:firebase.database.ServerValue.TIMESTAMP,userId:userId});
-        chatInput.value='';chatInput.focus();
+        document.getElementById('chatInput').value='';document.getElementById('chatInput').focus();
     }
 
-    chatSendBtn.onclick = sendMessage;
-    chatInput.onkeypress = function(e){if(e.key==='Enter')sendMessage();};
+    document.getElementById('chatSendBtn').onclick = sendMessage;
+    document.getElementById('chatInput').onkeypress = function(e){if(e.key==='Enter')sendMessage();};
 
     document.getElementById('changeNameBtn').onclick = function(){
         var newName=prompt('Nhập tên mới:',username);
@@ -807,6 +801,7 @@ auth.onAuthStateChanged(function(user){
 
     chatRef.orderByChild('time').limitToLast(50).on('child_added', function(snap){
         var msg=snap.val();
+        if(!msg) return;
         var div=document.createElement('div');
         var isSelf=msg.userId===userId;
         div.className='chat-msg'+(msg.system?' system':(isSelf?' self':' other'));
@@ -815,12 +810,12 @@ auth.onAuthStateChanged(function(user){
         div.innerHTML='<div class="chat-msg-author" style="'+(!isSelf&&!msg.system?'color:'+msg.color:'')+'">'+escapeHtml(msg.username)+'</div>'+
             '<div class="chat-msg-bubble">'+escapeHtml(msg.text)+'</div>'+
             '<div class="chat-msg-time">'+ts+'</div>';
-        chatMessages.appendChild(div);
-        chatMessages.scrollTop=chatMessages.scrollHeight;
+        document.getElementById('chatMessages').appendChild(div);
+        document.getElementById('chatMessages').scrollTop=document.getElementById('chatMessages').scrollHeight;
     });
 
     setupPresence();
-});
+}
 
 function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 </script>
