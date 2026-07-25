@@ -53,7 +53,7 @@ class PVPBattle {
     return clone;
   }
 
-  start(playerPets, enemyPets) {
+  start(playerPets, enemyPets, isOnline = false) {
     this.playerTeam = [];
     this.enemyTeam = [];
     this.fightLog = [{ text: '⚔️ Trận PvP bắt đầu!', type: 'system' }];
@@ -64,7 +64,7 @@ class PVPBattle {
     this.winner = null;
 
     for (let i = 0; i < playerPets.length; i++) {
-      const pet = this._clonePet(playerPets[i]);
+      const pet = isOnline ? playerPets[i] : this._clonePet(playerPets[i]);
       const role = getPetRole(pet.baseId);
       const pos = this.getFormation(role.id, i, 'left');
       pet.gridCol = pos.col;
@@ -74,7 +74,7 @@ class PVPBattle {
     }
 
     for (let i = 0; i < enemyPets.length; i++) {
-      const pet = this._clonePet(enemyPets[i]);
+      const pet = isOnline ? enemyPets[i] : this._clonePet(enemyPets[i]);
       const role = getPetRole(pet.baseId);
       const pos = this.getFormation(role.id, i, 'right');
       pet.gridCol = pos.col;

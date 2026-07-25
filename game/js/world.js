@@ -246,6 +246,16 @@ class WorldMap {
     this.scheduleUpdate();
   }
 
+  // Select up to 3 alive pets for online PvP
+  selectOnlinePets(petIds) {
+    const alive = this.player.pets.filter(p => !p.dead && p.hp > 0);
+    const valid = petIds.filter(id => alive.some(p => p.id === id)).slice(0, 3);
+    if (valid.length === 0) return false;
+    this.fieldPetIds = valid;
+    this.updateReserve();
+    return true;
+  }
+
   getBattlePets() {
     if (this.fieldPetIds.length > 0) {
       const alive = this.fieldPetIds.map(id => this.player.getPet(id)).filter(p => p && !p.dead && p.hp > 0);

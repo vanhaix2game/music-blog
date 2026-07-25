@@ -2,15 +2,36 @@ class App {
   constructor() {
     this.player = null;
     this.ui = null;
+    this.onlineMode = false;
   }
 
-  init() {
+  async init() {
     Leaderboard.init();
-    this.loadGame();
+    await FirebaseOnline.init();
+
+    this.onlineMode = FirebaseOnline.isLoggedIn;
+
+    if(!this.onlineMode){
+      var creds = await this._waitForPostMessage(5000);
+      if(creds){
+        try {
+          await FirebaseOnline.signIn(creds.email, creds.password);
+          this.onlineMode = FirebaseOnline.isLoggedIn;
+        } catch(e) {}
+      }
+    }
+
+    if(!this.onlineMode){
+      try{
+        var result = await FirebaseOnline.signIn('guest@musicblog.com', 'guest123');
+        if(result) this.onlineMode = true;
+      }catch(e){}
+    }
+
+    await this.loadGame();
     this.ui = new GameUI(this);
     this.ui.init();
     this.autoSave();
-    // Cheat: press ` (backtick) to get max resources
     document.addEventListener('keydown', (e) => {
       if (e.key === '`') {
         this.addCheatResources();
@@ -18,7 +39,34 @@ class App {
     });
   }
 
-  loadGame() {
+  _waitForPostMessage(timeout){
+    return new Promise(function(resolve){
+      var handler = function(e){
+        if(e.data && e.data.type === 'firebase-auth'){
+          window.removeEventListener('message', handler);
+          resolve(e.data);
+        }
+      };
+      window.addEventListener('message', handler);
+      setTimeout(function(){
+        window.removeEventListener('message', handler);
+        resolve(null);
+      }, timeout);
+    });
+  }
+
+  async loadGame() {
+    if(this.onlineMode){
+      try {
+        const onlineData = await FirebaseOnline.loadGame();
+        if(onlineData && onlineData.pets){
+          this.player = Player.fromJSON(onlineData);
+          return;
+        }
+      } catch(e) {
+        console.warn('Online load failed, trying local', e);
+      }
+    }
     try {
       const data = localStorage.getItem('myai_save');
       if (data) {
@@ -49,10 +97,13 @@ class App {
     this.player.addPet(pet);
   }
 
-  saveGame() {
+  async saveGame() {
     try {
       localStorage.setItem('myai_save', JSON.stringify(this.player.toJSON()));
       Leaderboard.updatePlayer(this.player);
+      if(this.onlineMode){
+        await FirebaseOnline.saveGame(this.player.toJSON());
+      }
     } catch (e) {
       console.warn('Save failed', e);
     }
@@ -456,12 +507,13 @@ class App {
   }
 
   startPvPBattle() {
+    // Normal PvP (offline) using selectedEnemyPets
     const team = this.ui.selectedEnemyPets;
     if (!team || team.length === 0) {
       this.ui.toast('Chọn ít nhất 1 pet!');
       return;
     }
-
+    // existing code unchanged below
     const avgLevel = Math.floor(team.reduce((s, p) => s + p.level, 0) / team.length);
     const types = Object.keys(DATA.PET_TYPES);
     const enemyTeam = [];
@@ -483,51 +535,34 @@ class App {
       pet.hp = pet.maxHp;
       enemyTeam.push(pet);
     }
-
     this.ui.closeModal();
-
     const pvp = new PVPBattle(this.player);
     this.ui.activePvPBattle = pvp;
     pvp.start(team, enemyTeam);
-
     this.ui.currentTab = 'battle';
     this.ui.renderBattle();
-
     pvp.onEnd = (b) => {
       for (const pet of team) {
         pet.totalBattles++;
         if (b.winner === 1) {
-          pet.wins++;
-          pet.addExp(30 + Math.floor(Math.random() * 30));
+          pet.wins++; pet.addExp(30 + Math.floor(Math.random() * 30));
         } else {
           pet.losses++;
         }
       }
       if (b.winner === 1) {
-        this.player.pvpWins++;
-        this.player.pvpRating += 15 + Math.floor(Math.random() * 10);
+        this.player.pvpWins++; this.player.pvpRating += 15 + Math.floor(Math.random() * 10);
         const goldReward = 100 + Math.floor(Math.random() * 100);
         this.player.addGold(goldReward);
         this.ui.toast(`🎉 PvP Thắng! +${goldReward} vàng, +rating!`);
-        this.player.updatePower();
-        this.saveGame();
-        this.ui.updateResources();
-        setTimeout(() => {
-          this.ui.showBattleResult(b.getSummary(), { gold: goldReward });
-          this.ui.leavePvP();
-        }, 2000);
+        this.player.updatePower(); this.saveGame(); this.ui.updateResources();
+        setTimeout(() => { this.ui.showBattleResult(b.getSummary(), { gold: goldReward }); this.ui.leavePvP(); }, 2000);
       } else if (b.winner === 2) {
-        this.player.pvpLosses++;
-        this.player.pvpRating = Math.max(0, this.player.pvpRating - 10);
+        this.player.pvpLosses++; this.player.pvpRating = Math.max(0, this.player.pvpRating - 10);
         this.player.addGold(20);
         this.ui.toast(`💔 PvP Thua! -rating`);
-        this.player.updatePower();
-        this.saveGame();
-        this.ui.updateResources();
-        setTimeout(() => {
-          this.ui.showBattleResult(b.getSummary(), { gold: 20 });
-          this.ui.leavePvP();
-        }, 2000);
+        this.player.updatePower(); this.saveGame(); this.ui.updateResources();
+        setTimeout(() => { this.ui.showBattleResult(b.getSummary(), { gold: 20 }); this.ui.leavePvP(); }, 2000);
       }
     };
   }

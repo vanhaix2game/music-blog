@@ -391,6 +391,7 @@ function hideAuthError(el){el.style.display='none';}
 document.getElementById('loginBtn').onclick = function(){
     var email = document.getElementById('loginEmail').value.trim();
     var pass = document.getElementById('loginPassword').value;
+    _lastCreds = {email: email, password: pass};
     hideAuthError(authError);
     if(!email||!pass){showAuthError(authError,'Vui lòng nhập email và mật khẩu');return;}
     document.getElementById('loginBtn').disabled = true;
@@ -399,6 +400,7 @@ document.getElementById('loginBtn').onclick = function(){
         showAuthError(authError, err.message);
         document.getElementById('loginBtn').disabled = false;
         document.getElementById('loginBtn').innerHTML = '<i class="fas fa-sign-in-alt"></i> Đăng nhập';
+        _lastCreds = null;
     });
 };
 
@@ -428,6 +430,7 @@ document.getElementById('registerBtn').onclick = function(){
     var email = document.getElementById('regEmail').value.trim();
     var pass = document.getElementById('regPassword').value;
     var confirm = document.getElementById('regConfirm').value;
+    _lastCreds = {email: email, password: pass};
     hideAuthError(regError);
     if(!email||!pass){showAuthError(regError,'Vui lòng điền đầy đủ thông tin');return;}
     if(pass.length<6){showAuthError(regError,'Mật khẩu phải có ít nhất 6 ký tự');return;}
@@ -438,6 +441,7 @@ document.getElementById('registerBtn').onclick = function(){
         showAuthError(regError, err.message);
         document.getElementById('registerBtn').disabled = false;
         document.getElementById('registerBtn').innerHTML = '<i class="fas fa-user-plus"></i> Đăng ký';
+        _lastCreds = null;
     });
 };
 
@@ -450,6 +454,26 @@ auth.onAuthStateChanged(function(user){
         document.getElementById('logoutLink').style.display = 'inline';
         initApp(user.uid);
         initChat(user);
+        function sendCredsToGame(){
+            var frame = document.getElementById('gameFrame');
+            if(frame && frame.contentWindow && _lastCreds){
+                frame.contentWindow.postMessage({type:'firebase-auth',email:_lastCreds.email,password:_lastCreds.password}, '*');
+                _lastCreds = null;
+            }
+        }
+        var frame = document.getElementById('gameFrame');
+        if(frame && frame.contentWindow){
+            sendCredsToGame();
+        } else {
+            var checkFrame = setInterval(function(){
+                var f = document.getElementById('gameFrame');
+                if(f && f.contentWindow){
+                    clearInterval(checkFrame);
+                    sendCredsToGame();
+                }
+            }, 200);
+            setTimeout(function(){ clearInterval(checkFrame); }, 8000);
+        }
     } else {
         authSection.style.display = 'flex';
         appSection.classList.remove('show');
@@ -503,7 +527,7 @@ function ytResume(){
     ytPlayer.playVideo();
 }
 
-var uid = null;
+var _lastCreds = null;
 var userQueueRef = null;
 var userPlayerRef = null;
 

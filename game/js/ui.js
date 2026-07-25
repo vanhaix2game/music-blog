@@ -57,6 +57,7 @@ class GameUI {
           <button class="tab-btn" data-tab="inventory">🎒 Túi</button>
           <button class="tab-btn" data-tab="shop">🏪 Shop</button>
           <button class="tab-btn" data-tab="rank">🏆 Hạng</button>
+    <button class="tab-btn" data-tab="pvpOnline">🌐 PvP Online</button>
         </div>
 
         <div id="content">
@@ -68,6 +69,7 @@ class GameUI {
           <div id="tab-inventory" class="tab-content"></div>
           <div id="tab-shop" class="tab-content"></div>
           <div id="tab-rank" class="tab-content"></div>
+          <div id="tab-pvpOnline" class="tab-content"></div>
         </div>
 
         <div id="toast"></div>
@@ -119,6 +121,9 @@ class GameUI {
     if (el) {
       el.classList.add('active');
       this['render' + tab.charAt(0).toUpperCase() + tab.slice(1)]();
+    }
+    if (tab !== 'pvpOnline') {
+      this.selectedOnlinePets = [];
     }
   }
 
@@ -1440,6 +1445,114 @@ class GameUI {
       </div>
       <button class="btn btn-primary" onclick="app.updateLeaderboard()">🔄 Cập nhật</button>
     `;
+  }
+
+  // ====================
+  // M1: PvP Online UI
+  // ====================
+  renderPvpOnline() {
+    const el = document.getElementById('tab-pvp-online');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="section-title">\ud83c\udf10 PvP Online</div>
+      <div id="online-rooms" class="room-list"></div>
+      <button class="btn btn-primary" onclick="app.ui.createRoom()">\ud83d\udee0\ufe0f T\u1ea1o ph\u00f2ng</button>
+      <button class="btn btn-success" onclick="app.ui.showOnlinePetSelect()">\ud83d\udc2b Ch\u1ecdn pet cho PvP</button>
+    `;
+    this.loadOnlineRooms();
+  }
+
+  async loadOnlineRooms() {
+    try {
+      const rooms = await FirebaseOnline.getOpenRooms();
+      const container = document.getElementById('online-rooms');
+      if (!container) return;
+      const filtered = rooms.filter(r => r.status === 'waiting' && r.host.uid !== FirebaseOnline.uid);
+      if (!filtered || filtered.length === 0) {
+        container.innerHTML = '<div class="empty-msg">Kh\u00f4ng c\u00f3 ph\u00f2ng n\u00e0o \u0111ang ch\u1edd.</div>';
+        return;
+      }
+      container.innerHTML = filtered.map(r => {
+        const host = r.host?.name || '???';
+        const status = r.status || 'waiting';
+        const btn = status === 'waiting' ? `<button class="btn btn-success" onclick="app.ui.joinRoom('${r.id}')">\ud83e\udd1d Tham gia</button>` : '';
+        return `<div class="room-item" style="margin:4px 0;padding:6px;background:rgba(255,255,255,0.04);border-radius:4px">
+          <span>\ud83d\udee1\ufe0f Ph\u00f2ng <strong>${r.id}</strong> \u2013 Ch\u1ee7: ${host} \u2013 Tr\u1ea1ng th\u00e1i: ${status}</span>
+          ${btn}
+        </div>`;
+      }).join('');
+    } catch (e) {
+      console.error('Load rooms error', e);
+    }
+  }
+
+  async createRoom() {
+    try {
+      const pets = this.selectedOnlinePets
+        ? this.selectedOnlinePets.map(id => this.player.getPet(id)).filter(Boolean)
+        : this.player.pets.slice(0, 3);
+      const roomId = await FirebaseOnline.createRoom(pets);
+      this.toast(`\u2705 \u0110\u00e3 t\u1ea1o ph\u00f2ng ${roomId}`);
+      this.loadOnlineRooms();
+    } catch (e) {
+      this.toast('\u274c T\u1ea1o ph\u00f2ng th\u1ea5t b\u1ea1i');
+      console.error(e);
+    }
+  }
+
+  async joinRoom(roomId) {
+    try {
+      const pets = this.selectedOnlinePets
+        ? this.selectedOnlinePets.map(id => this.player.getPet(id)).filter(Boolean)
+        : this.player.pets.slice(0, 3);
+      await FirebaseOnline.joinRoom(roomId, pets);
+      this.toast(`\u2705 \u0110\u00e3 v\u00e0o ph\u00f2ng ${roomId}`);
+      const petIds = pets.map(p => p.id);
+      this.selectedOnlinePets = petIds.slice(0, 3);
+      if (this.worldMap) this.worldMap.selectOnlinePets(this.selectedOnlinePets);
+    } catch (e) {
+      this.toast('\u274c Tham gia ph\u00f2ng th\u1ea5t b\u1ea1i');
+      console.error(e);
+    }
+  }
+
+  // New modal for selecting pets for online PvP
+  showOnlinePetSelect() {
+    const pets = this.player.pets.filter(p => !p.dead && p.hp > 0);
+    if (pets.length === 0) {
+      this.toast('Không có pet khả dụng!');
+      return;
+    }
+    let html = `<div class="modal-title">\ud83d\udc2b Chọn tối đa 3 pet cho PvP Online</div>`;
+    html += '<div class="pet-grid">';
+    pets.forEach(p => {
+      const checked = this.selectedOnlinePets && this.selectedOnlinePets.includes(p.id) ? 'checked' : '';
+      html += `<label class="pet-select-item" style="margin:4px;display:flex;align-items:center">
+        <input type="checkbox" class="online-pet-check" value="${p.id}" ${checked} />
+        <span style="margin-left:6px">${p.emoji} ${p.name} (Lv.${p.level})</span>
+      </label>`;
+    });
+    html += '</div>';
+    html += `<button class="btn btn-primary" onclick="app.ui.confirmOnlinePetSelect()">\u2714 Xác nhận</button>`;
+    html += `<button class="btn btn-close" onclick="app.ui.closeModal()">\u274c Đóng</button>`;
+    this.showModal(html);
+  }
+
+  confirmOnlinePetSelect() {
+    const checks = document.querySelectorAll('.online-pet-check:checked');
+    const ids = Array.from(checks).map(c => c.value);
+    if (ids.length === 0) {
+      this.toast('Chưa chọn pet nào!');
+      return;
+    }
+    if (ids.length > 3) {
+      this.toast('Chỉ được chọn tối đa 3 pet');
+      return;
+    }
+    this.selectedOnlinePets = ids;
+    if (this.worldMap) this.worldMap.selectOnlinePets(ids);
+    this.toast(`\u2705 Đã chọn ${ids.length} pet cho PvP`);
+    this.closeModal();
   }
 
   showBattleLive(battle, isPvP = false, isBoss = false) {
