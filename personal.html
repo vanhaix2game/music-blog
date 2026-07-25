@@ -339,14 +339,7 @@ document.getElementById('loginBtn').onclick = function(){
     if(!email||!pass){showAuthError(authError,'Vui lòng nhập email và mật khẩu');return;}
     document.getElementById('loginBtn').disabled = true;
     document.getElementById('loginBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng nhập...';
-    auth.signInWithEmailAndPassword(email, pass).then(function(result){
-        if(!result.user.emailVerified){
-            auth.signOut();
-            showAuthError(authError,'Email chưa được xác thực. Vui lòng kiểm tra hộp thư hoặc đăng ký lại.');
-            document.getElementById('loginBtn').disabled = false;
-            document.getElementById('loginBtn').innerHTML = '<i class="fas fa-sign-in-alt"></i> Đăng nhập';
-        }
-    }).catch(function(err){
+    auth.signInWithEmailAndPassword(email, pass).catch(function(err){
         showAuthError(authError, err.message);
         document.getElementById('loginBtn').disabled = false;
         document.getElementById('loginBtn').innerHTML = '<i class="fas fa-sign-in-alt"></i> Đăng nhập';
@@ -363,16 +356,12 @@ document.getElementById('registerBtn').onclick = function(){
     if(pass!==confirm){showAuthError(regError,'Mật khẩu không khớp');return;}
     document.getElementById('registerBtn').disabled = true;
     document.getElementById('registerBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng ký...';
-    auth.createUserWithEmailAndPassword(email, pass).then(function(result){
-        return result.user.sendEmailVerification().then(function(){
-            loginBox.style.display='none';
-            registerBox.style.display='none';
-            document.getElementById('verifyBox').style.display='block';
-            document.getElementById('verifyEmailDisplay').textContent=email;
-            hideAuthError(regError);
-            document.getElementById('registerBtn').disabled=false;
-            document.getElementById('registerBtn').innerHTML='<i class="fas fa-user-plus"></i> Đăng ký';
-        });
+    auth.createUserWithEmailAndPassword(email, pass).then(function(){
+        loginBox.style.display='none';
+        registerBox.style.display='none';
+        hideAuthError(regError);
+        document.getElementById('registerBtn').disabled=false;
+        document.getElementById('registerBtn').innerHTML='<i class="fas fa-user-plus"></i> Đăng ký';
     }).catch(function(err){
         showAuthError(regError, err.message);
         document.getElementById('registerBtn').disabled = false;
@@ -382,15 +371,6 @@ document.getElementById('registerBtn').onclick = function(){
 
 auth.onAuthStateChanged(function(user){
     if(user){
-        if(!user.emailVerified){
-            document.getElementById('verifyBox').style.display='block';
-            document.getElementById('verifyEmailDisplay').textContent=user.email;
-            document.getElementById('loginBox').style.display='none';
-            document.getElementById('registerBox').style.display='none';
-            return;
-        }
-        document.getElementById('verifyBox').style.display='none';
-        authSection.style.display = 'none';
         appSection.classList.add('show');
         document.getElementById('userBadge').style.display = 'inline';
         document.getElementById('userEmailDisplay').textContent = user.email;
