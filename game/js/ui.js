@@ -1917,7 +1917,7 @@ class GameUI {
       this.mapView.setPlayer(this.player);
       const botPetsForCanvas = this.worldMap.getBotPets();
       const botChars = this.worldMap.getBotCharacters();
-      this.mapView.syncEntities(alivePets, aliveMonsters, botPetsForCanvas, botChars);
+      this.mapView.syncEntities(alivePets, aliveMonsters, botPetsForCanvas, botChars, window.worldOnline?.remotePlayers || {});
       if (isExploring) {
         this.mapView.start();
       } else {
@@ -1990,7 +1990,7 @@ class GameUI {
       const botPetsForCanvas = this.worldMap.getBotPets();
       const botChars = this.worldMap.getBotCharacters();
       if (this.mapView) {
-        this.mapView.syncEntities(alivePets, aliveMonsters, botPetsForCanvas, botChars);
+        this.mapView.syncEntities(alivePets, aliveMonsters, botPetsForCanvas, botChars, window.worldOnline?.remotePlayers || {});
       }
 
       // Only update DOM in-place during exploring (avoids full re-render)

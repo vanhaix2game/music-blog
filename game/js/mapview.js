@@ -588,16 +588,19 @@ class MapView2D {
     ctx.restore();
   }
 
-  syncEntities(pets, monsters, botPets, botCharacters) {
+  syncEntities(pets, monsters, botPets, botCharacters, remotePlayers) {
     if (!botCharacters) botCharacters = [];
     if (!Array.isArray(botCharacters)) botCharacters = [botCharacters];
+    if (!remotePlayers) remotePlayers = {};
     const alivePetIds = new Set(pets.filter(p => !p.dead && p.hp > 0).map(p => p.id));
     const aliveMonIds = new Set(monsters.filter(m => !m.dead && m.hp > 0).map(m => m.id));
     const aliveBotIds = botPets ? new Set(botPets.filter(p => !p.dead && p.hp > 0).map(p => p.id)) : new Set();
     const aliveCharIds = new Set(botCharacters.filter(c => c && !c.dead).map(c => c.id));
+    const remoteUids = new Set(Object.keys(remotePlayers));
 
     this.entities = this.entities.filter(e => {
       if (e.dead) return false;
+      if (e.isRemote) return remoteUids.has(e.pet.id);
       if (e.isBotCharacter) return aliveCharIds.has(e.pet.id);
       if (e.isBot) return aliveBotIds.has(e.pet.id);
       if (!e.isMonster) return alivePetIds.has(e.pet.id);
@@ -673,6 +676,39 @@ class MapView2D {
       } else {
         const e = new MapEntity(bc, false, col, row);
         e.isBotCharacter = true;
+        const s = this.tileToScreen(col, row);
+        e.x = s.x; e.y = s.y;
+        this.entities.push(e);
+      }
+    }
+
+    // Remote player entities (online co-op)
+    for (const uid in remotePlayers) {
+      const rp = remotePlayers[uid];
+      if (!rp.alive) continue;
+      const col = rp.x != null ? rp.x : 0;
+      const row = rp.y != null ? rp.y : 0;
+      const pseudoPet = {
+        id: uid,
+        name: rp.name || uid.substring(0, 6),
+        emoji: rp.emoji || '🧑',
+        hp: rp.hp || 100,
+        maxHp: rp.maxHp || 100,
+        level: rp.level || 1,
+        playerColor: rp.color || '#FF6644',
+        gridCol: col,
+        gridRow: row,
+      };
+      let ent = this.entities.find(e => e.isRemote && e.pet.id === uid);
+      if (ent) {
+        ent.setTarget(col, row);
+        ent.pet.hp = pseudoPet.hp;
+        ent.pet.maxHp = pseudoPet.maxHp;
+        ent.pet.emoji = pseudoPet.emoji;
+        ent.pet.name = pseudoPet.name;
+      } else {
+        const e = new MapEntity(pseudoPet, false, col, row);
+        e.isRemote = true;
         const s = this.tileToScreen(col, row);
         e.x = s.x; e.y = s.y;
         this.entities.push(e);
@@ -1266,6 +1302,31 @@ class MapView2D {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(p.pet.name, sx + anim.wobX, sy - 29.5 + anim.bobY);
+    }
+
+    // Draw remote players (online co-op)
+    const remoteEnts = this.entities.filter(e => e.isRemote && !e.dead);
+    for (let ri = 0; ri < remoteEnts.length; ri++) {
+      const p = remoteEnts[ri];
+      const sx = p.x, sy = p.y;
+      const bobY = Math.sin(this.animTime * 2.5 + ri * 100) * 0.8;
+      const walkPhase = this.animTime * 4 + ri * 1.3 + 0.3;
+      PixelArt.drawPlayer(ctx, sx, sy + bobY, 1.2, p.pet.playerColor || '#FF6644', p.pet.emoji || '🧑', walkPhase);
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.font = '6px monospace';
+      const tw = ctx.measureText(p.pet.name).width || 24;
+      ctx.fillRect(sx - tw/2 - 3, sy - 34 + bobY, tw + 6, 9);
+      ctx.fillStyle = '#FFCC44';
+      ctx.font = '6px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.pet.name, sx, sy - 29.5 + bobY);
+      // HP bar
+      if (p.pet.hp != null && p.pet.maxHp != null) {
+        const barW = 20, barH = 3;
+        const barY = sy - 18 + bobY;
+        PixelArt.drawHPBar(ctx, sx - barW/2, barY, barW, barH, Math.max(0, p.pet.hp), p.pet.maxHp);
+      }
     }
 
     for (const eff of this.effects) eff.draw(ctx);
