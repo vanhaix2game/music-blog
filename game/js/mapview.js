@@ -390,7 +390,8 @@ class MapView2D {
       this.animTime += dt;
       this.update(dt);
       this.updatePerformanceMode();
-      const idle = this.effects.length === 0 && this.damageTexts.length === 0
+      const hasRemote = this.entities.some(e => e.isRemote);
+      const idle = !hasRemote && this.effects.length === 0 && this.damageTexts.length === 0
         && this.actionQueue.length === 0 && this.shakeTimer <= 0
         && this.lightningFlash <= 0 && !this.entities.some(e => e?.hitFlash > 0 || e?._skillTimer > 0);
       this._renderAccumulator += dt;

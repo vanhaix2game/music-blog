@@ -679,24 +679,11 @@ class App {
     if (!this.ui.worldMap) {
       this.ui.worldMap = new WorldMap(this.player);
     }
+    this.ui.worldMap.onUpdate = () => this.ui.refreshWorldUI();
     this.ui.worldMap.setOnlineMode(worldOnline);
     if (this.ui.worldMap.startExploring()) {
       this.ui.currentTab = 'world';
       this.ui.renderWorld();
-    }
-  }
-
-  stopExploring() {
-    if (!this.ui.worldMap) {
-      this.ui.toast('Lỗi hệ thống map!');
-      return;
-    }
-    if (this.ui.worldMap.startExploring()) {
-      this.ui.toast('⚔️ Bắt đầu khám phá map!');
-      this.ui.currentTab = 'world';
-      this.ui.renderWorld();
-    } else {
-      this.ui.toast('Cần pet còn sống để chiến đấu!');
     }
   }
 
