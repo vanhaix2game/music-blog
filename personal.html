@@ -140,6 +140,56 @@
 
         .playlist-section{border-radius:12px;padding:1rem}
 
+        .chat-panel{display:flex;flex-direction:column;height:calc(100vh - 100px);position:sticky;top:80px}
+        .chat-header{padding:1rem;border-bottom:1px solid rgba(0,0,0,0.06);display:flex;align-items:center;gap:0.5rem;flex-shrink:0}
+        body.dark .chat-header{border-bottom-color:rgba(255,255,255,0.1)}
+        .chat-header i{color:#e94560;font-size:1.1rem}
+        .chat-header h3{font-size:0.9rem;color:#333;flex:1}
+        body.dark .chat-header h3{color:#fff}
+        .online-count{font-size:0.7rem;color:#27ae60;display:flex;align-items:center;gap:0.3rem}
+        .online-dot{width:7px;height:7px;background:#27ae60;border-radius:50%;display:inline-block}
+        .chat-online-list{padding:0.4rem 1rem;font-size:0.7rem;color:rgba(0,0,0,0.4);border-bottom:1px solid rgba(0,0,0,0.05);min-height:1.5rem;flex-shrink:0}
+        body.dark .chat-online-list{color:rgba(255,255,255,0.5);border-bottom-color:rgba(255,255,255,0.08)}
+        .chat-messages{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:0.6rem}
+        .chat-msg{max-width:85%}
+        .chat-msg.self{align-self:flex-end}
+        .chat-msg.other{align-self:flex-start}
+        .chat-msg.system{align-self:center}
+        .chat-msg-author{font-size:0.65rem;font-weight:600;margin-bottom:0.15rem}
+        .chat-msg.self .chat-msg-author{color:#e94560;text-align:right}
+        .chat-msg.other .chat-msg-author{color:#3498db}
+        body.dark .chat-msg.other .chat-msg-author{color:#5dade2}
+        .chat-msg.system .chat-msg-author{color:rgba(0,0,0,0.3);font-style:italic;font-weight:400}
+        body.dark .chat-msg.system .chat-msg-author{color:rgba(255,255,255,0.4)}
+        .chat-msg-bubble{padding:0.5rem 0.85rem;border-radius:14px;font-size:0.82rem;line-height:1.4;word-wrap:break-word}
+        .chat-msg.self .chat-msg-bubble{background:linear-gradient(135deg,#e94560,#c23152);color:#fff;border-bottom-right-radius:4px}
+        .chat-msg.other .chat-msg-bubble{background:rgba(0,0,0,0.06);color:#333;border-bottom-left-radius:4px;border:1px solid rgba(0,0,0,0.08)}
+        body.dark .chat-msg.other .chat-msg-bubble{background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.1)}
+        .chat-msg.system .chat-msg-bubble{background:none;color:rgba(0,0,0,0.3);font-size:0.72rem;padding:0.2rem}
+        body.dark .chat-msg.system .chat-msg-bubble{color:rgba(255,255,255,0.3)}
+        .chat-msg-time{font-size:0.55rem;color:rgba(0,0,0,0.2);margin-top:0.15rem}
+        body.dark .chat-msg-time{color:rgba(255,255,255,0.25)}
+        .chat-msg.self .chat-msg-time{text-align:right}
+        .chat-input-area{padding:0.8rem;border-top:1px solid rgba(0,0,0,0.05);display:flex;gap:0.5rem;flex-shrink:0}
+        body.dark .chat-input-area{border-top-color:rgba(255,255,255,0.08)}
+        .chat-input-area input{flex:1;padding:0.6rem 1rem;border:1px solid rgba(0,0,0,0.1);border-radius:20px;font-size:0.85rem;background:rgba(0,0,0,0.03);color:#333}
+        body.dark .chat-input-area input{border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.08);color:#fff}
+        .chat-input-area input::placeholder{color:rgba(0,0,0,0.3)}
+        body.dark .chat-input-area input::placeholder{color:rgba(255,255,255,0.3)}
+        .chat-input-area input:focus{outline:none;border-color:#e94560}
+        .chat-send-btn{width:38px;height:38px;border-radius:50%;border:none;background:linear-gradient(135deg,#e94560,#c23152);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .chat-send-btn:hover{transform:scale(1.1)}
+        .chat-user-bar{padding:0.5rem 1rem;border-top:1px solid rgba(0,0,0,0.05);display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.02);border-radius:0 0 18px 18px;flex-shrink:0}
+        body.dark .chat-user-bar{border-top-color:rgba(255,255,255,0.08);background:rgba(0,0,0,0.15)}
+        .chat-user-name{font-size:0.8rem;font-weight:600;color:#e94560;display:flex;align-items:center;gap:0.4rem}
+        .chat-user-name::before{content:'';width:8px;height:8px;background:#27ae60;border-radius:50%;display:inline-block}
+        .chat-change-name-btn{background:none;border:1px solid rgba(0,0,0,0.1);padding:0.3rem 0.7rem;border-radius:8px;font-size:0.7rem;color:rgba(0,0,0,0.4);cursor:pointer}
+        body.dark .chat-change-name-btn{border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.5)}
+        .chat-change-name-btn:hover{border-color:#e94560;color:#e94560}
+        .chat-logout-btn{background:none;border:none;color:rgba(0,0,0,0.25);cursor:pointer;font-size:0.85rem;padding:0.3rem}
+        body.dark .chat-logout-btn{color:rgba(255,255,255,0.3)}
+        .chat-logout-btn:hover{color:#e74c3c}
+
         .profile-card{padding:1rem;text-align:center}
         .profile-card .avatar{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#e94560,#c23152);display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;font-size:1.8rem;color:#fff}
         .profile-card .email{font-size:0.8rem;color:rgba(0,0,0,0.4);margin-bottom:0.5rem}
@@ -250,13 +300,29 @@
         </div>
 
         <div class="right-panel">
-            <div class="profile-card glass">
-                <div class="avatar"><i class="fas fa-user"></i></div>
-                <h3 id="profileName">Khách</h3>
-                <div class="email" id="profileEmail"></div>
-                <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button>
-                <div style="margin-top:0.8rem;border-top:1px solid rgba(0,0,0,0.06);padding-top:0.8rem">
-                    <a href="index.html" style="color:#e94560;text-decoration:none;font-size:0.8rem"><i class="fas fa-globe"></i> Về trang chủ công cộng</a>
+            <div class="chat-panel glass">
+                <div class="chat-header">
+                    <i class="fas fa-comments"></i>
+                    <h3>Chat trực tuyến</h3>
+                    <span class="online-count"><span class="online-dot"></span> <span id="onlineCount">0</span> đang online</span>
+                </div>
+                <div class="chat-online-list" id="onlineNames">Đang tải...</div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-msg system">
+                        <div class="chat-msg-author">Hệ thống</div>
+                        <div class="chat-msg-bubble">Chào mừng bạn đến Music Blog!</div>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." maxlength="500">
+                    <button class="chat-send-btn" id="chatSendBtn"><i class="fas fa-paper-plane"></i></button>
+                </div>
+                <div class="chat-user-bar">
+                    <span class="chat-user-name" id="chatUserName">Khách</span>
+                    <div style="display:flex;gap:0.3rem;align-items:center">
+                        <button class="chat-change-name-btn" id="changeNameBtn"><i class="fas fa-pen"></i> Đổi tên</button>
+                        <button class="chat-logout-btn" id="chatLogoutBtn" title="Đăng xuất"><i class="fas fa-sign-out-alt"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -674,6 +740,89 @@ document.getElementById('resetGridBtn').addEventListener('click',function(){
     currentSongOrder=allSongs.slice();
     renderSongGrid(currentSongOrder,'allSongsGrid');
 });
+
+// Chat
+var chatRef = db.ref('chat');
+var presenceRef = db.ref('presence');
+var chatInput = document.getElementById('chatInput');
+var chatSendBtn = document.getElementById('chatSendBtn');
+var chatMessages = document.getElementById('chatMessages');
+
+auth.onAuthStateChanged(function(user){
+    if(!user) return;
+    var emailName = user.email.split('@')[0];
+    var storedName = localStorage.getItem('musicblog_username');
+    var username = storedName || emailName;
+    localStorage.setItem('musicblog_username', username);
+    document.getElementById('chatUserName').textContent = username;
+
+    var userColor = localStorage.getItem('musicblog_color') || (function(){
+        var c=['#e94560','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e74c3c'];
+        var pick=c[Math.floor(Math.random()*c.length)];
+        localStorage.setItem('musicblog_color',pick);
+        return pick;
+    })();
+    var userId = localStorage.getItem('musicblog_uid') || ('u_'+Math.random().toString(36).substr(2,9));
+    localStorage.setItem('musicblog_uid',userId);
+
+    function setupPresence(){
+        var myPres = presenceRef.child(userId);
+        myPres.set({name:username,time:firebase.database.ServerValue.TIMESTAMP});
+        myPres.onDisconnect().remove();
+        presenceRef.on('value', function(snap){
+            var users=snap.val()||{};
+            var keys=Object.keys(users);
+            document.getElementById('onlineCount').textContent=keys.length;
+            var names=keys.map(function(k){return users[k].name;}).join(', ');
+            document.getElementById('onlineNames').textContent=names||'Không ai';
+        });
+    }
+
+    function sendMessage(){
+        var text=chatInput.value.trim();
+        if(!text) return;
+        chatRef.push({username:username,color:userColor,text:text,time:firebase.database.ServerValue.TIMESTAMP,userId:userId});
+        chatInput.value='';chatInput.focus();
+    }
+
+    chatSendBtn.onclick = sendMessage;
+    chatInput.onkeypress = function(e){if(e.key==='Enter')sendMessage();};
+
+    document.getElementById('changeNameBtn').onclick = function(){
+        var newName=prompt('Nhập tên mới:',username);
+        if(!newName) return;
+        newName=newName.trim();
+        if(newName.length<2){alert('Tên phải có ít nhất 2 ký tự!');return;}
+        username=newName;
+        localStorage.setItem('musicblog_username',username);
+        document.getElementById('chatUserName').textContent=username;
+        setupPresence();
+        chatRef.push({username:'Hệ thống',text:username+' đã đổi tên trong trang cá nhân',time:firebase.database.ServerValue.TIMESTAMP,system:true});
+    };
+
+    document.getElementById('chatLogoutBtn').onclick = function(){
+        presenceRef.child(userId).remove();
+        auth.signOut();
+    };
+
+    chatRef.orderByChild('time').limitToLast(50).on('child_added', function(snap){
+        var msg=snap.val();
+        var div=document.createElement('div');
+        var isSelf=msg.userId===userId;
+        div.className='chat-msg'+(msg.system?' system':(isSelf?' self':' other'));
+        var t=new Date(msg.time);
+        var ts=t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0');
+        div.innerHTML='<div class="chat-msg-author" style="'+(!isSelf&&!msg.system?'color:'+msg.color:'')+'">'+escapeHtml(msg.username)+'</div>'+
+            '<div class="chat-msg-bubble">'+escapeHtml(msg.text)+'</div>'+
+            '<div class="chat-msg-time">'+ts+'</div>';
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop=chatMessages.scrollHeight;
+    });
+
+    setupPresence();
+});
+
+function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 </script>
 </body>
 </html>
