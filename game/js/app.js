@@ -656,23 +656,21 @@ class App {
     }
   }
 
-  // === PvP Online Map ===
+  // === Persistent Online World (no rooms) ===
 
-  async startMapOnline() {
+  async enterOnlineWorld() {
+    if (!FirebaseOnline.isLoggedIn) {
+      this.ui.toast('Cần đăng nhập để chơi online!');
+      var name = localStorage.getItem('musicblog_username') || 'Khách';
+      var emoji = this.player.costume ? (DATA.COSTUMES.find(function(c){ return c.id === app.player.costume; })?.emoji || '🐉') : '🐉';
+      await worldOnline.enterWorld(name, emoji);
+      return;
+    }
     var name = localStorage.getItem('musicblog_username') || FirebaseOnline.uid;
     var emoji = this.player.costume ? (DATA.COSTUMES.find(function(c){ return c.id === app.player.costume; })?.emoji || '🐉') : '🐉';
-    var result = await worldOnline.createWorld(name, emoji);
-    if (!result) { this.ui.toast('Tạo map online thất bại'); return; }
-    this.ui.toast('🌐 Đã tạo map online, chờ người join...');
-    this._enterPvPWorld();
-  }
-
-  async joinMapOnline(roomId) {
-    var name = localStorage.getItem('musicblog_username') || FirebaseOnline.uid;
-    var emoji = this.player.costume ? (DATA.COSTUMES.find(function(c){ return c.id === app.player.costume; })?.emoji || '🐉') : '🐉';
-    var room = await worldOnline.joinWorld(roomId, name, emoji);
-    if (!room) { this.ui.toast('Tham gia map thất bại'); return; }
-    this.ui.toast('🌐 Đã vào map online!');
+    var ok = await worldOnline.enterWorld(name, emoji);
+    if (!ok) { this.ui.toast('Vào world thất bại'); return; }
+    this.ui.toast('🌐 Đã vào thế giới online!');
     this._enterPvPWorld();
   }
 

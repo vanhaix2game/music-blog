@@ -124,13 +124,6 @@ class GameUI {
     if (el) {
       el.classList.add('active');
       this['render' + tab.charAt(0).toUpperCase() + tab.slice(1)]();
-    // Reset selected online pets when switching tabs
-    if (tab !== 'pvpOnline') {
-      this.selectedOnlinePets = [];
-    }
-    if (tab === 'mapOnline') {
-      this.renderMapOnline();
-    }
     }
     if (tab !== 'pvpOnline') {
       this.selectedOnlinePets = [];
@@ -1601,81 +1594,15 @@ class GameUI {
     var self = this;
     const el = document.getElementById('tab-mapOnline');
     if (!el) return;
-    el.innerHTML = `
-      <div class="section-title">🗺️ Bản đồ Online</div>
-      <div id="map-online-rooms" class="room-list"><div class="empty-msg">Đang tải...</div></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-        <button class="btn btn-primary" onclick="app.startMapOnline()">🆕 Tạo map online</button>
-        <button class="btn btn-secondary" onclick="app.ui.loadMapOnlineRooms()">🔄 Làm mới</button>
+    var isInWorld = worldOnline.isOnline;
+    el.innerHTML = isInWorld ? '' : `
+      <div class="section-title">🗺️ Thế giới Online</div>
+      <div style="text-align:center;padding:2rem">
+        <p style="font-size:1.2rem;margin-bottom:1rem">🌍 Cùng chơi trên một thế giới chung</p>
+        <p style="color:rgba(255,255,255,0.5);margin-bottom:1.5rem">Tất cả người online đều ở đây — không cần tạo phòng!</p>
+        <button class="btn btn-primary btn-lg" onclick="app.enterOnlineWorld()">🌐 Vào thế giới online</button>
       </div>
     `;
-    this.loadMapOnlineRooms();
-    // Auto-refresh map rooms every 3 seconds
-    if (self._mapRoomTimer) clearInterval(self._mapRoomTimer);
-    self._mapRoomTimer = setInterval(function(){ self.loadMapOnlineRooms(); }, 3000);
-  }
-
-  async loadMapOnlineRooms() {
-    try {
-      const rooms = await FirebaseOnline.getOpenWorldRooms();
-      const container = document.getElementById('map-online-rooms');
-      if (!container) return;
-      const filtered = rooms.filter(function(r){ return r.host.uid !== FirebaseOnline.uid; });
-      if (!filtered || filtered.length === 0) {
-        container.innerHTML = '<div class="empty-msg">Không có map online nào đang chờ</div>';
-        return;
-      }
-      container.innerHTML = filtered.map(function(r){
-        var host = r.host?.name || '???';
-        return '<div class="room-item" style="margin:4px 0;padding:6px;background:rgba(255,255,255,0.04);border-radius:4px">' +
-          '<span>🗺️ Map <strong>' + (r.mapId || r.id) + '</strong> — Chủ: ' + host + '</span>' +
-          '<button class="btn btn-success" onclick="app.joinMapOnline(\'' + r.id + '\')">🤝 Tham gia</button>' +
-        '</div>';
-      }).join('');
-    } catch (e) {
-      console.error('Load map rooms error', e);
-    }
-  }
-
-  // New modal for selecting pets for online PvP
-  showOnlinePetSelect() {
-    const pets = this.player.pets.filter(p => !p.dead && p.hp > 0);
-    if (pets.length === 0) {
-      this.toast('Không có pet khả dụng!');
-      return;
-    }
-    let html = `<div class="modal-title">\ud83d\udc2b Chọn tối đa 3 pet cho PvP Online</div>`;
-    html += '<div class="pet-grid">';
-    pets.forEach(p => {
-      const checked = this.selectedOnlinePets && this.selectedOnlinePets.includes(p.id) ? 'checked' : '';
-      html += `<label class="pet-select-item" style="margin:4px;display:flex;align-items:center">
-        <input type="checkbox" class="online-pet-check" value="${p.id}" ${checked} />
-        <span style="margin-left:6px">${p.emoji} ${p.name} (Lv.${p.level})</span>
-      </label>`;
-    });
-    html += '</div>';
-    html += `<button class="btn btn-primary" onclick="app.ui.confirmOnlinePetSelect()">\u2714 Xác nhận</button>`;
-    html += `<button class="btn btn-close" onclick="app.ui.closeModal()">\u274c Đóng</button>`;
-    this.showModal(html);
-  }
-
-  confirmOnlinePetSelect() {
-    const checks = document.querySelectorAll('.online-pet-check:checked');
-    const ids = Array.from(checks).map(c => c.value);
-    if (ids.length === 0) {
-      this.toast('Chưa chọn pet nào!');
-      return;
-    }
-    if (ids.length > 3) {
-      this.toast('Chỉ được chọn tối đa 3 pet');
-      return;
-    }
-    this.selectedOnlinePets = ids;
-    if (this.worldMap) this.worldMap.selectOnlinePets(ids);
-    var display = document.getElementById('selected-pet-display');
-    if (display) display.textContent = ids.join(', ');
-    this.toast(`\u2705 Đã chọn ${ids.length} pet cho PvP`);
-    this.closeModal();
   }
 
   showBattleLive(battle, isPvP = false, isBoss = false) {
