@@ -82,6 +82,14 @@ class WorldOnlineManager {
     });
   }
 
+  syncMonster(firebaseId, data) {
+    FirebaseOnline.updateMonster(firebaseId, data);
+  }
+
+  removeMonster(firebaseId) {
+    FirebaseOnline.removeMonster(firebaseId);
+  }
+
   _startWatchChallenges() {
     if (this._challengeUnsub) this._challengeUnsub();
     var self = this;

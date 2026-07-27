@@ -897,8 +897,20 @@ class WorldMap {
       lowerBoss._spawnTime = this.mapTimer;
       lowerBoss._baseLevel = lowerBoss.level;
       lowerBoss._maxLevel = lowerBoss._baseLevel + 3;
-      this.monsters.push(lowerBoss);
+this.monsters.push(lowerBoss);
       this.fightLog.push({ text: `👤 ${lowerBoss.name} (Lv.${lowerBoss.level}) xuất hiện!`, type: 'system' });
+      if (this.isOnline && this.onlineManager && this.onlineManager.isHost) {
+        var fid = 'mon_' + (++this._monsterIdCounter);
+        lowerBoss.firebaseId = fid;
+        this.onlineManager.syncMonster(fid, {
+          x: lowerBoss.gridCol, y: lowerBoss.gridRow,
+          hp: lowerBoss.hp, maxHp: lowerBoss.maxHp,
+          atk: lowerBoss.atk, def: lowerBoss.def,
+          element: lowerBoss.element || 'fire',
+          level: lowerBoss.level, alive: true, name: lowerBoss.name, emoji: lowerBoss.emoji,
+          isBoss: true
+        });
+      }
     } else {
       // Extra boss durability boost to make bosses tankier (def x3, hp x3)
       boss.def = Math.max(1, Math.floor(boss.def * 3));
@@ -907,6 +919,18 @@ class WorldMap {
       this.monsters.push(boss);
       const tierTag = tierIdx > 0 ? ` [${bossTier.name}]` : '';
       this.fightLog.push({ text: `👑 ${boss.name} (Lv.${boss.level}) xuất hiện!${tierTag}`, type: 'system' });
+      if (this.isOnline && this.onlineManager && this.onlineManager.isHost) {
+        var fid = 'mon_' + (++this._monsterIdCounter);
+        boss.firebaseId = fid;
+        this.onlineManager.syncMonster(fid, {
+          x: boss.gridCol, y: boss.gridRow,
+          hp: boss.hp, maxHp: boss.maxHp,
+          atk: boss.atk, def: boss.def,
+          element: boss.element || 'fire',
+          level: boss.level, alive: true, name: boss.name, emoji: boss.emoji,
+          isBoss: true
+        });
+      }
     }
     this.scheduleUpdate();
     return boss;

@@ -656,6 +656,37 @@ class App {
     }
   }
 
+  startOnlineExploring() {
+    if (!this.ui.worldMap) {
+      this.ui.toast('Lỗi hệ thống map!');
+      return;
+    }
+    if (this.ui.worldMap.startExploring()) {
+      this.ui.toast('⚔️ Đang khám phá map online!');
+      if (worldOnline.isHost && this.ui.worldMap.monsters) {
+        var wm = this.ui.worldMap;
+        wm.monsters.forEach(function(m){
+          if (!m.firebaseId) {
+            var fid = 'mon_' + (++wm._monsterIdCounter);
+            m.firebaseId = fid;
+            worldOnline.syncMonster(fid, {
+              x: m.gridCol, y: m.gridRow,
+              hp: m.hp, maxHp: m.maxHp,
+              atk: m.atk, def: m.def,
+              element: m.element || 'fire',
+              level: m.level, alive: true, name: m.name, emoji: m.emoji,
+              isBoss: !!m.isBoss
+            });
+          }
+        });
+      }
+      this.ui.currentTab = 'mapOnline';
+      this.ui.showTab('mapOnline');
+    } else {
+      this.ui.toast('Cần pet còn sống để chiến đấu!');
+    }
+  }
+
   // === Persistent Online World (auto-joined) ===
 
   async enterOnlineWorld() {
@@ -683,13 +714,29 @@ class App {
     this.ui.worldMap.onUpdate = () => self.ui.refreshMapOnlineUI();
     this.ui.worldMap.setOnlineMode(worldOnline);
     this.ui.worldMap.startExploring();
-    // Start periodic sync
+    // Host: sync initial monsters to Firebase
+    if (worldOnline.isHost && this.ui.worldMap.monsters) {
+      var self2 = this;
+      this.ui.worldMap.monsters.forEach(function(m){
+        var fid = 'mon_' + (++self2.ui.worldMap._monsterIdCounter);
+        m.firebaseId = fid;
+        worldOnline.syncMonster(fid, {
+          x: m.gridCol, y: m.gridRow,
+          hp: m.hp, maxHp: m.maxHp,
+          atk: m.atk, def: m.def,
+          element: m.element || 'fire',
+          level: m.level, alive: true, name: m.name, emoji: m.emoji,
+          isBoss: !!m.isBoss
+        });
+      });
+    }
+    // Start periodic refresh
     worldOnline._onlineRefreshTimer = setInterval(function(){
       if (self.ui.currentTab === 'mapOnline' && self.ui.mapView) {
         self.ui.refreshMapOnlineUI();
       }
     }, 200);
-    // Challenge callbacks
+    // Challenge callbacks for PvP Online tab
     worldOnline.onChallenge = function(id, c){
       self.ui._incomingChallengeId = id;
       self.ui._incomingChallenge = c;

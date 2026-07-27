@@ -1622,14 +1622,15 @@ class GameUI {
     // Already in online world - show canvas + player list
     var wm = window.worldOnline;
     var remoteCount = Object.keys(wm.remotePlayers || {}).length;
+    var totalPlayers = remoteCount + 1; // include self
 
     el.innerHTML = `
-      <div class="section-title">🌍 Map Online <span style="color:#27ae60;font-size:0.85rem">🌐 ${remoteCount} người đang online</span></div>
+      <div class="section-title">🌍 Map Online <span style="color:#27ae60;font-size:0.85rem">👥 ${totalPlayers} người online</span></div>
       <div class="world-canvas-container map-view-container">
         <canvas id="online-map-canvas" width="1280" height="540" class="pixel-canvas map-canvas"></canvas>
       </div>
       <div class="world-commands" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-success btn-lg" onclick="app.startExploring()">⚔️ Chiến đấu</button>
+        <button class="btn btn-success btn-lg" onclick="app.startOnlineExploring()">⚔️ Chiến đấu</button>
         <button class="btn btn-secondary" onclick="app.ui.refreshMapOnlineUI()">🔄 Làm mới</button>
         <button class="btn btn-danger" onclick="app.leavePvPWorld()">🚪 Rời map online</button>
       </div>
