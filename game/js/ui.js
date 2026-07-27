@@ -2182,9 +2182,9 @@ class GameUI {
       c.bossTimerContainer = document.createElement('div');
       c.bossTimerContainer.className = 'world-boss-timers';
       const info = el.querySelector('.world-info');
-      const monSection = el.querySelector('.world-monsters');
-      if (info && monSection) {
-        info.parentNode.insertBefore(c.bossTimerContainer, monSection);
+      const refNode = el.querySelector('.world-team') || el.querySelector('.world-status');
+      if (info && refNode) {
+        info.parentNode.insertBefore(c.bossTimerContainer, refNode);
       } else {
         el.appendChild(c.bossTimerContainer);
       }
