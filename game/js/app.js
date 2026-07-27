@@ -702,14 +702,13 @@ class App {
     if (this.ui.worldMap && this.ui.worldMap.exploring) {
       this.ui.worldMap.stopExploring();
     }
-    // Create or reuse WorldMap
+    // Create or reuse WorldMap with online mode
     if (!this.ui.worldMap) {
       this.ui.worldMap = new WorldMap(this.player);
     }
     this.ui.worldMap.onUpdate = () => self.ui.refreshWorldUI();
     this.ui.worldMap.onLogUpdate = () => self.ui.refreshLogOnly();
-    // Sync player position to Firebase
-    worldOnline.startSyncPosition(this.ui.worldMap);
+    this.ui.worldMap.setOnlineMode(worldOnline);
     // Start periodic refresh for online map canvas
     worldOnline._onlineRefreshTimer = setInterval(function(){
       if (self.ui.currentTab === 'mapOnline' && self.ui.mapView) {

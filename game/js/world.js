@@ -129,40 +129,35 @@ class WorldMap {
   }
 
   _syncMonstersFromFirebase(firebaseMonsters) {
-    // Host: spawn monsters that exist in Firebase but not locally
-    // Guest: replace local monsters with Firebase monsters
-    if (this.isOnline && this.onlineManager && this.onlineManager.isHost) {
-      for (var id in firebaseMonsters) {
-        var fm = firebaseMonsters[id];
-        if (!fm || !fm.alive) continue;
-        var existing = this.monsters.find(function(m){ return m.firebaseId === id; });
-        if (!existing) {
-          var mon = spawnMonster(fm.level || 5, this.getBattlePets());
-          mon.firebaseId = id;
-          mon.gridCol = fm.x;
-          mon.gridRow = fm.y;
-          mon.hp = fm.hp || mon.hp;
-          mon.maxHp = fm.maxHp || mon.maxHp;
-          if (fm.element) mon.element = fm.element;
-          this.monsters.push(mon);
-        }
-      }
-    } else if (this.isOnline) {
-      // Guest: replace local monster array with Firebase data
-      this.monsters = [];
-      for (var mid in firebaseMonsters) {
-        var fm = firebaseMonsters[mid];
-        if (!fm || !fm.alive) continue;
+    // Spawn monsters that exist in Firebase but not locally
+    // Don't overwrite HP (each player fights their own copies)
+    var newMonsters = [];
+    for (var id in firebaseMonsters) {
+      var fm = firebaseMonsters[id];
+      if (!fm || !fm.alive) continue;
+      var existing = this.monsters.find(function(m){ return m.firebaseId === id; });
+      if (existing) {
+        // Keep existing monster with local HP, just update position
+        existing.gridCol = fm.x;
+        existing.gridRow = fm.y;
+        newMonsters.push(existing);
+      } else {
+        // New monster from Firebase
         var mon = spawnMonster(fm.level || 5, this.getBattlePets());
-        mon.firebaseId = mid;
+        mon.firebaseId = id;
         mon.gridCol = fm.x;
         mon.gridRow = fm.y;
-        mon.hp = fm.hp || mon.hp;
         mon.maxHp = fm.maxHp || mon.maxHp;
+        mon.hp = mon.maxHp;
+        mon.level = fm.level || mon.level;
         if (fm.element) mon.element = fm.element;
-        this.monsters.push(mon);
+        if (fm.name) mon.name = fm.name;
+        if (fm.emoji) mon.emoji = fm.emoji;
+        if (fm.isBoss) { mon.isBoss = true; }
+        newMonsters.push(mon);
       }
     }
+    this.monsters = newMonsters;
   }
 
   getMapInfo() {
@@ -1145,23 +1140,17 @@ this.monsters.push(lowerBoss);
     this.tickEffects();
 
     // Remove dead monsters
-    this.monsters = this.monsters.filter(m => m.hp > 0 || !m.dead);
-
-    // Sync monsters to Firebase when online host
+    var removedIds = [];
+    this.monsters = this.monsters.filter(function(m){
+      var alive = m.hp > 0 || !m.dead;
+      if (!alive && m.firebaseId) removedIds.push(m.firebaseId);
+      return alive;
+    });
+    // Sync monster deaths to Firebase (host only)
     if (this.isOnline && this.onlineManager && this.onlineManager.isHost) {
-      var self = this;
-      this.monsters.forEach(function(m){
-        if (m.firebaseId) {
-          self.onlineManager.syncMonster(m.firebaseId, {
-            x: m.gridCol, y: m.gridRow,
-            hp: m.hp, maxHp: m.maxHp,
-            atk: m.atk, def: m.def,
-            element: m.element || 'fire',
-            level: m.level, alive: m.hp > 0,
-            name: m.name, emoji: m.emoji
-          });
-        }
-      });
+      for (var i = 0; i < removedIds.length; i++) {
+        this.onlineManager.removeMonster(removedIds[i]);
+      }
     }
 
     // Check if all pets died

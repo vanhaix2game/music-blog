@@ -1634,9 +1634,9 @@ class GameUI {
         this.mapView?.queueAction(attackerId, targetId, dmg, isCrit, skillType, roleId, isUltimate);
       };
     }
-    // Sync position if online
+    // Enable online mode for shared monsters
     if (window.worldOnline && window.worldOnline.isOnline) {
-      window.worldOnline.startSyncPosition(this.worldMap);
+      this.worldMap.setOnlineMode(window.worldOnline);
     }
 
     var wm = window.worldOnline;
