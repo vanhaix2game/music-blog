@@ -1638,28 +1638,17 @@ class GameUI {
         this.mapView?.queueAction(attackerId, targetId, dmg, isCrit, skillType, roleId, isUltimate);
       };
     }
-    // Enable online mode for shared monsters
     if (window.worldOnline && window.worldOnline.isOnline) {
       this.worldMap.setOnlineMode(window.worldOnline);
     }
-
     var wm = window.worldOnline;
-    var remoteCount = Object.keys(wm.remotePlayers || {}).length;
-    var totalPlayers = remoteCount + 1;
+    var roomLabel = 'Phòng ' + (wm.currentRoom || 1);
+    var count = Object.keys(wm.remotePlayers || {}).length + 1;
+    var headerExtra = '<span style="color:#27ae60;font-size:0.85rem;float:right">' + roomLabel + ' · 👥 ' + count + ' online</span>';
 
-    const isExploring = this.worldMap.exploring;
-    const alivePets = this.worldMap.getBattlePets();
-    const deadPets = this.player.pets.filter(p => p.dead);
-    const monsters = this.worldMap.monsters || [];
-    const aliveMonsters = monsters.filter(m => !m.dead && m.hp > 0);
-    const recentLog = this.worldMap.fightLog.slice(-10);
-    const allPets = this.player.pets;
-    const mapInfo = this.worldMap.getMapInfo();
-    const mapTimer = this.worldMap.mapTimer || 0;
-    const minutes = Math.floor(mapTimer / 60);
-    const seconds = mapTimer % 60;
+    this._renderWorldContent(el, 'online-map-canvas', headerExtra, 'selectMapOnline');
 
-    // Player list for online
+    // Append online sidebar
     var playerItems = [];
     playerItems.push({ uid: FirebaseOnline.uid, name: wm.myName || 'Bạn', emoji: wm.myEmoji || '🧑', isMe: true });
     for (var uid in wm.remotePlayers) {
@@ -1681,135 +1670,12 @@ class GameUI {
         '<button class="btn btn-success btn-sm" onclick="app.acceptChallenge(\'' + this._incomingChallengeId + '\')">✅ OK</button>' +
         '<button class="btn btn-danger btn-sm" onclick="app.declineChallenge(\'' + this._incomingChallengeId + '\')">❌</button></div>';
     }
-
-    // Boss timer
-    const bossMonsters = monsters.filter(m => m.isBoss && !m.dead && m.hp > 0);
-    const bossTimerHtml = bossMonsters.length > 0
-      ? bossMonsters.map(b => {
-          const elapsed = mapTimer - (b._spawnTime || 0);
-          const nextLevelIn = Math.max(0, 600 - (elapsed % 600));
-          const nextMin = Math.floor(nextLevelIn / 60);
-          const nextSec = nextLevelIn % 60;
-          const capText = b._maxLevel ? ` (tối đa Lv.${b._maxLevel})` : '';
-          return `<div class="boss-timer">👑 ${b.name} Lv.${b.level}${capText} — lên cấp sau ${nextMin}:${String(nextSec).padStart(2, '0')}</div>`;
-        }).join('')
-      : '';
-
-    var roomLabel = 'Phòng ' + (window.worldOnline?.currentRoom || 1);
-    var headerExtra = '<span style="color:#27ae60;font-size:0.85rem;float:right">' + roomLabel + ' · 👥 ' + totalPlayers + ' online</span>';
-
-    if (!isExploring) {
-      // Map selection screen
-      const playerMaxLvl = Math.max(...this.player.pets.map(p => p.level), 1);
-      const availableMaps = MAP_TIERS.filter(m => m.minLvl <= playerMaxLvl + 10);
-      el.innerHTML = `
-        <div class="section-title">🌍 Chọn bản đồ ${headerExtra}</div>
-        <div class="world-team">
-          <span class="team-label">🐾 Đội hình:</span>
-          ${this.getBattleTeamPreview()}
-          ${this.worldMap.reservePetIds && this.worldMap.reservePetIds.length > 0 ? `<span class="reserve-count" title="Pet dự bị">+${this.worldMap.reservePetIds.length}</span>` : ''}
-          <button class="btn btn-sm btn-secondary" onclick="app.ui.showTeamFormation()">↻</button>
-          <button class="btn btn-sm btn-secondary" onclick="app.ui.showTeamReorder()">☰</button>
-        </div>
-        <div class="map-tier-grid">
-          ${availableMaps.map(m => {
-            const locked = m.minLvl > playerMaxLvl;
-            const selected = this.worldMap.selectedMapId === m.id;
-            return '<div class="map-tier-card ' + (selected ? 'selected' : '') + ' ' + (locked ? 'locked' : '') + '" onclick="' + (locked ? '' : 'app.ui.selectMapOnline(' + m.id + ')') + '">' +
-              '<div class="map-tier-icon">' + m.icon + '</div>' +
-              '<div class="map-tier-name">' + m.name + '</div>' +
-              '<div class="map-tier-levels">Cấp ' + m.minLvl + '\u2013' + (m.maxLvl === 999 ? '\u221E' : m.maxLvl) + '</div>' +
-              (locked ? '<div class="map-tier-lock">🔒</div>' : '') +
-              '</div>';
-          }).join('')}
-        </div>
-        <div class="world-canvas-container map-view-container">
-          <canvas id="online-map-canvas" width="1280" height="540" class="pixel-canvas map-canvas"></canvas>
-        </div>
-        <div class="world-commands">
-          <button class="btn btn-success btn-lg" onclick="app.startOnlineExploring()" ${alivePets.length === 0 ? 'disabled' : ''}>
-            ${alivePets.length === 0 ? '💀 Pet đều chết! Vào 🐾 Pets cho ăn để hồi sinh' : `⚔️ Khám phá ${mapInfo.name}`}
-          </button>
-          ${deadPets.length > 0 ? '<div class="world-dead-hint">💀 Có pet chết. Vào tab 🐾 Pets, chọn pet và cho ăn để hồi sinh!</div>' : ''}
-        </div>
-        <div class="world-online-sidebar">${playerListHtml}${challengeHtml}</div>
-        <div class="world-status">
-          <div class="world-pets">
-            <div class="sub-title">🐾 Pet (${alivePets.length}/${this.player.pets.length})</div>
-            <div class="world-pet-list">
-              ${allPets.map(p => this.worldPetItem(p)).join('')}
-            </div>
-          </div>
-        </div>
-      `;
-    } else {
-      // Exploring UI
-      el.innerHTML = `
-        <div class="section-title">
-          🗺️ ${mapInfo.icon} ${mapInfo.name}
-          <span class="map-timer">⏱ ${minutes}:${String(seconds).padStart(2, '0')}</span>
-          ${headerExtra}
-        </div>
-        <div class="world-info">
-          <span>📍 Cấp ${mapInfo.minLvl}–${mapInfo.maxLvl === 999 ? '∞' : mapInfo.maxLvl}</span>
-          <span>💀 Quái: ${this.worldMap.totalKills}</span>
-          <span>👑 Boss: ${this.worldMap.bossKillCount}</span>
-        </div>
-        ${bossTimerHtml ? `<div class="world-boss-timers">${bossTimerHtml}</div>` : ''}
-        <div class="world-team">
-          <span class="team-label">🐾 Đội hình:</span>
-          ${this.getBattleTeamPreview()}
-          ${this.worldMap.reservePetIds && this.worldMap.reservePetIds.length > 0 ? `<span class="reserve-count" title="Pet dự bị">+${this.worldMap.reservePetIds.length}</span>` : ''}
-          <button class="btn btn-sm btn-secondary" onclick="app.ui.showTeamFormation()">↻</button>
-          <button class="btn btn-sm btn-secondary" onclick="app.ui.showTeamReorder()">☰</button>
-        </div>
-        <div class="world-canvas-container map-view-container">
-          <canvas id="online-map-canvas" width="1280" height="540" class="pixel-canvas map-canvas"></canvas>
-        </div>
-        <div class="world-commands">
-          <button class="btn btn-danger" onclick="app.stopOnlineExploring()">⏹️ Dừng</button>
-          <button class="btn cmd-btn ${this.worldMap.command === 'attack' ? 'active' : ''}" onclick="app.setCommand('attack')">⚔️ Tấn công</button>
-          <button class="btn cmd-btn ${this.worldMap.command === 'defend' ? 'active' : ''}" onclick="app.setCommand('defend')">🛡️ Phòng thủ</button>
-          <button class="btn cmd-btn ${this.worldMap.command === 'retreat' ? 'active' : ''}" onclick="app.setCommand('retreat')">🏃 Rút lui</button>
-          ${(this.worldMap.botPlayers?.length || 0) > 0
-            ? '<button class="btn btn-sm btn-warning" onclick="app.removeBot()">🤖 Bỏ bot (' + (this.worldMap.botPlayers?.length || 0) + ')</button>'
-            : ''}
-          <button class="btn btn-sm btn-success" onclick="app.callBot()">🤖 Gọi bot</button>
-          <span class="zoom-group">
-            <label>🔍</label>
-            ${[1,2,3,4].map(z => `<button class="btn btn-sm ${(this.mapView?.zoomLevel||1) === z ? 'active' : 'btn-ghost'}" onclick="app.setZoom(${z})">${z}×</button>`).join('')}
-          </span>
-        </div>
-        <div class="world-online-sidebar">${playerListHtml}${challengeHtml}</div>
-        <div class="world-log">
-          <div class="sub-title">📜 Nhật ký</div>
-          <div class="world-log-content">
-            ${recentLog.length ? recentLog.map(function(l) { return '<div class="log-' + l.type + '">' + l.text + '</div>'; }).join('') : '<div class="empty-msg">Chưa có chiến đấu nào</div>'}
-          </div>
-        </div>
-      `;
-    }
-
-    // Init canvas
-    const canvas = document.getElementById('online-map-canvas');
-    if (canvas) {
-      if (!this.mapView || this.mapView.canvas !== canvas) {
-        if (this.mapView) this.mapView.stop();
-        this.mapView = new MapView2D(canvas);
-      }
-      this.mapView.setTheme('grass');
-      this.mapView.setPlayer(this.player);
-      const botPetsForCanvas = this.worldMap.getBotPets();
-      const botChars = this.worldMap.getBotCharacters();
-      this.mapView.syncEntities(alivePets, aliveMonsters, botPetsForCanvas, botChars, wm.remotePlayers || {});
-      if (isExploring) {
-        this.mapView.start();
-        this.mapView.render();
-      } else {
-        this.mapView.stop();
-        this.mapView.render();
-      }
-    }
+    var sidebarEl = document.createElement('div');
+    sidebarEl.className = 'world-online-sidebar';
+    sidebarEl.innerHTML = playerListHtml + challengeHtml;
+    var existingSidebar = el.querySelector('.world-online-sidebar');
+    if (existingSidebar) existingSidebar.replaceWith(sidebarEl);
+    else el.querySelector('.world-commands')?.insertAdjacentElement('afterend', sidebarEl);
   }
 
   selectMapOnline(mapId) {
@@ -1916,14 +1782,11 @@ class GameUI {
   }
 
   renderWorld() {
-    // PvP online mode: show map + player list at bottom
     if (window.worldOnline && window.worldOnline.mapId) {
       this.renderWorldPvP();
       return;
     }
     const el = document.getElementById('tab-world');
-    // ⚠️ CRITICAL: PHẢI xoá _domCache khi rebuild DOM. updateWorldStatusInPlace dùng _domCache để cache DOM references.
-    // Nếu ko xoá, cache trỏ vào element cũ -> querySelector thất bại -> crash khi update HP bar.
     if (el) delete el._domCache;
     if (!this.worldMap) {
       this.worldMap = new WorldMap(this.player);
@@ -1935,13 +1798,23 @@ class GameUI {
         this.mapView?.queueAction(attackerId, targetId, dmg, isCrit, skillType, roleId, isUltimate);
       };
     }
+    var wm = window.worldOnline;
+    var headerExtra = '';
+    if (wm && wm.isOnline) {
+      this.worldMap.setOnlineMode(wm);
+      var roomLabel = 'Phòng ' + (wm.currentRoom || 1);
+      var count = Object.keys(wm.remotePlayers || {}).length + 1;
+      headerExtra = '<span style="color:#27ae60;font-size:0.85rem;float:right">' + roomLabel + ' · 👥 ' + count + ' online</span>';
+    }
+    this._renderWorldContent(el, 'world-map-canvas', headerExtra, 'selectMapTier');
+  }
 
+  _renderWorldContent(el, canvasId, headerExtra, selectFn) {
     const isExploring = this.worldMap.exploring;
     const alivePets = this.worldMap.getBattlePets();
     const deadPets = this.player.pets.filter(p => p.dead);
     const monsters = this.worldMap.monsters || [];
     const aliveMonsters = monsters.filter(m => !m.dead && m.hp > 0);
-    const botPets = this.worldMap.getBotPets();
     const recentLog = this.worldMap.fightLog.slice(-10);
     const allPets = this.player.pets;
     const mapInfo = this.worldMap.getMapInfo();
@@ -1949,7 +1822,6 @@ class GameUI {
     const minutes = Math.floor(mapTimer / 60);
     const seconds = mapTimer % 60;
 
-    // Boss timer info
     const bossMonsters = monsters.filter(m => m.isBoss && !m.dead && m.hp > 0);
     const bossTimerHtml = bossMonsters.length > 0
       ? bossMonsters.map(b => {
@@ -1963,7 +1835,6 @@ class GameUI {
       : '';
 
     if (!isExploring) {
-      // Map selection screen
       const playerMaxLvl = Math.max(...this.player.pets.map(p => p.level), 1);
       const availableMaps = MAP_TIERS.filter(m => m.minLvl <= playerMaxLvl + 10);
       el.innerHTML = `
@@ -1981,7 +1852,7 @@ class GameUI {
           ${availableMaps.map(m => {
             const locked = m.minLvl > playerMaxLvl;
             const selected = this.worldMap.selectedMapId === m.id;
-            return '<div class="map-tier-card ' + (selected ? 'selected' : '') + ' ' + (locked ? 'locked' : '') + '" onclick="' + (locked ? '' : 'app.ui.selectMapOnline(' + m.id + ')') + '">' +
+            return '<div class="map-tier-card ' + (selected ? 'selected' : '') + ' ' + (locked ? 'locked' : '') + '" onclick="' + (locked ? '' : 'app.ui.' + selectFn + '(' + m.id + ')') + '">' +
               '<div class="map-tier-icon">' + m.icon + '</div>' +
               '<div class="map-tier-name">' + m.name + '</div>' +
               '<div class="map-tier-levels">Cấp ' + m.minLvl + '\u2013' + (m.maxLvl === 999 ? '\u221E' : m.maxLvl) + '</div>' +
@@ -1990,7 +1861,7 @@ class GameUI {
           }).join('')}
         </div>
         <div class="world-canvas-container map-view-container">
-          <canvas id="online-map-canvas" width="1280" height="540" class="pixel-canvas map-canvas"></canvas>
+          <canvas id="${canvasId}" width="1280" height="540" class="pixel-canvas map-canvas"></canvas>
         </div>
         <div class="world-commands">
           <button class="btn btn-success btn-lg" onclick="app.startOnlineExploring()" ${alivePets.length === 0 ? 'disabled' : ''}>
@@ -2008,7 +1879,6 @@ class GameUI {
         </div>
       `;
     } else {
-      // Exploring UI
       el.innerHTML = `
         <div class="section-title">
           🗺️ ${mapInfo.icon} ${mapInfo.name}
@@ -2029,7 +1899,7 @@ class GameUI {
           <button class="btn btn-sm btn-secondary" onclick="app.ui.showTeamReorder()">☰</button>
         </div>
         <div class="world-canvas-container map-view-container">
-          <canvas id="online-map-canvas" width="1280" height="540" class="pixel-canvas map-canvas"></canvas>
+          <canvas id="${canvasId}" width="1280" height="540" class="pixel-canvas map-canvas"></canvas>
         </div>
         <div class="world-commands">
           <button class="btn btn-danger" onclick="app.stopOnlineExploring()">⏹️ Dừng</button>
@@ -2085,10 +1955,9 @@ class GameUI {
       `;
     }
 
-    // Init or reuse map view
     var wm = window.worldOnline;
     var remotePlayers = (wm && wm.isOnline) ? (wm.remotePlayers || {}) : {};
-    const canvas = document.getElementById('online-map-canvas');
+    const canvas = document.getElementById(canvasId);
     if (canvas) {
       if (!this.mapView || this.mapView.canvas !== canvas) {
         if (this.mapView) this.mapView.stop();
@@ -2226,8 +2095,8 @@ class GameUI {
   }
 
   refreshLogOnly() {
-    if (this.currentTab !== 'world') return;
-    const el = document.getElementById('tab-world');
+    if (this.currentTab !== 'world' && this.currentTab !== 'mapOnline') return;
+    const el = document.getElementById('tab-' + this.currentTab);
     if (!el) return;
     const logEl = el.querySelector('.world-log-content');
     if (!logEl) return;
