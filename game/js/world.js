@@ -2001,13 +2001,13 @@ class WorldMap {
 // Sync methods for online map data — added via prototype
 WorldMap.prototype.syncOnlinePlayers = function(players) {
   this.onlinePlayers = players || [];
-  if (this.refreshWorldUI) this.refreshWorldUI();
+  this.scheduleUpdate();
 };
 WorldMap.prototype.syncOnlineMonsters = function(monsters) {
   this.onlineMonsters = monsters || [];
-  if (this.refreshWorldUI) this.refreshWorldUI();
+  this.scheduleUpdate();
 };
 WorldMap.prototype.syncOnlineResources = function(resources) {
   this.onlineResources = resources || [];
-  if (this.refreshWorldUI) this.refreshWorldUI();
+  this.scheduleUpdate();
 };

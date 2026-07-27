@@ -361,6 +361,53 @@
         FirebaseOnline._worldListeners[k]();
         delete FirebaseOnline._worldListeners[k];
       }
+    },
+
+    // === Challenge System ===
+
+    _challengeListener: null,
+
+    sendChallenge: function(mapId, targetUid, fromName, fromEmoji){
+      return new Promise(function(resolve){
+        var ref = db.ref('world_maps/'+mapId+'/challenges').push();
+        var challenge = {
+          from: FirebaseOnline.uid,
+          fromName: fromName,
+          fromEmoji: fromEmoji || '🐉',
+          to: targetUid,
+          status: 'pending',
+          created: firebase.database.ServerValue.TIMESTAMP
+        };
+        ref.set(challenge).then(function(){
+          resolve(ref.key);
+        });
+      });
+    },
+
+    respondToChallenge: function(mapId, challengeId, accept){
+      return db.ref('world_maps/'+mapId+'/challenges/'+challengeId).update({
+        status: accept ? 'accepted' : 'declined'
+      });
+    },
+
+    watchChallenges: function(mapId, callback){
+      if(FirebaseOnline._challengeListener) FirebaseOnline._challengeListener();
+      var ref = db.ref('world_maps/'+mapId+'/challenges');
+      var listener = ref.on('value', function(snap){
+        var challenges = {};
+        snap.forEach(function(child){
+          challenges[child.key] = child.val();
+        });
+        callback(challenges);
+      });
+      FirebaseOnline._challengeListener = function(){ ref.off('value', listener); };
+    },
+
+    unwatchChallenges: function(){
+      if(FirebaseOnline._challengeListener){
+        FirebaseOnline._challengeListener();
+        FirebaseOnline._challengeListener = null;
+      }
     }
   };
 

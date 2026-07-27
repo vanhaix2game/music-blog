@@ -6,9 +6,16 @@ class WorldOnlineManager {
     this.remoteMonsters = {};
     this._posTimer = null;
     this._unsub = null;
+    this._challengeUnsub = null;
     this.onPlayersUpdate = null;
     this.onMonstersUpdate = null;
     this.onResourcesUpdate = null;
+    this.onChallenge = null;
+    this.onChallengeResponse = null;
+    this.myName = '';
+    this.myEmoji = '🐉';
+    this._outgoingChallengeId = null;
+    this._outgoingTarget = null;
   }
 
   async createWorld(name, emoji) {
@@ -16,7 +23,10 @@ class WorldOnlineManager {
     if (!result) return null;
     this.mapId = result.mapId;
     this.isHost = true;
+    this.myName = name;
+    this.myEmoji = emoji;
     this._startWatching();
+    this._startWatchChallenges();
     return result;
   }
 
@@ -25,7 +35,10 @@ class WorldOnlineManager {
     if (!room) return null;
     this.mapId = room.mapId;
     this.isHost = false;
+    this.myName = name;
+    this.myEmoji = emoji;
     this._startWatching();
+    this._startWatchChallenges();
     return room;
   }
 
@@ -49,23 +62,59 @@ class WorldOnlineManager {
     if (this._posTimer) { clearInterval(this._posTimer); this._posTimer = null; }
   }
 
-  updatePlayerHP(mapId, hp, maxHp, alive) {
-    FirebaseOnline.updatePlayerState(mapId, { hp: hp, maxHp: maxHp, alive: alive });
+  updatePlayerHP(hp, maxHp, alive) {
+    FirebaseOnline.updatePlayerState(this.mapId, { hp: hp, maxHp: maxHp, alive: alive });
   }
 
-  syncMonster(monsterId, data) {
-    if (!this.mapId) return;
-    FirebaseOnline.updateWorldMonster(this.mapId, monsterId, data);
+  challengePlayer(targetUid) {
+    if (this._outgoingChallengeId) return;
+    var self = this;
+    return FirebaseOnline.sendChallenge(this.mapId, targetUid, this.myName, this.myEmoji).then(function(id){
+      self._outgoingChallengeId = id;
+      self._outgoingTarget = targetUid;
+      return id;
+    });
   }
 
-  removeMonster(monsterId) {
-    if (!this.mapId) return;
-    FirebaseOnline.removeWorldMonster(this.mapId, monsterId);
+  cancelChallenge() {
+    if (!this._outgoingChallengeId) return;
+    var self = this;
+    FirebaseOnline.respondToChallenge(this.mapId, this._outgoingChallengeId, false).then(function(){
+      self._outgoingChallengeId = null;
+      self._outgoingTarget = null;
+    });
   }
 
-  syncResource(resId, data) {
-    if (!this.mapId) return;
-    FirebaseOnline.updateWorldResource(this.mapId, resId, data);
+  respondToChallenge(challengeId, accept) {
+    var self = this;
+    return FirebaseOnline.respondToChallenge(this.mapId, challengeId, accept).then(function(){
+      if (accept) self._outgoingChallengeId = null;
+    });
+  }
+
+  _startWatchChallenges() {
+    if (this._challengeUnsub) this._challengeUnsub();
+    var self = this;
+    FirebaseOnline.watchChallenges(this.mapId, function(challenges){
+      for (var id in challenges) {
+        var c = challenges[id];
+        if (!c || c.status === 'declined') continue;
+        // Incoming challenge (someone challenged us)
+        if (c.to === FirebaseOnline.uid && c.status === 'pending') {
+          if (self.onChallenge) self.onChallenge(id, c);
+        }
+        // Our outgoing challenge was responded to
+        if (c.from === FirebaseOnline.uid && self._outgoingChallengeId === id) {
+          self._outgoingChallengeId = null;
+          self._outgoingTarget = null;
+          if (c.status === 'accepted') {
+            if (self.onChallengeResponse) self.onChallengeResponse(true, c);
+          } else if (c.status === 'declined') {
+            if (self.onChallengeResponse) self.onChallengeResponse(false, c);
+          }
+        }
+      }
+    });
   }
 
   _startWatching() {
@@ -97,7 +146,11 @@ class WorldOnlineManager {
     this.isHost = false;
     this.remotePlayers = {};
     this.remoteMonsters = {};
+    this._outgoingChallengeId = null;
+    this._outgoingTarget = null;
     if (this._unsub) { this._unsub(); this._unsub = null; }
+    if (this._challengeUnsub) { this._challengeUnsub(); this._challengeUnsub = null; }
+    FirebaseOnline.unwatchChallenges();
   }
 }
 

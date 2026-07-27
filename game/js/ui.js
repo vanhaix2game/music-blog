@@ -1466,12 +1466,45 @@ class GameUI {
     const el = document.getElementById('tab-pvpOnline');
     if (!el) return;
     el.innerHTML = `
-      <div class="section-title">\ud83c\udf10 PvP Online</div>
-      <div id="online-rooms" class="room-list"></div>
-      <button class="btn btn-primary" onclick="app.ui.createRoom()">\ud83d\udee0\ufe0f T\u1ea1o ph\u00f2ng</button>
-      <button class="btn btn-success" onclick="app.ui.showOnlinePetSelect()">\ud83d\udc2b Ch\u1ecdn pet cho PvP</button>
+      <div class="section-title">🌐 PvP Online</div>
+      <div id="online-rooms" class="room-list"><div class="empty-msg">Đang tải danh sách phòng...</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-primary" onclick="app.ui.createRoom()">🛠️ Tạo phòng</button>
+        <button class="btn btn-secondary" onclick="app.ui.loadOnlineRooms()">🔄 Làm mới</button>
+      </div>
     `;
     this.loadOnlineRooms();
+    this._startRoomListener();
+  }
+
+  _startRoomListener() {
+    if (this._roomUnsub) this._roomUnsub();
+    var self = this;
+    this._roomUnsub = FirebaseOnline.listenRooms(function(rooms){
+      var container = document.getElementById('online-rooms');
+      if (!container) return;
+      var filtered = rooms.filter(function(r){ return r.host.uid !== FirebaseOnline.uid; });
+      if (!filtered || filtered.length === 0) {
+        container.innerHTML = '<div class="empty-msg">Không còn phòng nào đang chờ.</div>';
+        return;
+      }
+      container.innerHTML = filtered.map(function(r){
+        var host = r.host?.name || '???';
+        var btn = r.status === 'waiting'
+          ? '<button class="btn btn-success" onclick="app.ui.joinRoom(\'' + r.id + '\')">🤝 Tham gia</button>'
+          : '<span class="badge" style="background:#e94560">Đang chiến</span>';
+        return '<div class="room-item" style="margin:4px 0;padding:6px;background:rgba(255,255,255,0.04);border-radius:4px">' +
+          '<span>🛡️ Phòng <strong>' + r.id + '</strong> — Chủ: ' + host + '</span> ' + btn +
+        '</div>';
+      }).join('');
+    });
+  }
+
+  _stopRoomListener() {
+    if (this._roomUnsub) {
+      this._roomUnsub();
+      this._roomUnsub = null;
+    }
   }
 
   async loadOnlineRooms() {
@@ -1499,7 +1532,7 @@ class GameUI {
 
   async createRoom() {
     try {
-      const myPets = this.player.pets.map(p => p.id);
+      const myPets = this.player.pets.slice(0, 3);
       const roomId = await FirebaseOnline.createRoom(myPets);
       this.toast(`\u2705 \u0110\u00e3 t\u1ea1o ph\u00f2ng ${roomId}`);
       this.loadOnlineRooms();
@@ -1511,10 +1544,10 @@ class GameUI {
 
   async joinRoom(roomId) {
     try {
-      const myPets = this.player.pets.map(p => p.id);
+      const myPets = this.player.pets.slice(0, 3);
       await FirebaseOnline.joinRoom(roomId, myPets);
       this.toast(`\u2705 \u0110\u00e3 v\u00e0o ph\u00f2ng ${roomId}`);
-      this.selectedOnlinePets = myPets.slice(0, 3);
+      this.selectedOnlinePets = myPets.slice(0, 3).map(p => p.id);
       if (this.worldMap) this.worldMap.selectOnlinePets(this.selectedOnlinePets);
     } catch (e) {
       this.toast('\u274c Tham gia ph\u00f2ng th\u1ea5t bại');
@@ -1570,13 +1603,16 @@ class GameUI {
     if (!el) return;
     el.innerHTML = `
       <div class="section-title">🗺️ Bản đồ Online</div>
-      <div id="map-online-rooms" class="room-list"></div>
+      <div id="map-online-rooms" class="room-list"><div class="empty-msg">Đang tải...</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
         <button class="btn btn-primary" onclick="app.startMapOnline()">🆕 Tạo map online</button>
         <button class="btn btn-secondary" onclick="app.ui.loadMapOnlineRooms()">🔄 Làm mới</button>
       </div>
     `;
     this.loadMapOnlineRooms();
+    // Auto-refresh map rooms every 3 seconds
+    if (self._mapRoomTimer) clearInterval(self._mapRoomTimer);
+    self._mapRoomTimer = setInterval(function(){ self.loadMapOnlineRooms(); }, 3000);
   }
 
   async loadMapOnlineRooms() {
@@ -1741,6 +1777,11 @@ class GameUI {
   }
 
   renderWorld() {
+    // PvP online mode: show map + player list at bottom
+    if (window.worldOnline && window.worldOnline.mapId) {
+      this.renderWorldPvP();
+      return;
+    }
     const el = document.getElementById('tab-world');
     // ⚠️ CRITICAL: PHẢI xoá _domCache khi rebuild DOM. updateWorldStatusInPlace dùng _domCache để cache DOM references.
     // Nếu ko xoá, cache trỏ vào element cũ -> querySelector thất bại -> crash khi update HP bar.
@@ -1927,6 +1968,93 @@ class GameUI {
     }
   }
 
+  renderWorldPvP() {
+    var self = this;
+    const wm = window.worldOnline;
+    const el = document.getElementById('tab-world');
+    if (!el) return;
+    // Build player list from remote players + self
+    var playerList = [];
+    // Add self
+    playerList.push({
+      uid: FirebaseOnline.uid,
+      name: wm.myName || 'Bạn',
+      emoji: wm.myEmoji || '🧑',
+      isMe: true,
+      alive: true,
+    });
+    // Add remote players
+    for (var uid in wm.remotePlayers) {
+      var rp = wm.remotePlayers[uid];
+      playerList.push({
+        uid: uid,
+        name: rp.name || uid.substring(0, 6),
+        emoji: rp.emoji || '🧑',
+        isMe: false,
+        alive: rp.alive !== false,
+      });
+    }
+    var isOnlineWar = this._pvpWarActive || false;
+
+    var playerItems = playerList.map(function(p){
+      if (p.isMe) {
+        return '<div class="pvp-player-item me"><span class="pvp-player-emoji">' + p.emoji + '</span><span class="pvp-player-name">' + p.name + ' (bạn)</span></div>';
+      }
+      var challengeBtn;
+      if (self._pvpWarActive) {
+        challengeBtn = '<span class="pvp-war-badge">⚔️ Đang chiến</span>';
+      } else if (wm._outgoingTarget === p.uid) {
+        challengeBtn = '<span class="pvp-waiting">⏳ Đã thách...</span>';
+      } else {
+        challengeBtn = '<button class="btn btn-sm btn-warning" onclick="app.challengePlayer(\'' + p.uid + '\')">⚔️ Thách đấu</button>';
+      }
+      return '<div class="pvp-player-item">' +
+        '<span class="pvp-player-emoji">' + p.emoji + '</span>' +
+        '<span class="pvp-player-name">' + p.name + '</span>' +
+        challengeBtn + '</div>';
+    }).join('');
+
+    // Incoming challenge notification
+    var challengeHtml = '';
+    if (this._incomingChallenge) {
+      var c = this._incomingChallenge;
+      challengeHtml = '<div class="pvp-challenge-notice">' +
+        '<span>⚔️ <strong>' + (c.fromName || c.from) + '</strong> muốn thách đấu bạn!</span>' +
+        '<button class="btn btn-success btn-sm" onclick="app.acceptChallenge(\'' + this._incomingChallengeId + '\')">✅ Chấp nhận</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="app.declineChallenge(\'' + this._incomingChallengeId + '\')">❌ Từ chối</button>' +
+        '</div>';
+    }
+
+    el.innerHTML =
+      '<div class="section-title">🗺️ Map PvP Online</div>' +
+      '<div class="world-canvas-container map-view-container">' +
+        '<canvas id="world-map-canvas" width="1280" height="540" class="pixel-canvas map-canvas"></canvas>' +
+      '</div>' +
+      '<div class="pvp-online-info">' +
+        '<div class="pvp-online-players">' +
+          '<div class="sub-title">👥 Người chơi online (' + playerList.length + ')</div>' +
+          '<div class="pvp-player-list">' + playerItems + '</div>' +
+        '</div>' +
+        challengeHtml +
+        '<div style="margin-top:8px;display:flex;gap:8px">' +
+          '<button class="btn btn-danger" onclick="app.leavePvPWorld()">🚪 Rời map</button>' +
+        '</div>' +
+      '</div>';
+
+    // Init canvas
+    const canvas = document.getElementById('world-map-canvas');
+    if (canvas) {
+      if (!this.mapView || this.mapView.canvas !== canvas) {
+        if (this.mapView) this.mapView.stop();
+        this.mapView = new MapView2D(canvas);
+      }
+      this.mapView.setTheme('grass');
+      this.mapView.setPlayer(this.player);
+      this.mapView.syncEntities([], [], [], [], wm.remotePlayers || {});
+      this.mapView.start();
+    }
+  }
+
   worldPetItem(p) {
     return `
       <div class="world-pet ${p.dead ? 'dead' : ''} ${p.hp <= 0 ? 'ko' : ''}">
@@ -1976,6 +2104,11 @@ class GameUI {
 
   refreshWorldUI() {
     if (this.currentTab !== 'world') return;
+    // PvP online mode: sync remote players + battle state
+    if (window.worldOnline && window.worldOnline.mapId) {
+      this._refreshPvPUI();
+      return;
+    }
     if (this._worldRefreshTimer) return;
     this._worldRefreshTimer = setTimeout(() => {
       this._worldRefreshTimer = null;
@@ -1998,6 +2131,25 @@ class GameUI {
         this.updateWorldStatusInPlace(el, alivePets, aliveMonsters);
       }
     }, 450);
+  }
+
+  _refreshPvPUI() {
+    // Sync remote players or battle state to canvas
+    if (this.mapView && window.worldOnline) {
+      if (this._pvpWarActive && this._pvpBattle) {
+        var b = this._pvpBattle;
+        var team1 = b.playerTeam.filter(function(p){ return !p.dead && p.hp > 0; });
+        var team2 = b.enemyTeam.filter(function(p){ return !p.dead && p.hp > 0; });
+        var enemyAsMonsters = team2.map(function(p){
+          return { ...p, isMonster: true, element: getPetElement(p.baseId) };
+        });
+        this.mapView.syncEntities(team1, enemyAsMonsters, [], [], {});
+      } else {
+        this.mapView.syncEntities([], [], [], [], window.worldOnline.remotePlayers || {});
+      }
+    }
+    // Show challenge notice if incoming
+    if (this._incomingChallenge) this.renderWorldPvP();
   }
 
   updateWorldStatusInPlace(el, alivePets, aliveMonsters) {

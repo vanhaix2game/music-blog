@@ -656,14 +656,15 @@ class App {
     }
   }
 
-  // New: start map online (join or create)
+  // === PvP Online Map ===
+
   async startMapOnline() {
     var name = localStorage.getItem('musicblog_username') || FirebaseOnline.uid;
     var emoji = this.player.costume ? (DATA.COSTUMES.find(function(c){ return c.id === app.player.costume; })?.emoji || '🐉') : '🐉';
     var result = await worldOnline.createWorld(name, emoji);
     if (!result) { this.ui.toast('Tạo map online thất bại'); return; }
     this.ui.toast('🌐 Đã tạo map online, chờ người join...');
-    this._startWorldExplore();
+    this._enterPvPWorld();
   }
 
   async joinMapOnline(roomId) {
@@ -672,9 +673,129 @@ class App {
     var room = await worldOnline.joinWorld(roomId, name, emoji);
     if (!room) { this.ui.toast('Tham gia map thất bại'); return; }
     this.ui.toast('🌐 Đã vào map online!');
-    this._startWorldExplore();
+    this._enterPvPWorld();
   }
 
+  _enterPvPWorld() {
+    var self = this;
+    if (this.ui.worldMap) {
+      this.ui.worldMap.stopExploring();
+    }
+    // Set up challenge callbacks
+    worldOnline.onChallenge = function(id, c){
+      self.ui._incomingChallengeId = id;
+      self.ui._incomingChallenge = c;
+      self.ui.toast('⚔️ ' + (c.fromName || c.from) + ' thách đấu bạn!');
+      self.ui.renderWorldPvP();
+    };
+    worldOnline.onChallengeResponse = function(accepted, c){
+      self.ui._incomingChallengeId = null;
+      self.ui._incomingChallenge = null;
+      self.ui._outgoingChallengeSent = false;
+      if (accepted) {
+        self.ui.toast('✅ Đối thủ đã chấp nhận!');
+        self._startPvPBattle(c.from, c.fromName, c.fromEmoji);
+      } else {
+        self.ui.toast('❌ Đối thủ từ chối thách đấu');
+      }
+      self.ui.renderWorldPvP();
+    };
+    this.ui.currentTab = 'world';
+    this.ui.renderWorldPvP();
+    // Start a timer for refresh
+    if (this._pvpRefreshTimer) clearInterval(this._pvpRefreshTimer);
+    this._pvpRefreshTimer = setInterval(function(){
+      self.ui.refreshWorldUI();
+    }, 500);
+  }
+
+  challengePlayer(targetUid) {
+    var self = this;
+    var alivePets = this.player.pets.filter(function(p){ return !p.dead && p.hp > 0; });
+    if (alivePets.length === 0) { this.ui.toast('Không có pet sống để chiến!'); return; }
+    if (this.ui._pvpWarActive) { this.ui.toast('Đang trong trận!'); return; }
+    worldOnline.challengePlayer(targetUid).then(function(){
+      self.ui.toast('⚔️ Đã gửi thách đấu!');
+      self.ui.renderWorldPvP();
+    });
+  }
+
+  acceptChallenge(challengeId) {
+    var self = this;
+    var alivePets = this.player.pets.filter(function(p){ return !p.dead && p.hp > 0; });
+    if (alivePets.length === 0) { this.ui.toast('Không có pet sống để chiến!'); return; }
+    worldOnline.respondToChallenge(challengeId, true);
+    var c = this.ui._incomingChallenge;
+    this.ui._incomingChallengeId = null;
+    this.ui._incomingChallenge = null;
+    this.ui.toast('✅ Đã chấp nhận!');
+    this._startPvPBattle(c.from, c.fromName, c.fromEmoji);
+  }
+
+  declineChallenge(challengeId) {
+    worldOnline.respondToChallenge(challengeId, false);
+    this.ui._incomingChallengeId = null;
+    this.ui._incomingChallenge = null;
+    this.ui.toast('❌ Đã từ chối');
+    this.ui.renderWorldPvP();
+  }
+
+  _startPvPBattle(enemyUid, enemyName, enemyEmoji) {
+    var self = this;
+    var myPets = this.player.pets.filter(function(p){ return !p.dead && p.hp > 0; }).slice(0, 3);
+    if (myPets.length === 0) { this.ui.toast('Không có pet sống!'); return; }
+    this.ui._pvpWarActive = true;
+    this.ui._pvpBattle = null;
+
+    // Host creates the PVPBattle engine
+    if (worldOnline.isHost) {
+      var PVPBattle = window.PVPBattle;
+      if (!PVPBattle) { this.ui.toast('Lỗi: thiếu PVPBattle'); return; }
+      var pvp = new PVPBattle(myPets, []);
+      pvp._enemyUid = enemyUid;
+      pvp._enemyName = enemyName || 'Đối thủ';
+      pvp._enemyEmoji = enemyEmoji || '🧑';
+      this.ui._pvpBattle = pvp;
+      this.ui.toast('⚔️ Đợi đối thủ vào trận...');
+      // For now, just show the battle waiting state
+    }
+
+    // Watch for enemy battle data
+    this._watchEnemyBattleData(enemyUid);
+    this.ui.renderWorldPvP();
+    // Start periodic sync
+    if (worldOnline.isHost) {
+      this._pvpHostLoop = setInterval(function(){
+        if (!self.ui._pvpBattle || self.ui._pvpBattle.winner) {
+          clearInterval(self._pvpHostLoop);
+          self.ui._pvpHostLoop = null;
+          return;
+        }
+        self.ui._pvpBattle.tick();
+        self.ui.refreshWorldUI();
+      }, 700);
+    }
+  }
+
+  leavePvPWorld() {
+    if (this.ui._pvpBattle) {
+      if (this.ui._pvpBattle.winner > 0) {
+        // Battle ended normally
+      } else {
+        this.ui.toast('🚪 Đã rời trận!');
+      }
+      this.ui._pvpBattle = null;
+    }
+    this.ui._pvpWarActive = false;
+    if (this._pvpRefreshTimer) { clearInterval(this._pvpRefreshTimer); this._pvpRefreshTimer = null; }
+    if (this._pvpHostLoop) { clearInterval(this._pvpHostLoop); this._pvpHostLoop = null; }
+    worldOnline.leaveWorld();
+    this.ui.currentTab = 'world';
+    if (this.ui.mapView) this.ui.mapView.stop();
+    this.ui.renderWorld();
+  }
+
+  // For single-player explore (unchanged)
   _startWorldExplore() {
     if (!this.ui.worldMap) {
       this.ui.worldMap = new WorldMap(this.player);
@@ -699,7 +820,6 @@ class App {
     if (this.ui.worldMap) {
       this.ui.worldMap.setCommand(cmd);
       this.ui.toast(`Lệnh: ${cmd === 'attack' ? '⚔️ Tấn công' : cmd === 'defend' ? '🛡️ Phòng thủ' : '🏃 Rút lui'}`);
-      // ⚠️ KHÔNG gọi renderWorld() ở đây! renderWorld() rebuild DOM -> mất DOM cache -> _domCache trỏ vào element cũ -> crash. Chỉ gọi refreshWorldUI().
       this.ui.refreshWorldUI();
     }
   }
@@ -707,26 +827,6 @@ class App {
   setZoom(level) {
     if (this.ui.mapView) {
       this.ui.mapView.setZoom(level);
-    }
-  }
-
-  callBot() {
-    if (this.ui.worldMap) {
-      if ((this.ui.worldMap.botPlayers?.length || 0) >= 3) {
-        this.ui.toast('⚠️ Tối đa 3 bot!');
-        return;
-      }
-      this.ui.worldMap.addBot();
-      this.ui.toast('🤖 Đã gọi bot!');
-      this.ui.refreshWorldUI();
-    }
-  }
-
-  removeBot() {
-    if (this.ui.worldMap && this.ui.worldMap.botPlayers?.length > 0) {
-      const removed = this.ui.worldMap.botPlayers.pop();
-      this.ui.toast('🤖 Đã bỏ bot ' + (removed?.name || ''));
-      this.ui.refreshWorldUI();
     }
   }
 
