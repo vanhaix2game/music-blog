@@ -1613,11 +1613,15 @@ class GameUI {
 
     if (!window.worldOnline || !window.worldOnline.isOnline) {
       el.innerHTML = `
-        <div class="section-title">🌍 Map Online</div>
+        <div class="section-title">🌍 Map Online — Chọn phòng</div>
         <div style="text-align:center;padding:2rem">
-          <p style="font-size:1.2rem;margin-bottom:1rem">🌐 Vào thế giới chung với mọi người</p>
-          <p style="color:rgba(255,255,255,0.5);margin-bottom:1.5rem">Chọn map, chiến đấu quái, thấy nhau di chuyển!</p>
-          <button class="btn btn-primary btn-lg" onclick="app.enterOnlineWorld()">🌐 Vào thế giới online</button>
+          <p style="font-size:1.2rem;margin-bottom:0.5rem">🌐 Cùng săn quái, cạnh tranh trong phòng</p>
+          <p style="color:rgba(255,255,255,0.5);margin-bottom:1.5rem">Cùng phòng thì thấy nhau + đánh chung quái!</p>
+          <div class="room-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:400px;margin:0 auto 1.5rem">
+            ${[1,2,3,4,5,6,7,8,9,10].map(n => `
+              <button class="btn btn-primary" onclick="app.enterOnlineWorld(${n})" style="font-size:1.1rem;padding:12px 0">Phòng ${n}</button>
+            `).join('')}
+          </div>
         </div>
       `;
       return;
@@ -1691,7 +1695,8 @@ class GameUI {
         }).join('')
       : '';
 
-    var headerExtra = '<span style="color:#27ae60;font-size:0.85rem;float:right">👥 ' + totalPlayers + ' online</span>';
+    var roomLabel = 'Phòng ' + (window.worldOnline?.currentRoom || 1);
+    var headerExtra = '<span style="color:#27ae60;font-size:0.85rem;float:right">' + roomLabel + ' · 👥 ' + totalPlayers + ' online</span>';
 
     if (!isExploring) {
       // Map selection screen
@@ -1962,8 +1967,7 @@ class GameUI {
       const availableMaps = MAP_TIERS.filter(m => m.minLvl <= playerMaxLvl + 10);
       el.innerHTML = `
         <div class="section-title">
-          🗺️ Chọn bản đồ
-          <span class="avatar-indicator" onclick="app.ui.showCostumeInfo()" style="float:right;cursor:pointer;font-size:16px" title="Phục trang">${DATA.COSTUMES.find(c => c.id === this.player.costume)?.emoji || '🧑'}</span>
+          🗺️ Chọn bản đồ ${headerExtra}
         </div>
         <div class="world-team">
           <span class="team-label">🐾 Đội hình:</span>
@@ -2008,7 +2012,7 @@ class GameUI {
         <div class="section-title">
           🗺️ ${mapInfo.icon} ${mapInfo.name}
           <span class="map-timer">⏱ ${minutes}:${String(seconds).padStart(2, '0')}</span>
-          <span class="avatar-indicator" onclick="app.ui.showCostumeInfo()" style="float:right;cursor:pointer;font-size:16px" title="Phục trang">${DATA.COSTUMES.find(c => c.id === this.player.costume)?.emoji || '🧑'}</span>
+          ${headerExtra}
         </div>
         <div class="world-info">
           <span>📍 Cấp ${mapInfo.minLvl}–${mapInfo.maxLvl === 999 ? '∞' : mapInfo.maxLvl}</span>

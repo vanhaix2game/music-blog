@@ -16,9 +16,12 @@ class WorldOnlineManager {
     this.myEmoji = '🐉';
     this._outgoingChallengeId = null;
     this._outgoingTarget = null;
+    this.currentRoom = 1;
   }
 
-  async enterWorld(name, emoji) {
+  async enterWorld(name, emoji, roomNum) {
+    this.currentRoom = roomNum || 1;
+    FirebaseOnline.currentRoom = this.currentRoom;
     var result = await FirebaseOnline.enterWorld(name, emoji);
     if (!result) return false;
     this.isOnline = true;
@@ -56,6 +59,18 @@ class WorldOnlineManager {
     FirebaseOnline.updatePlayerState({ hp: hp, maxHp: maxHp, alive: alive });
   }
 
+  syncMonster(firebaseId, data) {
+    FirebaseOnline.updateMonster(firebaseId, data);
+  }
+
+  syncMonsterHP(firebaseId, hp) {
+    FirebaseOnline.updateMonsterHP(firebaseId, hp);
+  }
+
+  removeMonster(firebaseId) {
+    FirebaseOnline.removeMonster(firebaseId);
+  }
+
   challengePlayer(targetUid) {
     if (this._outgoingChallengeId) return;
     var self = this;
@@ -80,14 +95,6 @@ class WorldOnlineManager {
     return FirebaseOnline.respondToChallenge(challengeId, accept).then(function(){
       if (accept) self._outgoingChallengeId = null;
     });
-  }
-
-  syncMonster(firebaseId, data) {
-    FirebaseOnline.updateMonster(firebaseId, data);
-  }
-
-  removeMonster(firebaseId) {
-    FirebaseOnline.removeMonster(firebaseId);
   }
 
   _startWatchChallenges() {

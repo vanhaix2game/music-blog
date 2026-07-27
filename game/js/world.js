@@ -129,26 +129,28 @@ class WorldMap {
   }
 
   _syncMonstersFromFirebase(firebaseMonsters) {
-    // Spawn monsters that exist in Firebase but not locally
-    // Don't overwrite HP (each player fights their own copies)
     var newMonsters = [];
     for (var id in firebaseMonsters) {
       var fm = firebaseMonsters[id];
       if (!fm || !fm.alive) continue;
       var existing = this.monsters.find(function(m){ return m.firebaseId === id; });
       if (existing) {
-        // Keep existing monster with local HP, just update position
+        // Update position and HP from Firebase (other players' damage)
         existing.gridCol = fm.x;
         existing.gridRow = fm.y;
+        if (fm.hp != null && fm.hp < existing.hp) {
+          existing.hp = fm.hp;
+          existing._lastSyncHp = existing.hp;
+        }
         newMonsters.push(existing);
       } else {
-        // New monster from Firebase
         var mon = spawnMonster(fm.level || 5, this.getBattlePets());
         mon.firebaseId = id;
         mon.gridCol = fm.x;
         mon.gridRow = fm.y;
         mon.maxHp = fm.maxHp || mon.maxHp;
-        mon.hp = mon.maxHp;
+        mon.hp = fm.hp != null ? fm.hp : mon.maxHp;
+        mon._lastSyncHp = mon.hp;
         mon.level = fm.level || mon.level;
         if (fm.element) mon.element = fm.element;
         if (fm.name) mon.name = fm.name;
@@ -1138,6 +1140,17 @@ this.monsters.push(lowerBoss);
 
     // Tick effects at end of round
     this.tickEffects();
+
+    // Sync monster HP changes to Firebase (shared competitive combat)
+    if (this.isOnline && this.onlineManager) {
+      for (var mi = 0; mi < this.monsters.length; mi++) {
+        var m = this.monsters[mi];
+        if (m.firebaseId && m.hp !== m._lastSyncHp) {
+          m._lastSyncHp = m.hp;
+          this.onlineManager.syncMonsterHP(m.firebaseId, m.hp);
+        }
+      }
+    }
 
     // Remove dead monsters
     var removedIds = [];

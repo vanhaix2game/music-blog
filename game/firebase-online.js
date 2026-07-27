@@ -26,6 +26,11 @@
     onError: null,
     _worldRoomId: null,
     _worldListeners: {},
+    currentRoom: 1,
+
+    roomRef: function() {
+      return db.ref('online_world/rooms/room_' + (FirebaseOnline.currentRoom || 1));
+    },
 
     init: function(){
       return new Promise(function(resolve){
@@ -219,34 +224,29 @@
       });
     },
 
-    // === Persistent Online World (MMO-style, no rooms) ===
-
-    WORLD_ID: 'online_world',
+    // === Room-based Online World (rooms 1-10) ===
 
     enterWorld: function(playerName, emoji){
       return new Promise(function(resolve){
         if(!FirebaseOnline.isLoggedIn){ resolve(null); return; }
-        var worldRef = db.ref('online_world');
-        // Check if world exists, if not create it
-        worldRef.once('value').then(function(snap){
-          var world = snap.val();
-          var isHost = !world || !world.host;
+        var ref = FirebaseOnline.roomRef();
+        ref.once('value').then(function(snap){
+          var room = snap.val();
+          var isHost = !room || !room.host;
           if(isHost){
-            worldRef.set({
+            ref.set({
               host: FirebaseOnline.uid,
               players: {},
               monsters: {},
               resources: {}
             });
           }
-          // Add self to players
-          worldRef.child('players/'+FirebaseOnline.uid).set({
+          ref.child('players/'+FirebaseOnline.uid).set({
             name: playerName, emoji: emoji,
             x: 5, y: 5, hp: 100, maxHp: 100,
             alive: true, lastMove: Date.now()
           });
-          // Remove self on disconnect
-          worldRef.child('players/'+FirebaseOnline.uid).onDisconnect().remove();
+          ref.child('players/'+FirebaseOnline.uid).onDisconnect().remove();
           resolve({ isHost: isHost });
         });
       });
@@ -254,24 +254,24 @@
 
     leaveWorld: function(){
       if(!FirebaseOnline.isLoggedIn) return;
-      db.ref('online_world/players/'+FirebaseOnline.uid).remove();
+      FirebaseOnline.roomRef().child('players/'+FirebaseOnline.uid).remove();
       FirebaseOnline._unwatchAllWorld();
     },
 
     updatePlayerPosition: function(x, y){
       if(!FirebaseOnline.isLoggedIn) return;
-      db.ref('online_world/players/'+FirebaseOnline.uid).update({
+      FirebaseOnline.roomRef().child('players/'+FirebaseOnline.uid).update({
         x: x, y: y, lastMove: Date.now()
       });
     },
 
     updatePlayerState: function(data){
       if(!FirebaseOnline.isLoggedIn) return;
-      db.ref('online_world/players/'+FirebaseOnline.uid).update(data);
+      FirebaseOnline.roomRef().child('players/'+FirebaseOnline.uid).update(data);
     },
 
     watchWorld: function(callback){
-      var ref = db.ref('online_world');
+      var ref = FirebaseOnline.roomRef();
       var listener = ref.on('value', function(snap){
         callback(snap.val());
       });
@@ -281,15 +281,19 @@
     },
 
     updateMonster: function(monsterId, data){
-      return db.ref('online_world/monsters/'+monsterId).set(data);
+      return FirebaseOnline.roomRef().child('monsters/'+monsterId).set(data);
+    },
+
+    updateMonsterHP: function(monsterId, hp){
+      return FirebaseOnline.roomRef().child('monsters/'+monsterId + '/hp').set(hp);
     },
 
     removeMonster: function(monsterId){
-      return db.ref('online_world/monsters/'+monsterId).remove();
+      return FirebaseOnline.roomRef().child('monsters/'+monsterId).remove();
     },
 
     updateResource: function(resId, data){
-      return db.ref('online_world/resources/'+resId).set(data);
+      return FirebaseOnline.roomRef().child('resources/'+resId).set(data);
     },
 
     _unwatchAllWorld: function(){
@@ -299,13 +303,13 @@
       }
     },
 
-    // === Challenge System (PvP trong world) ===
+    // === Challenge System (room-scoped) ===
 
     _challengeListener: null,
 
     sendChallenge: function(targetUid, fromName, fromEmoji){
       return new Promise(function(resolve){
-        var ref = db.ref('online_world/challenges').push();
+        var ref = FirebaseOnline.roomRef().child('challenges').push();
         var challenge = {
           from: FirebaseOnline.uid,
           fromName: fromName,
@@ -319,14 +323,14 @@
     },
 
     respondToChallenge: function(challengeId, accept){
-      return db.ref('online_world/challenges/'+challengeId).update({
+      return FirebaseOnline.roomRef().child('challenges/'+challengeId).update({
         status: accept ? 'accepted' : 'declined'
       });
     },
 
     watchChallenges: function(callback){
       if(FirebaseOnline._challengeListener) FirebaseOnline._challengeListener();
-      var ref = db.ref('online_world/challenges');
+      var ref = FirebaseOnline.roomRef().child('challenges');
       var listener = ref.on('value', function(snap){
         var challenges = {};
         snap.forEach(function(child){ challenges[child.key] = child.val(); });

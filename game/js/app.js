@@ -684,14 +684,14 @@ class App {
 
   // === Persistent Online World (auto-joined) ===
 
-  async enterOnlineWorld() {
+  async enterOnlineWorld(roomNum) {
     if (worldOnline.isOnline) return;
     var name = localStorage.getItem('musicblog_username') || FirebaseOnline.uid || 'Khách';
     var emoji = this.player.costume ? (DATA.COSTUMES.find(function(c){ return c.id === app.player.costume; })?.emoji || '🐉') : '🐉';
-    var ok = await worldOnline.enterWorld(name, emoji);
+    var ok = await worldOnline.enterWorld(name, emoji, roomNum);
     if (!ok) return;
     this._setupOnlineWorld();
-    this.ui.toast('🌐 Đã vào thế giới online!');
+    this.ui.toast('🌐 Đã vào phòng ' + roomNum);
     this.ui.currentTab = 'mapOnline';
     this.ui.showTab('mapOnline');
   }
