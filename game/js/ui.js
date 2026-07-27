@@ -1976,7 +1976,7 @@ class GameUI {
           ${availableMaps.map(m => {
             const locked = m.minLvl > playerMaxLvl;
             const selected = this.worldMap.selectedMapId === m.id;
-            return '<div class="map-tier-card ' + (selected ? 'selected' : '') + ' ' + (locked ? 'locked' : '') + '" onclick="' + (locked ? '' : 'app.ui.selectMapTier(' + m.id + ')') + '">' +
+            return '<div class="map-tier-card ' + (selected ? 'selected' : '') + ' ' + (locked ? 'locked' : '') + '" onclick="' + (locked ? '' : 'app.ui.selectMapOnline(' + m.id + ')') + '">' +
               '<div class="map-tier-icon">' + m.icon + '</div>' +
               '<div class="map-tier-name">' + m.name + '</div>' +
               '<div class="map-tier-levels">Cấp ' + m.minLvl + '\u2013' + (m.maxLvl === 999 ? '\u221E' : m.maxLvl) + '</div>' +
@@ -1985,10 +1985,10 @@ class GameUI {
           }).join('')}
         </div>
         <div class="world-canvas-container map-view-container">
-          <canvas id="world-map-canvas" width="1280" height="540" class="pixel-canvas map-canvas"></canvas>
+          <canvas id="online-map-canvas" width="1280" height="540" class="pixel-canvas map-canvas"></canvas>
         </div>
         <div class="world-commands">
-          <button class="btn btn-success btn-lg" onclick="app.startExploring()" ${alivePets.length === 0 ? 'disabled' : ''}>
+          <button class="btn btn-success btn-lg" onclick="app.startOnlineExploring()" ${alivePets.length === 0 ? 'disabled' : ''}>
             ${alivePets.length === 0 ? '💀 Pet đều chết! Vào 🐾 Pets cho ăn để hồi sinh' : `⚔️ Khám phá ${mapInfo.name}`}
           </button>
           ${deadPets.length > 0 ? '<div class="world-dead-hint">💀 Có pet chết. Vào tab 🐾 Pets, chọn pet và cho ăn để hồi sinh!</div>' : ''}
@@ -2024,10 +2024,10 @@ class GameUI {
           <button class="btn btn-sm btn-secondary" onclick="app.ui.showTeamReorder()">☰</button>
         </div>
         <div class="world-canvas-container map-view-container">
-          <canvas id="world-map-canvas" width="1280" height="540" class="pixel-canvas map-canvas"></canvas>
+          <canvas id="online-map-canvas" width="1280" height="540" class="pixel-canvas map-canvas"></canvas>
         </div>
         <div class="world-commands">
-          <button class="btn btn-danger" onclick="app.stopExploring()">⏹️ Dừng</button>
+          <button class="btn btn-danger" onclick="app.stopOnlineExploring()">⏹️ Dừng</button>
           <button class="btn cmd-btn ${this.worldMap.command === 'attack' ? 'active' : ''}" onclick="app.setCommand('attack')">⚔️ Tấn công</button>
           <button class="btn cmd-btn ${this.worldMap.command === 'defend' ? 'active' : ''}" onclick="app.setCommand('defend')">🛡️ Phòng thủ</button>
           <button class="btn cmd-btn ${this.worldMap.command === 'retreat' ? 'active' : ''}" onclick="app.setCommand('retreat')">🏃 Rút lui</button>
@@ -2081,7 +2081,9 @@ class GameUI {
     }
 
     // Init or reuse map view
-    const canvas = document.getElementById('world-map-canvas');
+    var wm = window.worldOnline;
+    var remotePlayers = (wm && wm.isOnline) ? (wm.remotePlayers || {}) : {};
+    const canvas = document.getElementById('online-map-canvas');
     if (canvas) {
       if (!this.mapView || this.mapView.canvas !== canvas) {
         if (this.mapView) this.mapView.stop();
@@ -2091,7 +2093,7 @@ class GameUI {
       this.mapView.setPlayer(this.player);
       const botPetsForCanvas = this.worldMap.getBotPets();
       const botChars = this.worldMap.getBotCharacters();
-      this.mapView.syncEntities(alivePets, aliveMonsters, botPetsForCanvas, botChars, {});
+      this.mapView.syncEntities(alivePets, aliveMonsters, botPetsForCanvas, botChars, remotePlayers);
       if (isExploring) {
         this.mapView.start();
       } else {
