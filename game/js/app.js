@@ -37,9 +37,6 @@ class App {
         this.addCheatResources();
       }
     });
-    // Auto-join online world after everything is ready
-    var self = this;
-    setTimeout(function(){ self.enterOnlineWorld(); }, 1000);
   }
 
   _waitForPostMessage(timeout){
@@ -667,7 +664,47 @@ class App {
     var emoji = this.player.costume ? (DATA.COSTUMES.find(function(c){ return c.id === app.player.costume; })?.emoji || '🐉') : '🐉';
     var ok = await worldOnline.enterWorld(name, emoji);
     if (!ok) return;
-    console.log('[World] Đã vào thế giới online');
+    this._setupOnlineWorld();
+    this.ui.toast('🌐 Đã vào thế giới online!');
+    this.ui.currentTab = 'mapOnline';
+    this.ui.showTab('mapOnline');
+  }
+
+  _setupOnlineWorld() {
+    var self = this;
+    // Stop single-player exploration if active
+    if (this.ui.worldMap && this.ui.worldMap.exploring) {
+      this.ui.worldMap.stopExploring();
+    }
+    // Create or reuse WorldMap with online mode
+    if (!this.ui.worldMap) {
+      this.ui.worldMap = new WorldMap(this.player);
+    }
+    this.ui.worldMap.onUpdate = () => self.ui.refreshMapOnlineUI();
+    this.ui.worldMap.setOnlineMode(worldOnline);
+    this.ui.worldMap.startExploring();
+    // Start periodic sync
+    worldOnline._onlineRefreshTimer = setInterval(function(){
+      if (self.ui.currentTab === 'mapOnline' && self.ui.mapView) {
+        self.ui.refreshMapOnlineUI();
+      }
+    }, 200);
+    // Challenge callbacks
+    worldOnline.onChallenge = function(id, c){
+      self.ui._incomingChallengeId = id;
+      self.ui._incomingChallenge = c;
+      self.ui.toast('⚔️ ' + (c.fromName || c.from) + ' thách đấu bạn!');
+    };
+    worldOnline.onChallengeResponse = function(accepted, c){
+      self.ui._incomingChallengeId = null;
+      self.ui._incomingChallenge = null;
+      if (accepted) {
+        self.ui.toast('✅ Đối thủ đã chấp nhận!');
+        self._startPvPBattle(c.from, c.fromName, c.fromEmoji);
+      } else {
+        self.ui.toast('❌ Đối thủ từ chối thách đấu');
+      }
+    };
   }
 
   _enterPvPWorld() {
@@ -773,20 +810,22 @@ class App {
 
   leavePvPWorld() {
     if (this.ui._pvpBattle) {
-      if (this.ui._pvpBattle.winner > 0) {
-        // Battle ended normally
-      } else {
-        this.ui.toast('🚪 Đã rời trận!');
-      }
       this.ui._pvpBattle = null;
     }
     this.ui._pvpWarActive = false;
+    this.ui._incomingChallengeId = null;
+    this.ui._incomingChallenge = null;
     if (this._pvpRefreshTimer) { clearInterval(this._pvpRefreshTimer); this._pvpRefreshTimer = null; }
     if (this._pvpHostLoop) { clearInterval(this._pvpHostLoop); this._pvpHostLoop = null; }
+    if (worldOnline._onlineRefreshTimer) { clearInterval(worldOnline._onlineRefreshTimer); worldOnline._onlineRefreshTimer = null; }
+    if (this.ui.worldMap && this.ui.worldMap.isOnline) {
+      this.ui.worldMap.isOnline = false;
+      this.ui.worldMap.onlineManager = null;
+    }
     worldOnline.leaveWorld();
-    this.ui.currentTab = 'world';
-    if (this.ui.mapView) this.ui.mapView.stop();
-    this.ui.renderWorld();
+    this.ui.currentTab = 'home';
+    if (this.ui.mapView) { this.ui.mapView.stop(); this.ui.mapView = null; }
+    this.ui.showTab('home');
   }
 
   // For single-player explore (unchanged)
@@ -795,7 +834,6 @@ class App {
       this.ui.worldMap = new WorldMap(this.player);
     }
     this.ui.worldMap.onUpdate = () => this.ui.refreshWorldUI();
-    this.ui.worldMap.setOnlineMode(worldOnline);
     if (this.ui.worldMap.startExploring()) {
       this.ui.currentTab = 'world';
       this.ui.renderWorld();
