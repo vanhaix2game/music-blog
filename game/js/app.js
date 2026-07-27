@@ -37,6 +37,9 @@ class App {
         this.addCheatResources();
       }
     });
+    // Auto-join online world after everything is ready
+    var self = this;
+    setTimeout(function(){ self.enterOnlineWorld(); }, 1000);
   }
 
   _waitForPostMessage(timeout){
@@ -656,22 +659,15 @@ class App {
     }
   }
 
-  // === Persistent Online World (no rooms) ===
+  // === Persistent Online World (auto-joined) ===
 
   async enterOnlineWorld() {
-    if (!FirebaseOnline.isLoggedIn) {
-      this.ui.toast('Cần đăng nhập để chơi online!');
-      var name = localStorage.getItem('musicblog_username') || 'Khách';
-      var emoji = this.player.costume ? (DATA.COSTUMES.find(function(c){ return c.id === app.player.costume; })?.emoji || '🐉') : '🐉';
-      await worldOnline.enterWorld(name, emoji);
-      return;
-    }
-    var name = localStorage.getItem('musicblog_username') || FirebaseOnline.uid;
+    if (worldOnline.isOnline) return;
+    var name = localStorage.getItem('musicblog_username') || FirebaseOnline.uid || 'Khách';
     var emoji = this.player.costume ? (DATA.COSTUMES.find(function(c){ return c.id === app.player.costume; })?.emoji || '🐉') : '🐉';
     var ok = await worldOnline.enterWorld(name, emoji);
-    if (!ok) { this.ui.toast('Vào world thất bại'); return; }
-    this.ui.toast('🌐 Đã vào thế giới online!');
-    this._enterPvPWorld();
+    if (!ok) return;
+    console.log('[World] Đã vào thế giới online');
   }
 
   _enterPvPWorld() {

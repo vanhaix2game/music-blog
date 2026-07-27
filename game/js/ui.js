@@ -59,7 +59,6 @@ class GameUI {
           <button class="tab-btn" data-tab="shop">🏪 Shop</button>
           <button class="tab-btn" data-tab="rank">🏆 Hạng</button>
     <button class="tab-btn" data-tab="pvpOnline">🌐 PvP Online</button>
-    <button class="tab-btn" data-tab="mapOnline">🗺️ Bản đồ Online</button>
         </div>
 
         <div id="content">
@@ -71,7 +70,6 @@ class GameUI {
           <div id="tab-inventory" class="tab-content"></div>
           <div id="tab-shop" class="tab-content"></div>
           <div id="tab-rank" class="tab-content"></div>
-          <div id="tab-mapOnline" class="tab-content"></div>
           <div id="tab-pvpOnline" class="tab-content"></div>
         </div>
 
@@ -1588,22 +1586,8 @@ class GameUI {
   }
 
   // ====================
-  // M1: Map Online UI
+  // M1: Map Online UI (now part of world tab)
   // ====================
-  renderMapOnline() {
-    var self = this;
-    const el = document.getElementById('tab-mapOnline');
-    if (!el) return;
-    var isInWorld = worldOnline.isOnline;
-    el.innerHTML = isInWorld ? '' : `
-      <div class="section-title">🗺️ Thế giới Online</div>
-      <div style="text-align:center;padding:2rem">
-        <p style="font-size:1.2rem;margin-bottom:1rem">🌍 Cùng chơi trên một thế giới chung</p>
-        <p style="color:rgba(255,255,255,0.5);margin-bottom:1.5rem">Tất cả người online đều ở đây — không cần tạo phòng!</p>
-        <button class="btn btn-primary btn-lg" onclick="app.enterOnlineWorld()">🌐 Vào thế giới online</button>
-      </div>
-    `;
-  }
 
   showBattleLive(battle, isPvP = false, isBoss = false) {
     const modeTitle = isBoss ? '👑 Đánh Trùm' : isPvP ? '👤 PvP' : '⚔️ Chiến đấu';
@@ -1808,6 +1792,7 @@ class GameUI {
           <span>📍 Cấp ${mapInfo.minLvl}–${mapInfo.maxLvl === 999 ? '∞' : mapInfo.maxLvl}</span>
           <span>💀 Quái: ${this.worldMap.totalKills}</span>
           <span>👑 Boss: ${this.worldMap.bossKillCount}</span>
+          <span id="onlineWorldCount" style="color:#27ae60">🌐 Online: ${Object.keys(window.worldOnline?.remotePlayers || {}).length}</span>
         </div>
         ${bossTimerHtml ? `<div class="world-boss-timers">${bossTimerHtml}</div>` : ''}
         <div class="world-team">
@@ -2031,8 +2016,13 @@ class GameUI {
 
   refreshWorldUI() {
     if (this.currentTab !== 'world') return;
+    // Update online player count
+    var onlineCountEl = document.getElementById('onlineWorldCount');
+    if (onlineCountEl) {
+      onlineCountEl.textContent = '🌐 Online: ' + (Object.keys(window.worldOnline?.remotePlayers || {}).length);
+    }
     // PvP online mode: sync remote players + battle state
-    if (window.worldOnline && window.worldOnline.mapId) {
+    if (window.worldOnline && window.worldOnline.isOnline) {
       this._refreshPvPUI();
       return;
     }
