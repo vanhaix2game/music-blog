@@ -1804,6 +1804,7 @@ class GameUI {
       this.mapView.syncEntities(alivePets, aliveMonsters, botPetsForCanvas, botChars, wm.remotePlayers || {});
       if (isExploring) {
         this.mapView.start();
+        this.mapView.render();
       } else {
         this.mapView.stop();
         this.mapView.render();
