@@ -663,28 +663,23 @@ class App {
     }
     if (this.ui.worldMap.startExploring()) {
       this.ui.toast('⚔️ Đang khám phá map online!');
-      if (worldOnline.isHost && this.ui.worldMap.monsters) {
-        var wm = this.ui.worldMap;
-        wm.monsters.forEach(function(m){
-          if (!m.firebaseId) {
-            var fid = 'mon_' + (++wm._monsterIdCounter);
-            m.firebaseId = fid;
-            worldOnline.syncMonster(fid, {
-              x: m.gridCol, y: m.gridRow,
-              hp: m.hp, maxHp: m.maxHp,
-              atk: m.atk, def: m.def,
-              element: m.element || 'fire',
-              level: m.level, alive: true, name: m.name, emoji: m.emoji,
-              isBoss: !!m.isBoss
-            });
-          }
-        });
-      }
       this.ui.currentTab = 'mapOnline';
-      this.ui.showTab('mapOnline');
+      this.ui.renderMapOnline();
     } else {
       this.ui.toast('Cần pet còn sống để chiến đấu!');
     }
+  }
+
+  stopOnlineExploring() {
+    this.ui.worldMap.stopExploring();
+    this.ui.currentTab = 'mapOnline';
+    this.ui.renderMapOnline();
+  }
+
+  stopOnlineExploring() {
+    this.ui.worldMap.stopExploring();
+    this.ui.currentTab = 'mapOnline';
+    this.ui.renderMapOnline();
   }
 
   // === Persistent Online World (auto-joined) ===
@@ -707,40 +702,26 @@ class App {
     if (this.ui.worldMap && this.ui.worldMap.exploring) {
       this.ui.worldMap.stopExploring();
     }
-    // Create or reuse WorldMap with online mode
+    // Create or reuse WorldMap
     if (!this.ui.worldMap) {
       this.ui.worldMap = new WorldMap(this.player);
     }
-    this.ui.worldMap.onUpdate = () => self.ui.refreshMapOnlineUI();
-    this.ui.worldMap.setOnlineMode(worldOnline);
-    this.ui.worldMap.startExploring();
-    // Host: sync initial monsters to Firebase
-    if (worldOnline.isHost && this.ui.worldMap.monsters) {
-      var self2 = this;
-      this.ui.worldMap.monsters.forEach(function(m){
-        var fid = 'mon_' + (++self2.ui.worldMap._monsterIdCounter);
-        m.firebaseId = fid;
-        worldOnline.syncMonster(fid, {
-          x: m.gridCol, y: m.gridRow,
-          hp: m.hp, maxHp: m.maxHp,
-          atk: m.atk, def: m.def,
-          element: m.element || 'fire',
-          level: m.level, alive: true, name: m.name, emoji: m.emoji,
-          isBoss: !!m.isBoss
-        });
-      });
-    }
-    // Start periodic refresh
+    this.ui.worldMap.onUpdate = () => self.ui.refreshWorldUI();
+    this.ui.worldMap.onLogUpdate = () => self.ui.refreshLogOnly();
+    // Sync player position to Firebase
+    worldOnline.startSyncPosition(this.ui.worldMap);
+    // Start periodic refresh for online map canvas
     worldOnline._onlineRefreshTimer = setInterval(function(){
       if (self.ui.currentTab === 'mapOnline' && self.ui.mapView) {
-        self.ui.refreshMapOnlineUI();
+        self.ui.refreshWorldUI();
       }
     }, 200);
-    // Challenge callbacks for PvP Online tab
+    // Challenge callbacks
     worldOnline.onChallenge = function(id, c){
       self.ui._incomingChallengeId = id;
       self.ui._incomingChallenge = c;
       self.ui.toast('⚔️ ' + (c.fromName || c.from) + ' thách đấu bạn!');
+      if (self.ui.currentTab === 'mapOnline') self.ui.renderMapOnline();
     };
     worldOnline.onChallengeResponse = function(accepted, c){
       self.ui._incomingChallengeId = null;
