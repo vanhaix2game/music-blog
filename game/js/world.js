@@ -285,8 +285,12 @@ class WorldMap {
     const battlePets = this.getBattlePets();
     battlePets.forEach(p => p.resetBattleEnergy());
     battlePets.forEach((p, i) => this.assignPetGrid(p, i));
-    // Spawn initial monsters
-    this.spawnInitialMonsters();
+    // Spawn initial monsters (host only in online mode — non-host gets them from Firebase)
+    if (!this.isOnline || !this.onlineManager || this.onlineManager.isHost) {
+      this.spawnInitialMonsters();
+    } else if (this.onlineManager.remoteMonsters && Object.keys(this.onlineManager.remoteMonsters).length > 0) {
+      this._syncMonstersFromFirebase(this.onlineManager.remoteMonsters);
+    }
     if (this.reservePetIds.length > 0) {
       this.fightLog.push({ text: `🔄 ${this.reservePetIds.length} pet dự bị sẵn sàng vào sân`, type: 'system' });
     }
@@ -1004,6 +1008,9 @@ this.monsters.push(lowerBoss);
     this.tickBossLevels();
 
     // Continuous spawning: spawn normal monsters every 3-8 seconds
+    // Non-host online players get monsters from Firebase, don't spawn locally
+    const _isNonHost = this.isOnline && this.onlineManager && !this.onlineManager.isHost;
+    if (!_isNonHost) {
     const aliveNormals = this.monsters.filter(m => !m.dead && m.hp > 0 && !m.isBoss);
     const aliveBosses = this.monsters.filter(m => !m.dead && m.hp > 0 && m.isBoss);
 
@@ -1015,6 +1022,7 @@ this.monsters.push(lowerBoss);
     }
     if (aliveBosses.length < this.maxBosses && Math.random() < this.bossSpawnChance) {
       this.spawnBossMonster();
+    }
     }
 
     const aliveMonsters = this.monsters.filter(m => !m.dead && m.hp > 0);
