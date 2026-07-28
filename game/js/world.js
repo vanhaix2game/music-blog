@@ -148,15 +148,18 @@ class WorldMap {
       clearTimeout(this._nonHostFallback);
       this._nonHostFallback = null;
     }
-    // Keep monsters without firebaseId (local-only) OR with firebaseId not yet in Firebase (pending sync)
-    var localOnly = this.monsters.filter(function(m){ return !m.firebaseId || !firebaseMonsters[m.firebaseId]; });
+    // If no monsters arrived yet from Firebase, nothing to sync
+    var hasFirebaseMons = false;
+    for (var id in firebaseMonsters) { if (firebaseMonsters[id] && firebaseMonsters[id].alive) { hasFirebaseMons = true; break; } }
+    if (!hasFirebaseMons) return;
+    // Replace local-only monsters with shared Firebase monsters.
+    // Preserve monsters that have matching firebaseId (HP/position update).
     var newMonsters = [];
     for (var id in firebaseMonsters) {
       var fm = firebaseMonsters[id];
       if (!fm || !fm.alive) continue;
       var existing = this.monsters.find(function(m){ return m.firebaseId === id; });
       if (existing) {
-        // Update position and HP from Firebase (other players' damage)
         existing.gridCol = fm.x;
         existing.gridRow = fm.y;
         if (fm.hp != null && fm.hp < existing.hp) {
@@ -180,7 +183,8 @@ class WorldMap {
         newMonsters.push(mon);
       }
     }
-    this.monsters = localOnly.concat(newMonsters);
+    this.monsters = newMonsters;
+    this.scheduleUpdate();
   }
 
   getMapInfo() {
@@ -291,21 +295,14 @@ class WorldMap {
     const battlePets = this.getBattlePets();
     battlePets.forEach(p => p.resetBattleEnergy());
     battlePets.forEach((p, i) => this.assignPetGrid(p, i));
-    // Non-host online: monsters from Firebase (shared), with fallback
-    const _isNonHost = this.isOnline && this.onlineManager && !this.onlineManager.isHost;
-    if (_isNonHost) {
-      var _existing = this.onlineManager.remoteMonsters || {};
-      if (Object.keys(_existing).length > 0) {
-        this._syncMonstersFromFirebase(_existing);
-      } else {
-        var _self = this;
-        this._nonHostFallback = setTimeout(function(){
-          _self._nonHostFallback = null;
-          _self.spawnInitialMonsters();
-        }, 2000);
+    this.spawnInitialMonsters();
+    // If online and not host, also fetch host's monsters from Firebase as shared targets
+    if (this.isOnline && this.onlineManager && !this.onlineManager.isHost &&
+        this.onlineManager.remoteMonsters) {
+      var fbMons = this.onlineManager.remoteMonsters;
+      if (Object.keys(fbMons).length > 0) {
+        this._syncMonstersFromFirebase(fbMons);
       }
-    } else {
-      this.spawnInitialMonsters();
     }
     if (this.reservePetIds.length > 0) {
       this.fightLog.push({ text: `🔄 ${this.reservePetIds.length} pet dự bị sẵn sàng vào sân`, type: 'system' });
@@ -1027,7 +1024,9 @@ this.monsters.push(lowerBoss);
     // Boss level-up check
     this.tickBossLevels();
 
-    // Continuous spawning: spawn normal monsters every 3-8 seconds (host only in online)
+    // Continuous spawning: spawn normal monsters every 3-8 seconds
+    // Only host spawns to Firebase; non-host receives them via listener.
+    // If non-host has no monsters despite waiting, fallback to local spawn.
     if (!this.isOnline || !this.onlineManager || this.onlineManager.isHost) {
     const aliveNormals = this.monsters.filter(m => !m.dead && m.hp > 0 && !m.isBoss);
     const aliveBosses = this.monsters.filter(m => !m.dead && m.hp > 0 && m.isBoss);
@@ -1041,6 +1040,14 @@ this.monsters.push(lowerBoss);
     if (aliveBosses.length < this.maxBosses && Math.random() < this.bossSpawnChance) {
       this.spawnBossMonster();
     }
+    } else if (this.monsters.filter(m => !m.dead && m.hp > 0).length === 0) {
+      // Non-host with no alive monsters: spawn local fallback if Firebase is empty
+      var _fbMons = this.onlineManager.remoteMonsters || {};
+      var _hasFb = false;
+      for (var _id in _fbMons) { if (_fbMons[_id] && _fbMons[_id].alive) { _hasFb = true; break; } }
+      if (!_hasFb) {
+        this.spawnNormalMonster();
+      }
     }
 
     const aliveMonsters = this.monsters.filter(m => !m.dead && m.hp > 0);
