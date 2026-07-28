@@ -77,11 +77,13 @@ class WorldOnlineManager {
           dead: p.dead || false,
           gridCol: p.gridCol != null ? p.gridCol : 5,
           gridRow: p.gridRow != null ? p.gridRow : 5,
-          element: p.element || getPetElement(p.baseId)
+          element: p.element || getPetElement(p.baseId),
+          // Combat flag — true if exploring and monsters exist (for visual on other clients)
+          fighting: worldMap.exploring && worldMap.monsters && worldMap.monsters.some(function(m){ return !m.dead && m.hp > 0; })
         };});
         FirebaseOnline.updatePlayerPets(petSnap);
       }
-    }, 400);
+    }, 250);
   }
 
   stopSyncPosition() {

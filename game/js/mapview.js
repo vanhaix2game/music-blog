@@ -749,6 +749,11 @@ class MapView2D {
           pEnt.pet.maxHp = remotePetData.maxHp;
           pEnt.pet.emoji = remotePetData.emoji;
           pEnt.pet.level = remotePetData.level;
+          // Combat visual: flash periodically to show remote pet is fighting
+          if (rpPet.fighting) {
+            pEnt.hitFlash = 0.15;
+            pEnt.attackTimer = 0.3;
+          }
         } else {
           var pe = new MapEntity(remotePetData, false, pCol, pRow);
           pe.isRemotePet = true;
