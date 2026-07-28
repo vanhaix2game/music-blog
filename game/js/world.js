@@ -142,8 +142,8 @@ class WorldMap {
   }
 
   _syncMonstersFromFirebase(firebaseMonsters) {
-    // Keep locally-spawned monsters that haven't been synced to Firebase yet
-    var localOnly = this.monsters.filter(function(m){ return !m.firebaseId; });
+    // Keep monsters without firebaseId (local-only) OR with firebaseId not yet in Firebase (pending sync)
+    var localOnly = this.monsters.filter(function(m){ return !m.firebaseId || !firebaseMonsters[m.firebaseId]; });
     var newMonsters = [];
     for (var id in firebaseMonsters) {
       var fm = firebaseMonsters[id];
