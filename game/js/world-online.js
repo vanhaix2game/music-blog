@@ -81,8 +81,15 @@ class WorldOnlineManager {
           // Combat flag — true if exploring and monsters exist (for visual on other clients)
           fighting: worldMap.exploring && worldMap.monsters && worldMap.monsters.some(function(m){ return !m.dead && m.hp > 0; }),
           // Target monster firebaseId (null when idle) — lets remote clients show attack visual
-          targetMon: p._targetFirebaseId || null
+          targetMon: p._targetFirebaseId || null,
+          // Last attack details for skill visual sync
+          lastDmg: p._lastAttackDmg || 0,
+          lastCrit: !!p._lastAttackCrit,
+          lastSkill: p._lastAttackSkill || null,
+          lastUlt: !!p._lastAttackUlt
         };});
+        // Reset attack tracking after sync so stale values are not re-sent
+        battlePets.forEach(function(p){ if (p) { p._lastSyncDmg = p._lastAttackDmg; }});
         FirebaseOnline.updatePlayerPets(petSnap);
       }
     }, 250);

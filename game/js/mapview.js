@@ -761,6 +761,15 @@ class MapView2D {
               targetMonEnt.hitFlash = 0.12;
             }
           }
+          // Skill visual from remote pet (lastDmg changes on new attack)
+          if (rpPet.lastDmg > 0 && rpPet.lastDmg !== pEnt._lastSeenDmg && rpPet.targetMon) {
+            pEnt._lastSeenDmg = rpPet.lastDmg;
+            var targetSkillEnt = this.entities.find(function(e){ return e.isMonster && e.pet.firebaseId === rpPet.targetMon; });
+            if (targetSkillEnt) {
+              this.applyEntityImpact(pEnt, targetSkillEnt, { visualType: rpPet.lastSkill || 'slash', dmg: rpPet.lastDmg }, rpPet.lastUlt);
+              this.spawnEffect(rpPet.lastSkill || 'slash', pEnt.x, pEnt.y, targetSkillEnt.x, targetSkillEnt.y, rpPet.lastUlt, rpPet.lastSkill);
+            }
+          }
         } else {
           var pe = new MapEntity(remotePetData, false, pCol, pRow);
           pe.isRemotePet = true;

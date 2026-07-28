@@ -1638,6 +1638,14 @@ class GameUI {
     // ⚠️ Luôn set onAttackAnim (online map có thể được tạo từ _setupOnlineWorld trước đó).
     this.worldMap.onAttackAnim = (attackerId, targetId, dmg, isCrit, skillType, roleId, isUltimate) => {
       this.mapView?.queueAction(attackerId, targetId, dmg, isCrit, skillType, roleId, isUltimate);
+      // Track last attack on pet for Firebase sync (remote combat visual)
+      var _apt = this.worldMap.getBattlePets().find(function(p){ return p.id === attackerId; });
+      if (_apt) {
+        _apt._lastAttackDmg = dmg;
+        _apt._lastAttackCrit = isCrit;
+        _apt._lastAttackSkill = skillType;
+        _apt._lastAttackUlt = !!isUltimate;
+      }
     };
     if (window.worldOnline && window.worldOnline.isOnline && this.worldMap.onlineManager !== window.worldOnline) {
       this.worldMap.setOnlineMode(window.worldOnline);

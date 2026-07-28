@@ -110,6 +110,7 @@ class WorldMap {
     this.isOnline = false;
     this.onlineManager = null;
     this._monsterIdCounter = 0;
+    this._nonHostFallback = null;
   }
 
   getPlayerPosition() {
@@ -142,6 +143,11 @@ class WorldMap {
   }
 
   _syncMonstersFromFirebase(firebaseMonsters) {
+    // Clear non-host fallback when real Firebase monsters arrive
+    if (this._nonHostFallback) {
+      clearTimeout(this._nonHostFallback);
+      this._nonHostFallback = null;
+    }
     // Keep monsters without firebaseId (local-only) OR with firebaseId not yet in Firebase (pending sync)
     var localOnly = this.monsters.filter(function(m){ return !m.firebaseId || !firebaseMonsters[m.firebaseId]; });
     var newMonsters = [];
@@ -285,8 +291,22 @@ class WorldMap {
     const battlePets = this.getBattlePets();
     battlePets.forEach(p => p.resetBattleEnergy());
     battlePets.forEach((p, i) => this.assignPetGrid(p, i));
-    // Spawn initial monsters
-    this.spawnInitialMonsters();
+    // Non-host online: monsters from Firebase (shared), with fallback
+    const _isNonHost = this.isOnline && this.onlineManager && !this.onlineManager.isHost;
+    if (_isNonHost) {
+      var _existing = this.onlineManager.remoteMonsters || {};
+      if (Object.keys(_existing).length > 0) {
+        this._syncMonstersFromFirebase(_existing);
+      } else {
+        var _self = this;
+        this._nonHostFallback = setTimeout(function(){
+          _self._nonHostFallback = null;
+          _self.spawnInitialMonsters();
+        }, 2000);
+      }
+    } else {
+      this.spawnInitialMonsters();
+    }
     if (this.reservePetIds.length > 0) {
       this.fightLog.push({ text: `🔄 ${this.reservePetIds.length} pet dự bị sẵn sàng vào sân`, type: 'system' });
     }
@@ -300,6 +320,10 @@ class WorldMap {
     if (this.autoInterval) {
       clearInterval(this.autoInterval);
       this.autoInterval = null;
+    }
+    if (this._nonHostFallback) {
+      clearTimeout(this._nonHostFallback);
+      this._nonHostFallback = null;
     }
     this.botPlayers = [];
   }
@@ -1003,7 +1027,8 @@ this.monsters.push(lowerBoss);
     // Boss level-up check
     this.tickBossLevels();
 
-    // Continuous spawning: spawn normal monsters every 3-8 seconds
+    // Continuous spawning: spawn normal monsters every 3-8 seconds (host only in online)
+    if (!this.isOnline || !this.onlineManager || this.onlineManager.isHost) {
     const aliveNormals = this.monsters.filter(m => !m.dead && m.hp > 0 && !m.isBoss);
     const aliveBosses = this.monsters.filter(m => !m.dead && m.hp > 0 && m.isBoss);
 
@@ -1015,6 +1040,7 @@ this.monsters.push(lowerBoss);
     }
     if (aliveBosses.length < this.maxBosses && Math.random() < this.bossSpawnChance) {
       this.spawnBossMonster();
+    }
     }
 
     const aliveMonsters = this.monsters.filter(m => !m.dead && m.hp > 0);
