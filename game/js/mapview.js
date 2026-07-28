@@ -369,6 +369,7 @@ class MapView2D {
     this.running = true;
     this.bindVisibilityHandlers();
     this.lastTime = performance.now();
+    this.render();
     this.loop(this.lastTime);
   }
 

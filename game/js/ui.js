@@ -2136,6 +2136,9 @@ class GameUI {
       }
       if (this.mapView) {
         this.mapView.syncEntities(alivePets, aliveMonsters, botPetsForCanvas, botChars, remotePlayers);
+        // ⚠️ render ngay sau sync để canvas luôn hiển thị trạng thái mới nhất,
+        // không chờ loop (vì idle có thể skip render frame).
+        this.mapView.render();
       }
 
       // Only update DOM in-place during exploring (avoids full re-render)
