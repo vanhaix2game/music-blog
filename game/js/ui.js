@@ -1650,16 +1650,18 @@ class GameUI {
 
     // Append online sidebar
     var playerItems = [];
-    playerItems.push({ uid: FirebaseOnline.uid, name: wm.myName || 'Bạn', emoji: wm.myEmoji || '🧑', isMe: true });
+    var myPetCount = (this.worldMap ? this.worldMap.getBattlePets().length : 0) || 0;
+    playerItems.push({ uid: FirebaseOnline.uid, name: wm.myName || 'Bạn', emoji: wm.myEmoji || '🧑', isMe: true, petCount: myPetCount });
     for (var uid in wm.remotePlayers) {
       var rp = wm.remotePlayers[uid];
-      playerItems.push({ uid: uid, name: rp.name || uid.slice(0,6), emoji: rp.emoji || '🧑', isMe: false });
+      var petCount = (rp.pets || []).filter(function(p){ return p && !p.dead; }).length;
+      playerItems.push({ uid: uid, name: rp.name || uid.slice(0,6), emoji: rp.emoji || '🧑', isMe: false, petCount: petCount });
     }
     var playerListHtml = playerItems.map(function(p){
-      if (p.isMe) return '<div class="pvp-player-item me"><span class="pvp-player-emoji">' + p.emoji + '</span><span class="pvp-player-name">' + p.name + '</span></div>';
+      if (p.isMe) return '<div class="pvp-player-item me"><span class="pvp-player-emoji">' + p.emoji + '</span><span class="pvp-player-name">' + p.name + ' <span style="font-size:0.65rem;opacity:0.6">(' + p.petCount + ' pet)</span></span></div>';
       return '<div class="pvp-player-item">' +
         '<span class="pvp-player-emoji">' + p.emoji + '</span>' +
-        '<span class="pvp-player-name">' + p.name + '</span>' +
+        '<span class="pvp-player-name">' + p.name + ' <span style="font-size:0.65rem;opacity:0.6">(' + p.petCount + ' pet)</span></span>' +
         '<button class="btn btn-sm btn-warning" onclick="app.challengePlayer(\'' + p.uid + '\')">⚔️</button></div>';
     }).join('');
     var challengeHtml = '';

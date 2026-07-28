@@ -19,10 +19,18 @@ class WorldOnlineManager {
     this.currentRoom = 1;
   }
 
-  async enterWorld(name, emoji, roomNum) {
+  async enterWorld(name, emoji, roomNum, pets) {
     this.currentRoom = roomNum || 1;
     FirebaseOnline.currentRoom = this.currentRoom;
-    var result = await FirebaseOnline.enterWorld(name, emoji);
+    var petSnap = (pets || []).map(function(p){ return {
+      id: p.id, name: p.name, emoji: p.emoji,
+      level: p.level, hp: p.hp, maxHp: p.maxHp,
+      dead: p.dead || false,
+      gridCol: p.gridCol != null ? p.gridCol : 5,
+      gridRow: p.gridRow != null ? p.gridRow : 5,
+      element: getPetElement(p.baseId)
+    };});
+    var result = await FirebaseOnline.enterWorld(name, emoji, petSnap);
     if (!result) return false;
     this.isOnline = true;
     this.isHost = result.isHost;
@@ -48,7 +56,32 @@ class WorldOnlineManager {
       if (!self.isOnline) return;
       var pos = worldMap.getPlayerPosition();
       if (pos) FirebaseOnline.updatePlayerPosition(pos.x, pos.y);
-    }, 200);
+      // Sync pet states (HP, position, alive)
+      var battlePets = worldMap.getBattlePets();
+      if (!battlePets || battlePets.length === 0) {
+        // Fall back to battle team pets when not exploring
+        try {
+          var teamIds = (window.app && window.app.player && window.app.player.battleTeam) || [];
+          if (teamIds.length > 0) {
+            battlePets = teamIds.map(function(id){ return window.app.player.getPet(id); }).filter(function(p){ return p && !p.dead && p.hp > 0; });
+          }
+          if (!battlePets || battlePets.length === 0) {
+            battlePets = window.app.player ? window.app.player.getStrongestPets(3) : [];
+          }
+        } catch(e) { battlePets = []; }
+      }
+      if (battlePets && battlePets.length > 0) {
+        var petSnap = battlePets.filter(function(p){ return p; }).map(function(p){ return {
+          id: p.id, name: p.name, emoji: p.emoji,
+          level: p.level, hp: p.hp, maxHp: p.maxHp,
+          dead: p.dead || false,
+          gridCol: p.gridCol != null ? p.gridCol : 5,
+          gridRow: p.gridRow != null ? p.gridRow : 5,
+          element: p.element || getPetElement(p.baseId)
+        };});
+        FirebaseOnline.updatePlayerPets(petSnap);
+      }
+    }, 400);
   }
 
   stopSyncPosition() {

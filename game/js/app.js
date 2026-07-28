@@ -688,7 +688,13 @@ class App {
     if (worldOnline.isOnline) return;
     var name = localStorage.getItem('musicblog_username') || FirebaseOnline.uid || 'Khách';
     var emoji = this.player.costume ? (DATA.COSTUMES.find(function(c){ return c.id === app.player.costume; })?.emoji || '🐉') : '🐉';
-    var ok = await worldOnline.enterWorld(name, emoji, roomNum);
+    // Get active pets from battle team or strongest alive
+    var teamIds = this.player.battleTeam.filter(function(id){ var p = app.player.getPet(id); return p && !p.dead && p.hp > 0; });
+    if (teamIds.length === 0) {
+      teamIds = this.player.getStrongestPets(3).map(function(p){ return p.id; });
+    }
+    var activePets = teamIds.map(function(id){ return app.player.getPet(id); }).filter(function(p){ return p; });
+    var ok = await worldOnline.enterWorld(name, emoji, roomNum, activePets);
     if (!ok) return;
     this._setupOnlineWorld();
     this.ui.toast('🌐 Đã vào phòng ' + roomNum);

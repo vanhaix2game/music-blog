@@ -601,6 +601,7 @@ class MapView2D {
 
     this.entities = this.entities.filter(e => {
       if (e.dead) return false;
+      if (e.isRemotePet) return true; // handled per-owner below
       if (e.isRemote) return remoteUids.has(e.pet.id);
       if (e.isBotCharacter) return aliveCharIds.has(e.pet.id);
       if (e.isBot) return aliveBotIds.has(e.pet.id);
@@ -700,7 +701,7 @@ class MapView2D {
         gridCol: col,
         gridRow: row,
       };
-      let ent = this.entities.find(e => e.isRemote && e.pet.id === uid);
+      let ent = this.entities.find(e => e.isRemote && !e.isRemotePet && e.pet.id === uid);
       if (ent) {
         ent.setTarget(col, row);
         ent.pet.hp = pseudoPet.hp;
@@ -714,7 +715,55 @@ class MapView2D {
         e.x = s.x; e.y = s.y;
         this.entities.push(e);
       }
+
+      // Remote player's pets
+      const remotePets = rp.pets || [];
+      const remoteAliveIds = new Set(remotePets.filter(function(p){ return p && !p.dead && p.hp > 0; }).map(function(p){ return p.id; }));
+      // Remove remote pet entities that are no longer alive
+      this.entities = this.entities.filter(function(e){
+        if (!e.isRemotePet) return true;
+        if (e._remoteOwnerUid !== uid) return true;
+        return remoteAliveIds.has(e.pet.id);
+      });
+      for (var pi = 0; pi < remotePets.length; pi++) {
+        var rpPet = remotePets[pi];
+        if (!rpPet || rpPet.dead || rpPet.hp <= 0) continue;
+        var pCol = rpPet.gridCol != null ? rpPet.gridCol : col + pi;
+        var pRow = rpPet.gridRow != null ? rpPet.gridRow : row;
+        var remotePetData = {
+          id: rpPet.id || uid + '_pet_' + pi,
+          name: rpPet.name || '',
+          emoji: rpPet.emoji || '🐾',
+          hp: rpPet.hp || 100,
+          maxHp: rpPet.maxHp || 100,
+          level: rpPet.level || 1,
+          element: rpPet.element || 'fire',
+          gridCol: pCol,
+          gridRow: pRow,
+        };
+        var pEnt = this.entities.find(function(e){ return e.isRemotePet && e._remoteOwnerUid === uid && e.pet.id === remotePetData.id; });
+        if (pEnt) {
+          pEnt.setTarget(pCol, pRow);
+          pEnt.pet.hp = remotePetData.hp;
+          pEnt.pet.maxHp = remotePetData.maxHp;
+          pEnt.pet.emoji = remotePetData.emoji;
+          pEnt.pet.level = remotePetData.level;
+        } else {
+          var pe = new MapEntity(remotePetData, false, pCol, pRow);
+          pe.isRemotePet = true;
+          pe._remoteOwnerUid = uid;
+          pe._remoteOwnerName = rp.name || pseudoPet.name;
+          var ps = this.tileToScreen(pCol, pRow);
+          pe.x = ps.x; pe.y = ps.y;
+          this.entities.push(pe);
+        }
+      }
     }
+    // Clean up remote pet entities whose owner disconnected
+    this.entities = this.entities.filter(function(e){
+      if (!e.isRemotePet) return true;
+      return remoteUids.has(e._remoteOwnerUid);
+    });
   }
 
   getVisualTypeForAnim(anim, isUltimate, element) {
@@ -1237,7 +1286,7 @@ class MapView2D {
         const barY = sy - 18 + bobY + (isBossEnt ? -6 : -2);
         PixelArt.drawHPBar(ctx, sx - barW / 2, barY, barW, barH, Math.max(0, ent.pet.hp), ent.pet.maxHp);
 
-        ctx.fillStyle = ent.isMonster ? '#FF8888' : (ent.isBot ? '#88AAFF' : '#88FF88');
+        ctx.fillStyle = ent.isMonster ? '#FF8888' : (ent.isBot ? '#88AAFF' : (ent.isRemotePet ? '#FFAA44' : '#88FF88'));
         ctx.font = '5px monospace';
         ctx.textAlign = 'center';
         const label = ent.isBot
@@ -1246,6 +1295,12 @@ class MapView2D {
             ? (ent.pet.isMutant ? '🧬' : '') + (ent.pet.name || '').substring(0, 5)
             : ent.pet.emoji;
         ctx.fillText(label, sx, sy - 21 + bobY);
+        // Show owner name under remote pets
+        if (ent.isRemotePet && ent._remoteOwnerName) {
+          ctx.fillStyle = '#FFAA44';
+          ctx.font = '4px monospace';
+          ctx.fillText('~' + ent._remoteOwnerName.substring(0, 6), sx, sy - 12 + bobY);
+        }
 
         // Skill name floating text phía trên đầu
         if (ent._skillTimer > 0 && ent._displaySkill) {

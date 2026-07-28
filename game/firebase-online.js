@@ -226,7 +226,7 @@
 
     // === Room-based Online World (rooms 1-10) ===
 
-    enterWorld: function(playerName, emoji){
+    enterWorld: function(playerName, emoji, pets){
       return new Promise(function(resolve){
         if(!FirebaseOnline.isLoggedIn){ resolve(null); return; }
         var ref = FirebaseOnline.roomRef();
@@ -244,7 +244,8 @@
           ref.child('players/'+FirebaseOnline.uid).set({
             name: playerName, emoji: emoji,
             x: 5, y: 5, hp: 100, maxHp: 100,
-            alive: true, lastMove: Date.now()
+            alive: true, lastMove: Date.now(),
+            pets: pets || []
           });
           ref.child('players/'+FirebaseOnline.uid).onDisconnect().remove();
           resolve({ isHost: isHost });
@@ -256,6 +257,11 @@
       if(!FirebaseOnline.isLoggedIn) return;
       FirebaseOnline.roomRef().child('players/'+FirebaseOnline.uid).remove();
       FirebaseOnline._unwatchAllWorld();
+    },
+
+    updatePlayerPets: function(pets){
+      if(!FirebaseOnline.isLoggedIn) return;
+      FirebaseOnline.roomRef().child('players/'+FirebaseOnline.uid + '/pets').set(pets || []);
     },
 
     updatePlayerPosition: function(x, y){
