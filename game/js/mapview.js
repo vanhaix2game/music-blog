@@ -954,7 +954,11 @@ class MapView2D {
           ent._displaySkill = '';
         }
       }
+      // Snap entities to target positions when idle (no animation running)
       if (!shouldUpdateMotion) {
+        const snapTarget = this.tileToScreen(ent.targetCol, ent.targetRow);
+        ent.x = snapTarget.x;
+        ent.y = snapTarget.y;
         if (ent.hitFlash > 0) ent.hitFlash = Math.max(0, ent.hitFlash - dt);
         if (ent.attackTimer > 0) ent.attackTimer = Math.max(0, ent.attackTimer - dt);
         if (ent.staggerTimer > 0) ent.staggerTimer = Math.max(0, ent.staggerTimer - dt);

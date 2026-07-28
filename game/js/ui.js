@@ -1634,10 +1634,11 @@ class GameUI {
       this.worldMap.onLogUpdate = () => this.refreshLogOnly();
       this.worldMap.onLevelUp = (pet) => this.toast(`🎉 ${pet.emoji} ${pet.name} lên cấp ${pet.level}!`);
       this.worldMap.onPetDeath = (pet, lost) => this.toast(`💔 ${pet.emoji} ${pet.name} chết! Mất ${lost} cấp.`);
-      this.worldMap.onAttackAnim = (attackerId, targetId, dmg, isCrit, skillType, roleId, isUltimate) => {
-        this.mapView?.queueAction(attackerId, targetId, dmg, isCrit, skillType, roleId, isUltimate);
-      };
     }
+    // ⚠️ Luôn set onAttackAnim (online map có thể được tạo từ _setupOnlineWorld trước đó).
+    this.worldMap.onAttackAnim = (attackerId, targetId, dmg, isCrit, skillType, roleId, isUltimate) => {
+      this.mapView?.queueAction(attackerId, targetId, dmg, isCrit, skillType, roleId, isUltimate);
+    };
     if (window.worldOnline && window.worldOnline.isOnline && this.worldMap.onlineManager !== window.worldOnline) {
       this.worldMap.setOnlineMode(window.worldOnline);
     }
