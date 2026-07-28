@@ -167,9 +167,13 @@ class WorldOnlineManager {
       self.remotePlayers = players;
       if (self.onPlayersUpdate) self.onPlayersUpdate(players);
 
+      // ⚠️ CHỈ gọi onMonstersUpdate khi data.monsters thực sự thay đổi.
+      // Nếu không, mỗi lần sync position (400ms) sẽ trigger value event -> clear/merge monsters -> gián đoạn combat.
       var monsters = data.monsters || {};
+      var prevKey = JSON.stringify(self.remoteMonsters);
+      var newKey = JSON.stringify(monsters);
       self.remoteMonsters = monsters;
-      if (self.onMonstersUpdate) self.onMonstersUpdate(monsters);
+      if (prevKey !== newKey && self.onMonstersUpdate) self.onMonstersUpdate(monsters);
 
       if (self.onResourcesUpdate && data.resources) {
         self.onResourcesUpdate(data.resources);
