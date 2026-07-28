@@ -79,7 +79,9 @@ class WorldOnlineManager {
           gridRow: p.gridRow != null ? p.gridRow : 5,
           element: p.element || getPetElement(p.baseId),
           // Combat flag — true if exploring and monsters exist (for visual on other clients)
-          fighting: worldMap.exploring && worldMap.monsters && worldMap.monsters.some(function(m){ return !m.dead && m.hp > 0; })
+          fighting: worldMap.exploring && worldMap.monsters && worldMap.monsters.some(function(m){ return !m.dead && m.hp > 0; }),
+          // Target monster firebaseId (null when idle) — lets remote clients show attack visual
+          targetMon: p._targetFirebaseId || null
         };});
         FirebaseOnline.updatePlayerPets(petSnap);
       }

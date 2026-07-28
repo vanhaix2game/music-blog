@@ -754,6 +754,13 @@ class MapView2D {
             pEnt.hitFlash = 0.15;
             pEnt.attackTimer = 0.3;
           }
+          // Attack target monster visual: flash the specific monster this pet is hitting
+          if (rpPet.targetMon) {
+            var targetMonEnt = this.entities.find(function(e){ return e.isMonster && e.pet.firebaseId === rpPet.targetMon; });
+            if (targetMonEnt) {
+              targetMonEnt.hitFlash = 0.12;
+            }
+          }
         } else {
           var pe = new MapEntity(remotePetData, false, pCol, pRow);
           pe.isRemotePet = true;

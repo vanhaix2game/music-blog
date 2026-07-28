@@ -1033,6 +1033,8 @@ this.monsters.push(lowerBoss);
       const role = getPetRole(pet.baseId);
       pet.addBattleEnergy(10);
       const selectedTarget = this.selectPetTarget(pet, aliveMonsters, alivePets);
+      // Track which monster this pet is engaging (for remote combat sync)
+      pet._targetFirebaseId = selectedTarget ? (selectedTarget.firebaseId || null) : null;
 
       if (selectedTarget) {
         const desired = this.getPetDesiredPosition(pet, selectedTarget, alivePets);
