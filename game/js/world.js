@@ -110,6 +110,7 @@ class WorldMap {
     this.isOnline = false;
     this.onlineManager = null;
     this._monsterIdCounter = 0;
+    this._nonHostFallback = null;
   }
 
   getPlayerPosition() {
@@ -142,27 +143,44 @@ class WorldMap {
   }
 
   _syncMonstersFromFirebase(firebaseMonsters) {
-    // Update existing Firebase monsters (HP/position), don't create new ones.
-    // This avoids duplicating host monsters on top of each player's local spawns.
+    // Clear non-host fallback when real Firebase monsters arrive
+    if (this._nonHostFallback) {
+      clearTimeout(this._nonHostFallback);
+      this._nonHostFallback = null;
+    }
+    // Keep monsters without firebaseId (local-only) OR with firebaseId not yet in Firebase (pending sync)
+    var localOnly = this.monsters.filter(function(m){ return !m.firebaseId || !firebaseMonsters[m.firebaseId]; });
+    var newMonsters = [];
     for (var id in firebaseMonsters) {
       var fm = firebaseMonsters[id];
       if (!fm || !fm.alive) continue;
       var existing = this.monsters.find(function(m){ return m.firebaseId === id; });
       if (existing) {
+        // Update position and HP from Firebase (other players' damage)
         existing.gridCol = fm.x;
         existing.gridRow = fm.y;
         if (fm.hp != null && fm.hp < existing.hp) {
           existing.hp = fm.hp;
           existing._lastSyncHp = existing.hp;
         }
+        newMonsters.push(existing);
+      } else {
+        var mon = spawnMonster(fm.level || 5, this.getBattlePets());
+        mon.firebaseId = id;
+        mon.gridCol = fm.x;
+        mon.gridRow = fm.y;
+        mon.maxHp = fm.maxHp || mon.maxHp;
+        mon.hp = fm.hp != null ? fm.hp : mon.maxHp;
+        mon._lastSyncHp = mon.hp;
+        mon.level = fm.level || mon.level;
+        if (fm.element) mon.element = fm.element;
+        if (fm.name) mon.name = fm.name;
+        if (fm.emoji) mon.emoji = fm.emoji;
+        if (fm.isBoss) { mon.isBoss = true; }
+        newMonsters.push(mon);
       }
     }
-    // Remove monsters whose Firebase entry is gone (host removed them after death)
-    this.monsters = this.monsters.filter(function(m) {
-      if (!m.firebaseId) return true;
-      var fm = firebaseMonsters[m.firebaseId];
-      return fm && fm.alive;
-    });
+    this.monsters = localOnly.concat(newMonsters);
   }
 
   getMapInfo() {
@@ -273,7 +291,22 @@ class WorldMap {
     const battlePets = this.getBattlePets();
     battlePets.forEach(p => p.resetBattleEnergy());
     battlePets.forEach((p, i) => this.assignPetGrid(p, i));
-    this.spawnInitialMonsters();
+    // Non-host online: monsters from Firebase (shared), with fallback
+    const _isNonHost = this.isOnline && this.onlineManager && !this.onlineManager.isHost;
+    if (_isNonHost) {
+      var _existing = this.onlineManager.remoteMonsters || {};
+      if (Object.keys(_existing).length > 0) {
+        this._syncMonstersFromFirebase(_existing);
+      } else {
+        var _self = this;
+        this._nonHostFallback = setTimeout(function(){
+          _self._nonHostFallback = null;
+          _self.spawnInitialMonsters();
+        }, 2000);
+      }
+    } else {
+      this.spawnInitialMonsters();
+    }
     if (this.reservePetIds.length > 0) {
       this.fightLog.push({ text: `🔄 ${this.reservePetIds.length} pet dự bị sẵn sàng vào sân`, type: 'system' });
     }
@@ -287,6 +320,10 @@ class WorldMap {
     if (this.autoInterval) {
       clearInterval(this.autoInterval);
       this.autoInterval = null;
+    }
+    if (this._nonHostFallback) {
+      clearTimeout(this._nonHostFallback);
+      this._nonHostFallback = null;
     }
     this.botPlayers = [];
   }
@@ -990,7 +1027,8 @@ this.monsters.push(lowerBoss);
     // Boss level-up check
     this.tickBossLevels();
 
-    // Continuous spawning: spawn normal monsters every 3-8 seconds
+    // Continuous spawning: spawn normal monsters every 3-8 seconds (host only in online)
+    if (!this.isOnline || !this.onlineManager || this.onlineManager.isHost) {
     const aliveNormals = this.monsters.filter(m => !m.dead && m.hp > 0 && !m.isBoss);
     const aliveBosses = this.monsters.filter(m => !m.dead && m.hp > 0 && m.isBoss);
 
@@ -1002,6 +1040,7 @@ this.monsters.push(lowerBoss);
     }
     if (aliveBosses.length < this.maxBosses && Math.random() < this.bossSpawnChance) {
       this.spawnBossMonster();
+    }
     }
 
     const aliveMonsters = this.monsters.filter(m => !m.dead && m.hp > 0);
