@@ -111,7 +111,6 @@ class WorldMap {
     this.onlineManager = null;
     this._monsterIdCounter = 0;
   }
-  }
 
   getPlayerPosition() {
     var pet = this.fieldPetIds.length > 0 ? this.player.getPet(this.fieldPetIds[0]) : null;
