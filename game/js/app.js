@@ -715,6 +715,11 @@ class App {
     this.ui.worldMap.onUpdate = () => self.ui.refreshWorldUI();
     this.ui.worldMap.onLogUpdate = () => self.ui.refreshLogOnly();
     this.ui.worldMap.setOnlineMode(worldOnline);
+    // Prevent duplicate refresh timers when re-entering the online room.
+    if (worldOnline._onlineRefreshTimer) {
+      clearInterval(worldOnline._onlineRefreshTimer);
+      worldOnline._onlineRefreshTimer = null;
+    }
     // Start periodic refresh for online map canvas
     worldOnline._onlineRefreshTimer = setInterval(function(){
       if (self.ui.currentTab === 'mapOnline' && self.ui.mapView) {
@@ -960,5 +965,5 @@ class App {
   }
 }
 
-const app = new App();
-document.addEventListener('DOMContentLoaded', () => app.init());
+window.app = new App();
+document.addEventListener('DOMContentLoaded', () => window.app.init());

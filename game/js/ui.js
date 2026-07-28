@@ -1638,7 +1638,7 @@ class GameUI {
         this.mapView?.queueAction(attackerId, targetId, dmg, isCrit, skillType, roleId, isUltimate);
       };
     }
-    if (window.worldOnline && window.worldOnline.isOnline) {
+    if (window.worldOnline && window.worldOnline.isOnline && this.worldMap.onlineManager !== window.worldOnline) {
       this.worldMap.setOnlineMode(window.worldOnline);
     }
     var wm = window.worldOnline;
@@ -1803,7 +1803,9 @@ class GameUI {
     var wm = window.worldOnline;
     var headerExtra = '';
     if (wm && wm.isOnline) {
-      this.worldMap.setOnlineMode(wm);
+      if (this.worldMap.onlineManager !== wm) {
+        this.worldMap.setOnlineMode(wm);
+      }
       var roomLabel = 'Phòng ' + (wm.currentRoom || 1);
       var count = Object.keys(wm.remotePlayers || {}).length + 1;
       headerExtra = '<span style="color:#27ae60;font-size:0.85rem;float:right">' + roomLabel + ' · 👥 ' + count + ' online</span>';

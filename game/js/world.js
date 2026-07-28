@@ -119,6 +119,13 @@ class WorldMap {
   }
 
   setOnlineMode(manager) {
+    if (this.onlineManager === manager && this.isOnline) {
+      if (manager.remoteMonsters && Object.keys(manager.remoteMonsters).length > 0) {
+        this._syncMonstersFromFirebase(manager.remoteMonsters);
+        this.scheduleUpdate();
+      }
+      return;
+    }
     this.onlineManager = manager;
     this.isOnline = true;
     var self = this;
@@ -126,6 +133,12 @@ class WorldMap {
     manager.onMonstersUpdate = function(monsters){
       self._syncMonstersFromFirebase(monsters);
     };
+    // If the manager already has monster data from an initial world snapshot,
+    // sync it immediately to avoid stale empty map state after joining.
+    if (manager.remoteMonsters && Object.keys(manager.remoteMonsters).length > 0) {
+      self._syncMonstersFromFirebase(manager.remoteMonsters);
+      self.scheduleUpdate();
+    }
   }
 
   _syncMonstersFromFirebase(firebaseMonsters) {
