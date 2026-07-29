@@ -274,16 +274,18 @@
         FirebaseOnline.ensureAuthenticated().then(function(ok){
           if(!ok){ resolve(null); return; }
           var ref = FirebaseOnline.roomRef();
-          ref.once('value').then(function(snap){
-            var room = snap.val();
-            var isHost = !room || !room.host || room.host === FirebaseOnline.uid;
-            if(isHost){
-              ref.set({
-                host: FirebaseOnline.uid,
-                players: {},
-                monsters: {},
-                resources: {}
-              });
+          // Use transaction to atomically claim host — prevents race when both join at same time.
+          ref.child('host').transaction(function(currentHost){
+            if (currentHost === null || currentHost === undefined) {
+              return FirebaseOnline.uid;
+            }
+          }, function(error, committed, snapshot){
+            if (error) { resolve(null); return; }
+            var isHost = snapshot.val() === FirebaseOnline.uid;
+            if (isHost) {
+              ref.child('monsters').set({});
+              ref.child('resources').set({});
+              ref.child('host').onDisconnect().remove();
             }
             ref.child('players/'+FirebaseOnline.uid).set({
               name: playerName, emoji: emoji,
@@ -292,10 +294,8 @@
               pets: pets || []
             });
             ref.child('players/'+FirebaseOnline.uid).onDisconnect().remove();
-            // Cleanup host on disconnect so next player becomes host
-            ref.child('host').onDisconnect().remove();
             resolve({ isHost: isHost });
-          });
+          }, false);
         });
       });
     },
