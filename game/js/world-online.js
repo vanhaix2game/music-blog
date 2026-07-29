@@ -123,7 +123,6 @@ class WorldOnlineManager {
       payload[key] = {
         x: mon.gridCol,
         y: mon.gridRow,
-        hp: mon.hp,
         maxHp: mon.maxHp,
         atk: mon.atk,
         def: mon.def,
@@ -135,7 +134,12 @@ class WorldOnlineManager {
         isBoss: !!mon.isBoss
       };
     });
-    return FirebaseOnline.roomRef().child('monsters').set(payload);
+    // Use update on the monsters parent to avoid overwriting hp (managed via transactions)
+    var monsterRef = FirebaseOnline.roomRef().child('monsters');
+    for (var key in payload) {
+      monsterRef.child(key).update(payload[key]);
+    }
+    return Promise.resolve();
   }
 
   syncMonsterHP(firebaseId, hp) {

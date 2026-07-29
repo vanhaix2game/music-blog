@@ -541,10 +541,14 @@ class Player {
   }
 
   addWeapon(weapon) {
+    if (!this.equipment) this.equipment = { weapons: [], armors: [] };
+    if (!this.equipment.weapons) this.equipment.weapons = [];
     this.equipment.weapons.push({ ...weapon });
   }
 
   addArmor(armor) {
+    if (!this.equipment) this.equipment = { weapons: [], armors: [] };
+    if (!this.equipment.armors) this.equipment.armors = [];
     this.equipment.armors.push({ ...armor });
   }
 

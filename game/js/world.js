@@ -1214,6 +1214,9 @@ this.monsters.push(lowerBoss);
     }
 
     // --- Monster movement + attack ---
+    // Only host processes monster AI to avoid HP/position desync between clients.
+    // Non-host receives monster state via Firebase sync from host.
+    if (!this.isOnline || !this.onlineManager || this.onlineManager.isHost) {
     for (const mon of aliveMonsters) {
       if (alivePets.length === 0) break;
       if (mon.hp <= 0 || mon.dead) continue;
@@ -1263,39 +1266,31 @@ this.monsters.push(lowerBoss);
         mon.battleEnergy = Math.min(100, (mon.battleEnergy || 0) + 8);
       }
     }
+    }
 
     // Tick effects at end of round
     this.tickEffects();
 
     // Sync monster HP changes to Firebase (shared competitive combat)
     // Both host and non-host send damage delta via transaction (atomic, prevents race).
-    // Host additionally writes absolute HP + full monster list for eventual consistency.
+    // Host syncs full monster list (without HP — HP is managed exclusively via transactions).
     if (this.isOnline && this.onlineManager) {
       var hasMonsterStateChange = false;
-      var hostHpChanges = {};
       for (var mi = 0; mi < this.monsters.length; mi++) {
         var m = this.monsters[mi];
         if (m.firebaseId && m.hp !== m._lastSyncHp) {
           var damage = m._lastSyncHp - m.hp;
           m._lastSyncHp = m.hp;
           if (damage > 0) {
-            // Both host and non-host use transaction for atomic damage application
             this.onlineManager.applyMonsterDamage(m.firebaseId, damage);
             hasMonsterStateChange = true;
           }
-          if (this.onlineManager.isHost) {
-            hostHpChanges[m.firebaseId] = m.hp;
-          }
         }
       }
-      // Host also writes absolute HP and full monster list for eventual consistency
-      if (this.onlineManager.isHost) {
-        for (var _fid in hostHpChanges) {
-          this.onlineManager.syncMonsterHP(_fid, hostHpChanges[_fid]);
-        }
-        if (hasMonsterStateChange && this.onlineManager.syncRoomMonsters) {
-          this.onlineManager.syncRoomMonsters(this.monsters);
-        }
+      // Host syncs full monster list (position, level, etc.) to Firebase.
+      // Monster HP is managed exclusively via transactions to avoid overwriting non-host damage.
+      if (this.onlineManager.isHost && hasMonsterStateChange && this.onlineManager.syncRoomMonsters) {
+        this.onlineManager.syncRoomMonsters(this.monsters);
       }
     }
 
