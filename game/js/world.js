@@ -1278,7 +1278,7 @@ this.monsters.push(lowerBoss);
       var hasMonsterStateChange = false;
       for (var mi = 0; mi < this.monsters.length; mi++) {
         var m = this.monsters[mi];
-        if (m.firebaseId && m.hp !== m._lastSyncHp) {
+        if (m.firebaseId && m.hp !== m._lastSyncHp && m.hp > 0) {
           var damage = m._lastSyncHp - m.hp;
           m._lastSyncHp = m.hp;
           if (damage > 0) {
