@@ -86,7 +86,8 @@ class WorldOnlineManager {
           lastDmg: p._lastAttackDmg || 0,
           lastCrit: !!p._lastAttackCrit,
           lastSkill: p._lastAttackSkill || null,
-          lastUlt: !!p._lastAttackUlt
+          lastUlt: !!p._lastAttackUlt,
+          displaySkill: p.displaySkill || p._lastAttackSkill || null
         };});
         // Reset attack tracking after sync so stale values are not re-sent
         battlePets.forEach(function(p){ if (p) {

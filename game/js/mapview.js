@@ -783,6 +783,11 @@ class MapView2D {
           // Skill visual from remote pet (lastDmg changes on new attack)
           if (rpPet.lastDmg > 0 && rpPet.lastDmg !== pEnt._lastSeenDmg && rpPet.targetMon) {
             pEnt._lastSeenDmg = rpPet.lastDmg;
+            // Show floating skill name above remote pet
+            if (rpPet.displaySkill) {
+              pEnt._displaySkill = rpPet.displaySkill;
+              pEnt._skillTimer = 1.5;
+            }
             var targetSkillEnt = this.entities.find(function(e){ return e.isMonster && e.pet.firebaseId === rpPet.targetMon; });
             if (targetSkillEnt) {
               this.applyEntityImpact(pEnt, targetSkillEnt, { visualType: rpPet.lastSkill || 'slash', dmg: rpPet.lastDmg }, rpPet.lastUlt);
