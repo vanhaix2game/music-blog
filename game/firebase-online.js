@@ -276,7 +276,7 @@
           var ref = FirebaseOnline.roomRef();
           ref.once('value').then(function(snap){
             var room = snap.val();
-            var isHost = !room || !room.host;
+            var isHost = !room || !room.host || room.host === FirebaseOnline.uid;
             if(isHost){
               ref.set({
                 host: FirebaseOnline.uid,
@@ -292,6 +292,8 @@
               pets: pets || []
             });
             ref.child('players/'+FirebaseOnline.uid).onDisconnect().remove();
+            // Cleanup host on disconnect so next player becomes host
+            ref.child('host').onDisconnect().remove();
             resolve({ isHost: isHost });
           });
         });
