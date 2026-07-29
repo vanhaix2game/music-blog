@@ -34,6 +34,8 @@ class Pet {
     this.isMonster = config.isMonster || false;
     this.isMutant = config.isMutant || false;
     this.dead = config.dead || false;
+    this.gridCol = config.gridCol ?? 6;
+    this.gridRow = config.gridRow ?? 4;
     this.role = config.role || getPetRole(this.baseId);
     this.purchasedSkills = [];
     this.pendingSkillChoices = config.pendingSkillChoices || [];
@@ -421,6 +423,7 @@ class Pet {
       wins: this.wins, losses: this.losses, totalBattles: this.totalBattles,
       isBoss: this.isBoss, isMonster: this.isMonster, isMutant: this.isMutant, dead: this.dead,
       role: this.role,
+      gridCol: this.gridCol, gridRow: this.gridRow,
       purchasedSkills: this.purchasedSkills,
       pendingSkillChoices: this.pendingSkillChoices,
       skillProficiency: this.skillProficiency,

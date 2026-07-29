@@ -41,7 +41,7 @@ class PVPBattle {
   }
 
   gridDist(a, b) {
-    if (!a || !b) return 999;
+    if (!a || !b || !isFinite(a.gridCol) || !isFinite(b.gridCol)) return 999;
     return Math.abs(a.gridCol - b.gridCol);
   }
 
@@ -219,9 +219,8 @@ class PVPBattle {
       this._petAttackPet(pet, target, teamId);
       pet.addBattleEnergy(10);
     } else {
-      const dir = target.gridCol > pet.gridCol ? 1 : -1;
-      pet.gridCol += dir * 2;
-      pet.gridCol = Math.max(1, Math.min(28, pet.gridCol));
+      const dir = target.gridCol > (pet.gridCol ?? 6) ? 1 : -1;
+      pet.gridCol = Math.max(1, Math.min(28, (pet.gridCol ?? 6) + dir * 2));
     }
   }
 

@@ -171,8 +171,8 @@ class WorldMap {
       processedFirebaseIds[id] = true;
       var existing = this.monsters.find(function(m){ return m.firebaseId === id || m.id === id; });
       if (existing) {
-        existing.gridCol = fm.x;
-        existing.gridRow = fm.y;
+        existing.gridCol = fm.x != null && isFinite(fm.x) ? fm.x : existing.gridCol;
+        existing.gridRow = fm.y != null && isFinite(fm.y) ? fm.y : existing.gridRow;
         existing.firebaseId = id;
         existing.id = existing.id || id;
         if (fm.maxHp != null && fm.maxHp > 0) {
@@ -195,8 +195,8 @@ class WorldMap {
         var mon = spawnMonster(fm.level || 5, this.getBattlePets());
         mon.firebaseId = id;
         mon.id = mon.id || id;
-        mon.gridCol = fm.x;
-        mon.gridRow = fm.y;
+        mon.gridCol = fm.x != null && isFinite(fm.x) ? fm.x : mon.gridCol;
+        mon.gridRow = fm.y != null && isFinite(fm.y) ? fm.y : mon.gridRow;
         mon.maxHp = fm.maxHp || mon.maxHp;
         mon.hp = fm.hp != null && fm.hp > 0 ? fm.hp : mon.maxHp;
         mon._lastSyncHp = mon.hp;
@@ -457,7 +457,7 @@ class WorldMap {
   }
 
   gridDist(a, b) {
-    if (!a || !b) return 999;
+    if (!a || !b || !isFinite(a.gridCol) || !isFinite(b.gridCol)) return 999;
     return Math.abs(a.gridCol - b.gridCol);
   }
 
@@ -664,11 +664,12 @@ class WorldMap {
     if (!target) return;
     const dist = this.gridDist(monster, target);
     const style = monster?.combatStyle || 'melee';
+    const mc = monster.gridCol ?? 8;
 
     if (style === 'ranged') {
       if (dist < preferredRange) {
-        const retreatDir = monster.gridCol > target.gridCol ? -1 : 1;
-        monster.gridCol = clamp(monster.gridCol + retreatDir, 8, 33);
+        const retreatDir = mc > (target.gridCol ?? 8) ? -1 : 1;
+        monster.gridCol = clamp(mc + retreatDir, 8, 33);
       } else if (dist > preferredRange + 1) {
         this.moveMonsterTowardTarget(monster, target, 1);
       }
@@ -678,8 +679,8 @@ class WorldMap {
     if (dist > preferredRange) {
       this.moveMonsterTowardTarget(monster, target, 1);
     } else if (style === 'tank' && dist < preferredRange) {
-      const retreatDir = monster.gridCol > target.gridCol ? -1 : 1;
-      monster.gridCol = clamp(monster.gridCol + retreatDir, 8, 33);
+      const retreatDir = mc > (target.gridCol ?? 8) ? -1 : 1;
+      monster.gridCol = clamp(mc + retreatDir, 8, 33);
     }
   }
 
@@ -817,10 +818,12 @@ class WorldMap {
   moveMonsterTowardTarget(monster, target, phase) {
     if (!target) return;
     const speed = phase > 3 ? 3 : (phase > 2 ? 2 : (phase > 1 ? 1 : 1));
-    const colDelta = target.gridCol - monster.gridCol;
-    const rowDelta = target.gridRow - monster.gridRow;
-    let newCol = monster.gridCol;
-    let newRow = monster.gridRow;
+    const mc = monster.gridCol ?? 8, mr = monster.gridRow ?? 4;
+    const tc = target.gridCol ?? 8, tr = target.gridRow ?? 4;
+    const colDelta = tc - mc;
+    const rowDelta = tr - mr;
+    let newCol = mc;
+    let newRow = mr;
     if (Math.abs(colDelta) > speed) {
       newCol += colDelta > 0 ? speed : -speed;
     }
@@ -852,17 +855,18 @@ class WorldMap {
     if (!target) return;
     const dist = this.gridDist(monster, target);
     const rangeType = monster.rangeType || 1;
+    const mc = monster.gridCol ?? 8, mr = monster.gridRow ?? 4;
     if (this.shouldBossRetreat(monster, target, dist, phase)) {
-      const retreatDir = monster.gridCol > target.gridCol ? -1 : 1;
-      monster.gridCol = clamp(monster.gridCol + retreatDir, 8, 33);
-      monster.gridRow = clamp(monster.gridRow + (Math.random() < 0.5 ? -1 : 1), 2, 11);
+      const retreatDir = (target.gridCol ?? 8) > mc ? -1 : 1;
+      monster.gridCol = clamp(mc + retreatDir, 8, 33);
+      monster.gridRow = clamp(mr + (Math.random() < 0.5 ? -1 : 1), 2, 11);
       this.fightLog.push({ text: `↩️ ${monster.emoji} ${monster.name} lùi lại để chờ thời điểm đánh!`, type: 'buff' });
       return;
     }
     // Maintain preferred range based on range type
     if (rangeType >= 2 && dist < 2) {
-      const retreatDir = monster.gridCol > target.gridCol ? -1 : 1;
-      monster.gridCol = clamp(monster.gridCol + retreatDir, 8, 33);
+      const retreatDir = (target.gridCol ?? 8) > mc ? -1 : 1;
+      monster.gridCol = clamp(mc + retreatDir, 8, 33);
       return;
     }
     const desiredMinDist = rangeType;
@@ -1204,9 +1208,8 @@ this.monsters.push(lowerBoss);
         this.petAttackMonster(pet, target);
         pet.addBattleEnergy(10);
       } else {
-        const dir = target.gridCol > pet.gridCol ? 1 : -1;
-        pet.gridCol += dir * 2;
-        pet.gridCol = Math.max(1, Math.min(35, pet.gridCol));
+        const dir = target.gridCol > (pet.gridCol ?? 6) ? 1 : -1;
+        pet.gridCol = Math.max(1, Math.min(35, (pet.gridCol ?? 6) + dir * 2));
       }
     }
 
@@ -1602,15 +1605,14 @@ this.monsters.push(lowerBoss);
 
     // Flash strike: monster teleports to target position
     if (special === 'flash') {
-      const oldCol = mon.gridCol;
-      mon.gridCol = Math.max(1, target.gridCol - 1);
+      mon.gridCol = Math.max(1, (target.gridCol ?? 8) - 1);
       this.fightLog.push({ text: `⚡ ${mon.emoji} ${mon.name} chớp nhoáng đến gần ${target.emoji}!`, type: 'buff' });
     }
 
     // Knockback: push target away
     if (special === 'knockback') {
-      const dir = target.gridCol > mon.gridCol ? 3 : -3;
-      target.gridCol = Math.max(1, Math.min(35, target.gridCol + dir));
+      const dir = (target.gridCol ?? 8) > (mon.gridCol ?? 8) ? 3 : -3;
+      target.gridCol = Math.max(1, Math.min(35, (target.gridCol ?? 8) + dir));
       this.fightLog.push({ text: `💨 ${mon.emoji} ${mon.name} đẩy lùi ${target.emoji}!`, type: 'buff' });
     }
 
@@ -1633,9 +1635,9 @@ this.monsters.push(lowerBoss);
     const alivePets = this.getBattlePets().filter(p => p.hp > 0);
 
     if (special === 'dash') {
-      const dashCol = clamp(target.gridCol - 1, 8, 33);
+      const dashCol = clamp((target.gridCol ?? 8) - 1, 8, 33);
       mon.gridCol = dashCol;
-      mon.gridRow = clamp(target.gridRow + (Math.random() < 0.5 ? -1 : 1), 2, 11);
+      mon.gridRow = clamp((target.gridRow ?? 4) + (Math.random() < 0.5 ? -1 : 1), 2, 11);
       target.hp = Math.max(0, target.hp - dmg);
       this.fightLog.push({ text: `⚡ ${mon.emoji} ${skill.name}! → ${target.emoji} -${dmg}`, type: 'buff' });
       if (this.onAttackAnim) this.onAttackAnim(mon.id, target.id, dmg, false, skill.anim || 'dash_strike', 'monster', animIsUltimate);
