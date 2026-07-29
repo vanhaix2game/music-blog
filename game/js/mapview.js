@@ -617,8 +617,8 @@ class MapView2D {
 
     for (const pet of pets) {
       if (pet.dead || pet.hp <= 0) continue;
-      const col = pet.gridCol != null ? pet.gridCol : 2;
-      const row = pet.gridRow != null ? pet.gridRow : 2;
+      const col = pet.gridCol != null && isFinite(pet.gridCol) ? pet.gridCol : 2;
+      const row = pet.gridRow != null && isFinite(pet.gridRow) ? pet.gridRow : 2;
       let ent = this.entities.find(e => !e.isMonster && !e.isBot && !e.isBotCharacter && e.pet.id === pet.id);
       if (ent) {
         ent.setTarget(col, row);
@@ -638,8 +638,8 @@ class MapView2D {
       if (Number.isFinite(hp) && hp <= 0) continue;
       const monKey = mon.firebaseId || mon.id;
       if (!monKey) continue;
-      const col = mon.gridCol != null ? mon.gridCol : 8;
-      const row = mon.gridRow != null ? mon.gridRow : 4;
+      const col = mon.gridCol != null && isFinite(mon.gridCol) ? mon.gridCol : 8;
+      const row = mon.gridRow != null && isFinite(mon.gridRow) ? mon.gridRow : 4;
       let ent = this.entities.find(e => e.isMonster && (e.pet.firebaseId || e.pet.id) === monKey);
       if (ent) {
         ent.setTarget(col, row);
@@ -670,8 +670,8 @@ class MapView2D {
     if (botPets) {
       for (const bp of botPets) {
         if (bp.dead || bp.hp <= 0) continue;
-        const col = bp.gridCol != null ? bp.gridCol : 2;
-        const row = bp.gridRow != null ? bp.gridRow : 2;
+        const col = bp.gridCol != null && isFinite(bp.gridCol) ? bp.gridCol : 2;
+        const row = bp.gridRow != null && isFinite(bp.gridRow) ? bp.gridRow : 2;
         let ent = this.entities.find(e => e.isBot && !e.isBotCharacter && e.pet.id === bp.id);
         if (ent) {
           ent.setTarget(col, row);
@@ -690,8 +690,8 @@ class MapView2D {
     // Bot character entities (multiple)
     for (const bc of botCharacters) {
       if (!bc || bc.dead) continue;
-      const col = bc.gridCol != null ? bc.gridCol : 0;
-      const row = bc.gridRow != null ? bc.gridRow : 8;
+      const col = bc.gridCol != null && isFinite(bc.gridCol) ? bc.gridCol : 0;
+      const row = bc.gridRow != null && isFinite(bc.gridRow) ? bc.gridRow : 8;
       let ent = this.entities.find(e => e.isBotCharacter && e.pet.id === bc.id);
       if (ent) {
         ent.setTarget(col, row);
@@ -748,8 +748,8 @@ class MapView2D {
       for (var pi = 0; pi < remotePets.length; pi++) {
         var rpPet = remotePets[pi];
         if (!rpPet || rpPet.dead || rpPet.hp <= 0) continue;
-        var pCol = rpPet.gridCol != null ? rpPet.gridCol : col + pi;
-        var pRow = rpPet.gridRow != null ? rpPet.gridRow : row;
+        var pCol = rpPet.gridCol != null && isFinite(rpPet.gridCol) ? rpPet.gridCol : col + pi;
+        var pRow = rpPet.gridRow != null && isFinite(rpPet.gridRow) ? rpPet.gridRow : row;
         var remotePetData = {
           id: rpPet.id || uid + '_pet_' + pi,
           name: rpPet.name || '',
@@ -1304,6 +1304,7 @@ class MapView2D {
     for (const [index, ent] of drawEnts.entries()) {
       if (index >= maxDrawEnts) break;
       const sx = ent.x, sy = ent.y;
+      if (!isFinite(sx) || !isFinite(sy)) continue;
       const bobY = Math.sin(this.animTime * 2.5 + (ent.isMonster ? 100 : 0) + ent.targetCol * 2) * 0.8;
       const scaleOverride = ent.pet?.bossScale || (ent.pet?.isBoss ? 1.3 : 0);
       const s = scaleOverride ? scaleOverride * 0.45 : (ent.isMonster ? 0.42 : 0.48);

@@ -165,6 +165,7 @@ class PixelArt {
   }
 
   static drawCharacter(ctx, pet, x, y, scale = 1, isBoss = false, walkPhase = 0, flipX = false) {
+    if (!isFinite(x) || !isFinite(y) || !isFinite(scale)) return;
     if (flipX) { ctx.save(); ctx.translate(x, 0); ctx.scale(-1, 1); ctx.translate(-x, 0); }
 
     const s = this.SPRITE_SIZE * scale;

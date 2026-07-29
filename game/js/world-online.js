@@ -26,8 +26,8 @@ class WorldOnlineManager {
       id: p.id, name: p.name, emoji: p.emoji,
       level: p.level, hp: p.hp, maxHp: p.maxHp,
       dead: p.dead || false,
-      gridCol: p.gridCol != null ? p.gridCol : 5,
-      gridRow: p.gridRow != null ? p.gridRow : 5,
+      gridCol: p.gridCol != null && isFinite(p.gridCol) ? p.gridCol : 5,
+      gridRow: p.gridRow != null && isFinite(p.gridRow) ? p.gridRow : 5,
       element: getPetElement(p.baseId)
     };});
     var result = await FirebaseOnline.enterWorld(name, emoji, petSnap);
@@ -75,8 +75,8 @@ class WorldOnlineManager {
           id: p.id, name: p.name, emoji: p.emoji,
           level: p.level, hp: p.hp, maxHp: p.maxHp,
           dead: p.dead || false,
-          gridCol: p.gridCol != null ? p.gridCol : 5,
-          gridRow: p.gridRow != null ? p.gridRow : 5,
+          gridCol: p.gridCol != null && isFinite(p.gridCol) ? p.gridCol : 5,
+          gridRow: p.gridRow != null && isFinite(p.gridRow) ? p.gridRow : 5,
           element: p.element || getPetElement(p.baseId),
           // Combat flag — true if exploring and monsters exist (for visual on other clients)
           fighting: worldMap.exploring && worldMap.monsters && worldMap.monsters.some(function(m){ return !m.dead && m.hp > 0; }),
