@@ -1650,6 +1650,15 @@ class GameUI {
     if (window.worldOnline && window.worldOnline.isOnline && this.worldMap.onlineManager !== window.worldOnline) {
       this.worldMap.setOnlineMode(window.worldOnline);
     }
+    if (window.worldOnline && window.worldOnline.remoteMonsters && Object.keys(window.worldOnline.remoteMonsters).length > 0) {
+      console.log('[renderMapOnline] syncing remote monsters:', Object.keys(window.worldOnline.remoteMonsters).length);
+      this.worldMap._syncMonstersFromFirebase(window.worldOnline.remoteMonsters);
+    }
+    // Verify monsters after setup
+    setTimeout(function(){
+      const mons = self.worldMap?.monsters?.filter(function(m){ return !m.dead && m.hp > 0; }) || [];
+      console.log('[renderMapOnline] alive monsters after 1s:', mons.length, 'exploring:', self.worldMap?.exploring, 'isOnline:', self.worldMap?.isOnline, 'isHost:', window.worldOnline?.isHost);
+    }, 1000);
     var wm = window.worldOnline;
     var roomLabel = 'Phòng ' + (wm.currentRoom || 1);
     var count = Object.keys(wm.remotePlayers || {}).length + 1;
@@ -1986,6 +1995,19 @@ class GameUI {
       } else {
         this.mapView.stop();
         this.mapView.render();
+      }
+      // Force a re-sync after 500ms to ensure canvas catches up with any async spawning
+      if (isExploring && canvasId === 'online-map-canvas') {
+        setTimeout(() => {
+          const stillExploring = this.worldMap && this.worldMap.exploring;
+          const curEl = document.getElementById('tab-mapOnline');
+          if (stillExploring && curEl && this.mapView && this.mapView.canvas === canvas) {
+            const _alivePets = this.worldMap.getBattlePets();
+            const _aliveMonsters = (this.worldMap.monsters || []).filter(m => !m.dead && m.hp > 0);
+            this.mapView.syncEntities(_alivePets, _aliveMonsters, this.worldMap.getBotPets(), this.worldMap.getBotCharacters(), remotePlayers);
+            this.mapView.render();
+          }
+        }, 500);
       }
     }
   }

@@ -595,7 +595,11 @@ class MapView2D {
     if (!Array.isArray(botCharacters)) botCharacters = [botCharacters];
     if (!remotePlayers) remotePlayers = {};
     const alivePetIds = new Set(pets.filter(p => !p.dead && p.hp > 0).map(p => p.id));
-    const aliveMonIds = new Set(monsters.filter(m => !m.dead && m.hp > 0).map(m => m.id));
+    const aliveMonIds = new Set(monsters.filter(m => {
+      if (!m || m.dead || m.alive === false) return false;
+      const hp = Number(m.hp);
+      return !Number.isFinite(hp) || hp > 0;
+    }).map(m => m.firebaseId || m.id));
     const aliveBotIds = botPets ? new Set(botPets.filter(p => !p.dead && p.hp > 0).map(p => p.id)) : new Set();
     const aliveCharIds = new Set(botCharacters.filter(c => c && !c.dead).map(c => c.id));
     const remoteUids = new Set(Object.keys(remotePlayers));
@@ -607,7 +611,7 @@ class MapView2D {
       if (e.isBotCharacter) return aliveCharIds.has(e.pet.id);
       if (e.isBot) return aliveBotIds.has(e.pet.id);
       if (!e.isMonster) return alivePetIds.has(e.pet.id);
-      if (e.isMonster) return aliveMonIds.has(e.pet.id);
+      if (e.isMonster) return aliveMonIds.has(e.pet.firebaseId || e.pet.id);
       return false;
     });
 
@@ -629,18 +633,33 @@ class MapView2D {
     }
 
     for (const mon of monsters) {
-      if (mon.dead || mon.hp <= 0) continue;
+      if (!mon || mon.dead || mon.alive === false) continue;
+      const hp = Number(mon.hp);
+      if (Number.isFinite(hp) && hp <= 0) continue;
+      const monKey = mon.firebaseId || mon.id;
+      if (!monKey) continue;
       const col = mon.gridCol != null ? mon.gridCol : 8;
       const row = mon.gridRow != null ? mon.gridRow : 4;
-      let ent = this.entities.find(e => e.isMonster && e.pet.id === mon.id);
+      let ent = this.entities.find(e => e.isMonster && (e.pet.firebaseId || e.pet.id) === monKey);
       if (ent) {
         ent.setTarget(col, row);
-        ent.pet.hp = mon.hp;
-        ent.pet.name = mon.name;
-        ent.pet.emoji = mon.emoji;
+        ent.pet.hp = mon.hp != null ? mon.hp : ent.pet.hp;
+        ent.pet.maxHp = mon.maxHp != null ? mon.maxHp : ent.pet.maxHp;
+        ent.pet.name = mon.name || ent.pet.name;
+        ent.pet.emoji = mon.emoji || ent.pet.emoji;
+        ent.pet.level = mon.level != null ? mon.level : ent.pet.level;
+        ent.pet.element = mon.element || ent.pet.element;
+        ent.pet.isBoss = !!mon.isBoss || !!ent.pet.isBoss;
+        ent.pet.isMutant = !!mon.isMutant || !!ent.pet.isMutant;
+        ent.pet.firebaseId = mon.firebaseId || mon.id || ent.pet.firebaseId;
+        ent.pet.id = mon.id || mon.firebaseId || ent.pet.id;
         if (mon.hp <= 0) ent.dead = true;
       } else {
-        const e = new MapEntity(mon, true, col, row);
+        const monsterPet = Object.assign({}, mon, {
+          id: mon.id || mon.firebaseId,
+          firebaseId: mon.firebaseId || mon.id
+        });
+        const e = new MapEntity(monsterPet, true, col, row);
         const s = this.tileToScreen(col, row);
         e.x = s.x; e.y = s.y;
         this.entities.push(e);

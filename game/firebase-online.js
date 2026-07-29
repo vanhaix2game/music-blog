@@ -34,22 +34,65 @@
 
     init: function(){
       return new Promise(function(resolve){
-        auth.onAuthStateChanged(function(user){
-          if(user){
+        var settled = false;
+        var finish = function(user){
+          if (settled) return;
+          settled = true;
+          if (user) {
             FirebaseOnline.uid = user.uid;
             FirebaseOnline.isLoggedIn = true;
             resolve(user);
-          } else {
+            return;
+          }
+          FirebaseOnline.signInAnonymously().then(function(result){
+            if (result && result.user) {
+              FirebaseOnline.uid = result.user.uid;
+              FirebaseOnline.isLoggedIn = true;
+              resolve(result.user);
+            } else {
+              FirebaseOnline.uid = null;
+              FirebaseOnline.isLoggedIn = false;
+              resolve(null);
+            }
+          }).catch(function(e){
             FirebaseOnline.uid = null;
             FirebaseOnline.isLoggedIn = false;
+            if (FirebaseOnline.onError) FirebaseOnline.onError(e);
             resolve(null);
+          });
+        };
+        auth.onAuthStateChanged(function(user){
+          if (user) {
+            FirebaseOnline.uid = user.uid;
+            FirebaseOnline.isLoggedIn = true;
+            finish(user);
+          } else {
+            finish(null);
           }
+        });
+      });
+    },
+
+    ensureAuthenticated: function(){
+      return new Promise(function(resolve){
+        if (FirebaseOnline.isLoggedIn && FirebaseOnline.uid) {
+          resolve(true);
+          return;
+        }
+        FirebaseOnline.init().then(function(user){
+          resolve(!!user);
+        }).catch(function(){
+          resolve(false);
         });
       });
     },
 
     signIn: function(email, password){
       return auth.signInWithEmailAndPassword(email, password);
+    },
+
+    signInAnonymously: function(){
+      return auth.signInAnonymously();
     },
 
     signOut: function(){
@@ -228,27 +271,29 @@
 
     enterWorld: function(playerName, emoji, pets){
       return new Promise(function(resolve){
-        if(!FirebaseOnline.isLoggedIn){ resolve(null); return; }
-        var ref = FirebaseOnline.roomRef();
-        ref.once('value').then(function(snap){
-          var room = snap.val();
-          var isHost = !room || !room.host;
-          if(isHost){
-            ref.set({
-              host: FirebaseOnline.uid,
-              players: {},
-              monsters: {},
-              resources: {}
+        FirebaseOnline.ensureAuthenticated().then(function(ok){
+          if(!ok){ resolve(null); return; }
+          var ref = FirebaseOnline.roomRef();
+          ref.once('value').then(function(snap){
+            var room = snap.val();
+            var isHost = !room || !room.host;
+            if(isHost){
+              ref.set({
+                host: FirebaseOnline.uid,
+                players: {},
+                monsters: {},
+                resources: {}
+              });
+            }
+            ref.child('players/'+FirebaseOnline.uid).set({
+              name: playerName, emoji: emoji,
+              x: 5, y: 5, hp: 100, maxHp: 100,
+              alive: true, lastMove: Date.now(),
+              pets: pets || []
             });
-          }
-          ref.child('players/'+FirebaseOnline.uid).set({
-            name: playerName, emoji: emoji,
-            x: 5, y: 5, hp: 100, maxHp: 100,
-            alive: true, lastMove: Date.now(),
-            pets: pets || []
+            ref.child('players/'+FirebaseOnline.uid).onDisconnect().remove();
+            resolve({ isHost: isHost });
           });
-          ref.child('players/'+FirebaseOnline.uid).onDisconnect().remove();
-          resolve({ isHost: isHost });
         });
       });
     },
@@ -296,6 +341,18 @@
 
     removeMonster: function(monsterId){
       return FirebaseOnline.roomRef().child('monsters/'+monsterId).remove();
+    },
+
+    // Non-host reports damage delta — host uses transaction to atomically apply it
+    applyMonsterDamage: function(monsterId, damage){
+      if (!FirebaseOnline.isLoggedIn || damage <= 0) return Promise.resolve();
+      var ref = FirebaseOnline.roomRef().child('monsters/' + monsterId + '/hp');
+      return ref.transaction(function(currentHp){
+        if (currentHp === null || currentHp === undefined) return undefined; // abort
+        return Math.max(0, currentHp - damage);
+      }, function(error){
+        if (error) console.warn('applyMonsterDamage transaction failed:', error);
+      }, false);
     },
 
     updateResource: function(resId, data){

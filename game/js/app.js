@@ -28,6 +28,13 @@ class App {
       }catch(e){}
     }
 
+    if(!this.onlineMode){
+      try{
+        var anonResult = await FirebaseOnline.signInAnonymously();
+        if(anonResult && anonResult.user) this.onlineMode = true;
+      }catch(e){}
+    }
+
     await this.loadGame();
     this.ui = new GameUI(this);
     this.ui.init();
@@ -697,7 +704,11 @@ class App {
     var ok = await worldOnline.enterWorld(name, emoji, roomNum, activePets);
     if (!ok) return;
     this._setupOnlineWorld();
-    this.ui.toast('🌐 Đã vào phòng ' + roomNum);
+    if (this.ui.worldMap && this.ui.worldMap.startExploring()) {
+      this.ui.toast('🌐 Đã vào phòng ' + roomNum + ' · Bắt đầu khám phá!');
+    } else {
+      this.ui.toast('🌐 Đã vào phòng ' + roomNum + ' · Chọn đội hình và bắt đầu khám phá');
+    }
     this.ui.currentTab = 'mapOnline';
     this.ui.showTab('mapOnline');
   }

@@ -89,7 +89,13 @@ class WorldOnlineManager {
           lastUlt: !!p._lastAttackUlt
         };});
         // Reset attack tracking after sync so stale values are not re-sent
-        battlePets.forEach(function(p){ if (p) { p._lastSyncDmg = p._lastAttackDmg; }});
+        battlePets.forEach(function(p){ if (p) {
+          p._lastSyncDmg = p._lastAttackDmg;
+          p._lastAttackDmg = 0;
+          p._lastAttackCrit = false;
+          p._lastAttackSkill = null;
+          p._lastAttackUlt = false;
+        }});
         FirebaseOnline.updatePlayerPets(petSnap);
       }
     }, 250);
@@ -107,8 +113,38 @@ class WorldOnlineManager {
     FirebaseOnline.updateMonster(firebaseId, data);
   }
 
+  syncRoomMonsters(monsters) {
+    if (!this.isOnline || !FirebaseOnline.isLoggedIn) return Promise.resolve();
+    var payload = {};
+    (monsters || []).forEach(function(mon){
+      if (!mon || mon.dead || !mon.hp || mon.hp <= 0) return;
+      var key = mon.firebaseId || mon.id;
+      if (!key) return;
+      payload[key] = {
+        x: mon.gridCol,
+        y: mon.gridRow,
+        hp: mon.hp,
+        maxHp: mon.maxHp,
+        atk: mon.atk,
+        def: mon.def,
+        element: mon.element || 'fire',
+        level: mon.level,
+        alive: !mon.dead && mon.hp > 0,
+        name: mon.name,
+        emoji: mon.emoji,
+        isBoss: !!mon.isBoss
+      };
+    });
+    return FirebaseOnline.roomRef().child('monsters').set(payload);
+  }
+
   syncMonsterHP(firebaseId, hp) {
     FirebaseOnline.updateMonsterHP(firebaseId, hp);
+  }
+
+  // Non-host reports damage delta using Firebase transaction (avoids race condition)
+  applyMonsterDamage(firebaseId, damage) {
+    FirebaseOnline.applyMonsterDamage(firebaseId, damage);
   }
 
   removeMonster(firebaseId) {
