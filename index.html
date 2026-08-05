@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -286,7 +286,28 @@
 
         footer{background:rgba(0,0,0,0.03);border-top:1px solid rgba(0,0,0,0.05);padding:2rem;text-align:center;color:rgba(0,0,0,0.35);font-size:0.8rem;margin-top:2rem}
         body.dark footer{background:rgba(0,0,0,0.2);border-top-color:rgba(255,255,255,0.06);color:rgba(255,255,255,0.35)}
-        @media(max-width:900px){.main-layout{flex-direction:column;padding:1rem}.right-panel{width:100%}.chat-panel{height:400px;position:static}.theme-toggle{top:auto;bottom:20px;right:20px}}
+        @media(max-width:900px){.main-layout{flex-direction:column;padding:1rem}
+        /* ===== SKILL SYSTEM ===== */
+        .skill-panel{padding:0.8rem 1rem;border-top:1px solid rgba(0,0,0,0.06);flex-shrink:0}
+        body.dark .skill-panel{border-top-color:rgba(255,255,255,0.1)}
+        .skill-panel-title{font-size:0.7rem;color:rgba(0,0,0,0.4);margin-bottom:0.5rem;font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
+        body.dark .skill-panel-title{color:rgba(255,255,255,0.4)}
+        .skill-btns{display:flex;gap:0.4rem;flex-wrap:wrap}
+        .skill-btn{position:relative;border:1px solid rgba(0,0,0,0.08);background:rgba(0,0,0,0.05);border-radius:10px;padding:0.35rem 0.6rem;cursor:pointer;font-size:1.1rem;transition:transform 0.15s,background 0.15s}
+        body.dark .skill-btn{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.1)}
+        .skill-btn:hover{transform:scale(1.2);background:rgba(233,69,96,0.15)}
+        .skill-btn:active{transform:scale(0.9)}
+        .skill-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+        .skill-cooldown-ring{position:absolute;inset:0;border-radius:10px;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:#fff;pointer-events:none;opacity:0;transition:opacity 0.2s}
+        .skill-btn.cooling .skill-cooldown-ring{opacity:1}
+        #skillOverlay{position:fixed;inset:0;pointer-events:none;z-index:99999;overflow:hidden}
+        .skill-fx{position:absolute;font-size:2.2rem;pointer-events:none;user-select:none;animation:skillFly 1.6s ease-out forwards}
+        .skill-label{position:absolute;font-size:0.65rem;font-weight:700;color:#fff;background:rgba(0,0,0,0.6);border-radius:8px;padding:1px 6px;pointer-events:none;user-select:none;animation:skillFly 1.6s ease-out forwards;white-space:nowrap}
+        @keyframes skillFly{0%{transform:translate(0,0) scale(1);opacity:1}60%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(0.3);opacity:0}}
+        @keyframes skillBoom{0%{transform:scale(0.5);opacity:1}50%{transform:scale(2.5);opacity:0.8}100%{transform:scale(4);opacity:0}}
+        .skill-boom{position:absolute;font-size:2rem;pointer-events:none;animation:skillBoom 0.7s ease-out forwards}
+        #skillToast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;padding:0.5rem 1.2rem;border-radius:20px;font-size:0.82rem;pointer-events:none;z-index:100000;opacity:0;transition:opacity 0.3s;white-space:nowrap}
+        #skillToast.show{opacity:1}.right-panel{width:100%}.chat-panel{height:400px;position:static}.theme-toggle{top:auto;bottom:20px;right:20px}}
     </style>
 </head>
 <body>
@@ -387,7 +408,10 @@
                     <div class="chat-msg-bubble">Chào mừng đến Music Blog! Nhập tên để bắt đầu chat.</div>
                 </div>
             </div>
-            <div class="chat-input-area">
+                        <div class="skill-panel" id="skillPanel" style="display:none">
+                <div class="skill-panel-title">⚔️ Tấn công</div>
+                <div class="skill-btns" id="skillBtns"></div>
+            </div><div class="chat-input-area">
                 <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." maxlength="500" disabled>
                 <button class="chat-send-btn" id="chatSendBtn" disabled><i class="fas fa-paper-plane"></i></button>
             </div>
@@ -775,6 +799,8 @@ document.getElementById('changeNameBtn').addEventListener('click',function(){
 
 function enableChat(){
     chatInput.disabled=false;chatSendBtn.disabled=false;chatInput.focus();
+    document.getElementById("skillPanel").style.display="block";
+    buildSkillBtns();
     setupPresence();
     updateAdminUI();
 }
@@ -861,7 +887,184 @@ document.getElementById('resetGridBtn').addEventListener('click',function(){
     setTimeout(function(){btn.classList.remove('active');},300);
 });
 
+
+/* ===== SKILL SYSTEM ===== */
+var skillRef = db.ref('skills');
+var skillCooldowns = {};
+var SKILLS = [
+    {key:'fire',   emoji:'🔥', label:'Lửa',   cd:2000},
+    {key:'boom',   emoji:'💥', label:'Nổ',     cd:3000},
+    {key:'heart',  emoji:'❤️', label:'Tim',    cd:1500},
+    {key:'music',  emoji:'🎵', label:'Nốt',    cd:1000},
+    {key:'star',   emoji:'⭐', label:'Sao',    cd:2000},
+    {key:'sword',  emoji:'⚔️', label:'Kiếm',   cd:3500},
+    {key:'thunder',emoji:'⚡', label:'Sét',    cd:2500},
+    {key:'ice',    emoji:'❄️', label:'Băng',   cd:2000},
+    {key:'poison', emoji:'☠️', label:'Độc',    cd:4000},
+    {key:'rainbow',emoji:'🌈', label:'Cầu vồng',cd:5000}
+];
+
+function buildSkillBtns(){
+    var panel = document.getElementById('skillBtns');
+    if(!panel) return;
+    var html = '';
+    for(var i=0;i<SKILLS.length;i++){
+        var s = SKILLS[i];
+        html += '<button class="skill-btn" id="skbtn_'+s.key+'" title="'+s.label+' ('+s.cd/1000+'s)" data-key="'+s.key+'">'
+              + s.emoji
+              + '<div class="skill-cooldown-ring" id="skcd_'+s.key+'">...</div>'
+              + '</button>';
+    }
+    panel.innerHTML = html;
+    panel.querySelectorAll('.skill-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){
+            fireSkill(btn.dataset.key);
+        });
+    });
+}
+
+function fireSkill(key){
+    if(!username) return;
+    var sk = null;
+    for(var i=0;i<SKILLS.length;i++){if(SKILLS[i].key===key){sk=SKILLS[i];break;}}
+    if(!sk) return;
+    if(skillCooldowns[key]) return;
+
+    // Vị trí ngẫu nhiên để spawn
+    var ox = Math.floor(Math.random()*80 + 10); // 10-90% width
+    var oy = Math.floor(Math.random()*60 + 20); // 20-80% height
+
+    // Push lên Firebase để tất cả đều nhận
+    skillRef.push({
+        key: key,
+        emoji: sk.emoji,
+        label: sk.label,
+        sender: username,
+        senderId: userId,
+        color: userColor,
+        ox: ox,
+        oy: oy,
+        ts: firebase.database.ServerValue.TIMESTAMP
+    });
+
+    startCooldown(key, sk.cd);
+}
+
+function startCooldown(key, ms){
+    skillCooldowns[key] = true;
+    var btn = document.getElementById('skbtn_'+key);
+    var ring = document.getElementById('skcd_'+key);
+    if(!btn || !ring) return;
+    btn.disabled = true;
+    btn.classList.add('cooling');
+
+    var remain = ms / 1000;
+    ring.textContent = remain.toFixed(1) + 's';
+    var interval = setInterval(function(){
+        remain -= 0.1;
+        if(remain <= 0){
+            clearInterval(interval);
+            skillCooldowns[key] = false;
+            btn.disabled = false;
+            btn.classList.remove('cooling');
+            ring.textContent = '';
+        } else {
+            ring.textContent = remain.toFixed(1) + 's';
+        }
+    }, 100);
+}
+
+function renderSkillFX(data){
+    var overlay = document.getElementById('skillOverlay');
+    if(!overlay) return;
+
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+
+    // Vị trí bắt đầu
+    var startX = (data.ox / 100) * vw;
+    var startY = (data.oy / 100) * vh;
+
+    // Hướng bay ngẫu nhiên
+    var angle = Math.random() * Math.PI * 2;
+    var dist = 180 + Math.random() * 200;
+    var dx = Math.cos(angle) * dist;
+    var dy = Math.sin(angle) * dist;
+
+    // Tạo emoji bay
+    var el = document.createElement('div');
+    el.className = 'skill-fx';
+    el.textContent = data.emoji;
+    el.style.left = startX + 'px';
+    el.style.top  = startY + 'px';
+    el.style.setProperty('--dx', dx + 'px');
+    el.style.setProperty('--dy', dy + 'px');
+    overlay.appendChild(el);
+
+    // Tạo label tên người dùng
+    var lbl = document.createElement('div');
+    lbl.className = 'skill-label';
+    lbl.textContent = data.sender + ' dùng ' + data.label;
+    lbl.style.left = startX + 'px';
+    lbl.style.top  = (startY + 30) + 'px';
+    lbl.style.setProperty('--dx', dx + 'px');
+    lbl.style.setProperty('--dy', (dy + 20) + 'px');
+    lbl.style.background = data.color || 'rgba(0,0,0,0.6)';
+    overlay.appendChild(lbl);
+
+    // Tạo boom ở điểm cuối
+    setTimeout(function(){
+        var boom = document.createElement('div');
+        boom.className = 'skill-boom';
+        boom.textContent = data.emoji;
+        boom.style.left = (startX + dx) + 'px';
+        boom.style.top  = (startY + dy) + 'px';
+        overlay.appendChild(boom);
+        setTimeout(function(){ if(boom.parentNode) boom.parentNode.removeChild(boom); }, 700);
+    }, 900);
+
+    // Dọn sau 2s
+    setTimeout(function(){
+        if(el.parentNode) el.parentNode.removeChild(el);
+        if(lbl.parentNode) lbl.parentNode.removeChild(lbl);
+    }, 2000);
+
+    // Toast
+    showSkillToast(data.sender + ' tung ' + data.emoji + ' ' + data.label + '!');
+}
+
+function showSkillToast(msg){
+    var toast = document.getElementById('skillToast');
+    if(!toast) return;
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function(){ toast.classList.remove('show'); }, 2000);
+}
+
+// Lắng nghe skill từ Firebase - chỉ nhận skill mới (trong 10s gần nhất)
+var skillListenStart = Date.now();
+skillRef.orderByChild('ts').on('child_added', function(snap){
+    var data = snap.val();
+    if(!data || !data.ts) return;
+    // Bỏ qua skill cũ khi load trang
+    if(data.ts < skillListenStart - 500) return;
+    renderSkillFX(data);
+    // Tự xóa khỏi Firebase sau 5s để tránh tích lũy
+    setTimeout(function(){ snap.ref.remove(); }, 5000);
+});
+
+// Dọn skill cũ định kỳ
+setInterval(function(){
+    skillRef.orderByChild('ts').endAt(Date.now() - 10000).once('value', function(snap){
+        snap.forEach(function(child){ child.ref.remove(); });
+    });
+}, 30000);
 updateAdminUI();
 </script>
-</body>
+<div id="skillOverlay"></div>
+<div id="skillToast"></div></body>
 </html>
+
+
+
