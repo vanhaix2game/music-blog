@@ -1,4 +1,4 @@
-const MAP_TIERS = [
+﻿const MAP_TIERS = [
   { id: 1, name: 'Đồng cỏ xanh', minLvl: 1, maxLvl: 10, theme: 'grass', icon: '🌾',
     monsters: { normal: { count: [1,2], lvlRange: [1,4], statMul: 0.7, hpMul: 5 }, boss: { count: [0,1], lvlRange: [4,6], statMul: 0.6, hpMul: 5 } } },
   { id: 2, name: 'Rừng rậm', minLvl: 10, maxLvl: 20, theme: 'forest', icon: '🌲',
@@ -1250,17 +1250,72 @@ this.monsters.push(lowerBoss);
           this.monsterUseSkill(mon, target, skill, true);
         } else {
           this.monsterAttackPet(mon, target);
+        }      } else {
+        // ===== NORMAL MONSTER AI =====
+        // 1. Attack nearest pet when in range
+        // 2. Chase pet when detected (dist <= 8)
+        // 3. When pet is far: patrol spread around boss, no stacking
+
+        const guardBoss = this.monsters.find(m => m.isBoss && !m.dead && m.hp > 0);
+
+        // Assign patrol slot once per monster (spread evenly around boss)
+        if (mon._patrolSlot == null || mon._lastBossId !== (guardBoss ? guardBoss.id : null)) {
+          const aliveNormals = this.monsters.filter(m => !m.isBoss && !m.dead && m.hp > 0);
+          const myIdx = aliveNormals.indexOf(mon);
+          mon._patrolSlot = myIdx >= 0 ? myIdx : Math.floor(Math.random() * 8);
+          mon._lastBossId = guardBoss ? guardBoss.id : null;
         }
-      } else {
-        // Normal monster AI: chủ động tìm và lao tới pet gần nhất
+
+        // 8 patrol positions in a semicircle in front of boss (facing pets)
+        const patrolOffsets = [
+          { dc: -1, dr: -3 }, { dc: -2, dr: -2 }, { dc: -3, dr: -1 },
+          { dc: -3, dr:  0 }, { dc: -3, dr:  1 },
+          { dc: -2, dr:  2 }, { dc: -1, dr:  3 }, { dc:  0, dr:  2 },
+        ];
+        const off = patrolOffsets[mon._patrolSlot % patrolOffsets.length];
+        const baseCol = guardBoss ? guardBoss.gridCol : 14;
+        const baseRow = guardBoss ? guardBoss.gridRow : 4;
+        const patrolCol = clamp(baseCol + off.dc, 8, 22);
+        const patrolRow = clamp(baseRow + off.dr, 2, 11);
+
         if (dist <= monRange) {
+          // In attack range -> attack immediately
           this.monsterAttackPet(mon, target);
+        } else if (dist <= 8) {
+          // Pet detected -> charge toward pet
+          this.moveMonsterTowardTarget(mon, target, 2);
         } else {
-          // Detection radius: nếu pet trong tầm phát hiện (8 ô), quái lao nhanh hơn
-          const seekPhase = dist <= 6 ? 4 : 3;
-          this.moveMonsterTowardTarget(mon, target, seekPhase);
+          // Pet far away -> hold patrol position around boss, avoid stacking
+          const patrolDist = Math.abs(mon.gridCol - patrolCol) + Math.abs(mon.gridRow - patrolRow);
+          if (patrolDist > 1) {
+            const nc = mon.gridCol + (patrolCol > mon.gridCol ? 1 : patrolCol < mon.gridCol ? -1 : 0);
+            const nr = mon.gridRow + (patrolRow > mon.gridRow ? 1 : patrolRow < mon.gridRow ? -1 : 0);
+            if (!this.isMonsterCellOccupied(nc, nr, mon)) {
+              mon.gridCol = clamp(nc, 8, 33);
+              mon.gridRow = clamp(nr, 2, 11);
+            } else if (!this.isMonsterCellOccupied(nc, mon.gridRow, mon)) {
+              mon.gridCol = clamp(nc, 8, 33);
+            } else if (!this.isMonsterCellOccupied(mon.gridCol, nr, mon)) {
+              mon.gridRow = clamp(nr, 2, 11);
+            } else {
+              // Stuck -> jitter to escape
+              const jc = mon.gridCol + (Math.random() < 0.5 ? 1 : -1);
+              if (!this.isMonsterCellOccupied(jc, mon.gridRow, mon)) mon.gridCol = clamp(jc, 8, 33);
+            }
+          }
         }
+
         mon.battleEnergy = Math.min(100, (mon.battleEnergy || 0) + 8);
+
+        // Small monsters use skill if available, enough energy, and near pet
+        if (mon.monsterSkills && mon.monsterSkills.length > 0 && dist <= monRange + 1
+            && (mon.battleEnergy || 0) >= 60 && Math.random() < 0.20) {
+          const sk = mon.monsterSkills[Math.floor(Math.random() * mon.monsterSkills.length)];
+          if (sk) {
+            mon.battleEnergy = Math.max(0, (mon.battleEnergy || 0) - 60);
+            this.monsterUseSkill(mon, target, sk, true);
+          }
+        }
       }
     }
 
@@ -2177,3 +2232,4 @@ WorldMap.prototype.syncOnlineResources = function(resources) {
   this.onlineResources = resources || [];
   this.scheduleUpdate();
 };
+
