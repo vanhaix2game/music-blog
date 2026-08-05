@@ -1269,7 +1269,7 @@ this.monsters.push(lowerBoss);
           const rowDelta = tr - mr;
 
           // Di chuyen theo ca col va row trong mot tick de nhanh hon
-          let nc = mc + (Math.abs(colDelta) > 0 ? (colDelta > 0 ? -speed : speed) : 0);
+          let nc = mc + (Math.abs(colDelta) > 0 ? (colDelta > 0 ? speed : -speed) : 0);
           let nr = mr + (Math.abs(rowDelta) > 1 ? (rowDelta > 0 ? 1 : -1) : 0);
 
           nc = clamp(nc, 8, 33);
@@ -2217,5 +2217,6 @@ WorldMap.prototype.syncOnlineResources = function(resources) {
   this.onlineResources = resources || [];
   this.scheduleUpdate();
 };
+
 
 
