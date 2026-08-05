@@ -1250,7 +1250,8 @@ this.monsters.push(lowerBoss);
           this.monsterUseSkill(mon, target, skill, true);
         } else {
           this.monsterAttackPet(mon, target);
-        }      } else {
+        }
+      } else {
         // ===== NORMAL MONSTER AI =====
         // Moi tick (~800ms): luon di chuyen ve phia pet gan nhat, tan cong khi trong tam
 
@@ -1300,7 +1301,6 @@ this.monsters.push(lowerBoss);
             this.monsterUseSkill(mon, target, sk, true);
           }
         }
-      }
       }
     }
 

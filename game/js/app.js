@@ -1,4 +1,4 @@
-class App {
+﻿class App {
   constructor() {
     this.player = null;
     this.ui = null;
@@ -668,6 +668,9 @@ class App {
       this.ui.toast('Lỗi hệ thống map!');
       return;
     }
+    if (window.worldOnline && window.worldOnline.isOnline && this.ui.worldMap.onlineManager !== window.worldOnline) {
+      this.ui.worldMap.setOnlineMode(window.worldOnline);
+    }
     if (this.ui.worldMap.startExploring()) {
       this.ui.toast('⚔️ Đang khám phá map online!');
       this.ui.currentTab = 'mapOnline';
@@ -678,13 +681,7 @@ class App {
   }
 
   stopOnlineExploring() {
-    this.ui.worldMap.stopExploring();
-    this.ui.currentTab = 'mapOnline';
-    this.ui.renderMapOnline();
-  }
-
-  stopOnlineExploring() {
-    this.ui.worldMap.stopExploring();
+    if (this.ui.worldMap) this.ui.worldMap.stopExploring();
     this.ui.currentTab = 'mapOnline';
     this.ui.renderMapOnline();
   }
@@ -692,7 +689,11 @@ class App {
   // === Persistent Online World (auto-joined) ===
 
   async enterOnlineWorld(roomNum) {
-    if (worldOnline.isOnline) return;
+    if (worldOnline.isOnline && worldOnline.currentRoom === roomNum) return;
+    if (worldOnline.isOnline) {
+      if (this.ui.worldMap && this.ui.worldMap.exploring) this.ui.worldMap.stopExploring();
+      worldOnline.leaveWorld();
+    }
     var name = localStorage.getItem('musicblog_username') || FirebaseOnline.uid || 'Khách';
     var emoji = this.player.costume ? (DATA.COSTUMES.find(function(c){ return c.id === app.player.costume; })?.emoji || '🐉') : '🐉';
     // Get active pets from battle team or strongest alive

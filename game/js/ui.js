@@ -1,4 +1,4 @@
-function getSkillCategory(s) {
+﻿function getSkillCategory(s) {
   if (s.healMul || s.type === 'heal' || s.type === 'heal_all') return 'heal';
   if (s.defSelf || s.defUp || s.taunt || s.type === 'selfbuff' || s.type === 'buff' || s.type === 'taunt') return 'defense';
   if (s.effect && (s.effect === 'stun' || s.effect === 'freeze' || s.effect === 'root' || s.effect === 'slow')) return 'control';
@@ -1632,8 +1632,12 @@ class GameUI {
       this.worldMap = new WorldMap(this.player);
       this.worldMap.onUpdate = () => this.refreshWorldUI();
       this.worldMap.onLogUpdate = () => this.refreshLogOnly();
-      this.worldMap.onLevelUp = (pet) => this.toast(`🎉 ${pet.emoji} ${pet.name} lên cấp ${pet.level}!`);
-      this.worldMap.onPetDeath = (pet, lost) => this.toast(`💔 ${pet.emoji} ${pet.name} chết! Mất ${lost} cấp.`);
+      this.worldMap.onLevelUp = (pet) => this.toast(`\u2b06\ufe0f ${pet.emoji} ${pet.name} l\u00ean c\u1ea5p ${pet.level}!`);
+      this.worldMap.onPetDeath = (pet, lost) => this.toast(`\u2620\ufe0f ${pet.emoji} ${pet.name} ch\u1ebft! M\u1ea5t ${lost} c\u1ea5p.`);
+      // Set online mode ngay khi tao moi de tranh spawn local monsters
+      if (window.worldOnline && window.worldOnline.isOnline) {
+        this.worldMap.setOnlineMode(window.worldOnline);
+      }
     }
     // ⚠️ Luôn set onAttackAnim (online map có thể được tạo từ _setupOnlineWorld trước đó).
     this.worldMap.onAttackAnim = (attackerId, targetId, dmg, isCrit, skillType, roleId, isUltimate) => {
